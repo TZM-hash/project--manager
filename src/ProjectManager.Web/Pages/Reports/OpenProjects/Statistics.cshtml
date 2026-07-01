@@ -4,33 +4,40 @@
     ViewData["Title"] = "未结案统计";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h3 mb-0">未结案统计</h1>
-    <a class="btn btn-outline-secondary" asp-page="./Index">返回报表</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">未结案统计</h1>
+        <div class="page-subtitle">按状态汇总项目数量、金额、请购和付款资料</div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回报表</a>
+    </div>
 </div>
 
-<table class="table table-sm table-striped align-middle">
-    <thead>
-        <tr>
-            <th>状态</th>
-            <th>项目数</th>
-            <th>项目金额合计</th>
-            <th>请购金额合计</th>
-            <th>实际已付款合计</th>
-            <th>平均收款比例</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var row in Model.Rows)
-    {
-        <tr>
-            <td>@row.StatusName</td>
-            <td>@row.Count</td>
-            <td>@row.ProjectAmountTotal.ToString("N2")</td>
-            <td>@row.PurchaseAmountTotal.ToString("N2")</td>
-            <td>@row.ActualPaidAmountTotal.ToString("N2")</td>
-            <td>@row.AverageCollectionPercent.ToString("0.##")%</td>
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="data-table-wrap">
+    <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th>状态</th>
+                <th class="numeric">项目数</th>
+                <th class="numeric">项目金额合计</th>
+                <th class="numeric">请购金额合计</th>
+                <th class="numeric">实际已付款合计</th>
+                <th class="numeric">平均收款比例</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var row in Model.Rows)
+        {
+            <tr>
+                <td>@row.StatusName</td>
+                <td class="numeric">@row.Count</td>
+                <td class="numeric">@row.ProjectAmountTotal.ToString("N2")</td>
+                <td class="numeric">@row.PurchaseAmountTotal.ToString("N2")</td>
+                <td class="numeric">@row.ActualPaidAmountTotal.ToString("N2")</td>
+                <td class="numeric">@row.AverageCollectionPercent.ToString("0.##")%</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,49 +1,51 @@
 @model IReadOnlyList<ProjectManager.Web.Models.Project>
 @using ProjectManager.Web.Models
 
-<table class="table table-sm table-striped align-middle">
-    <thead>
-        <tr>
-            <th>年</th>
-            <th>母案案号</th>
-            <th>项目工号</th>
-            <th>项目名称</th>
-            <th>专案人员</th>
-            <th>进度</th>
-            <th>项目金额</th>
-            <th>收款比例</th>
-            <th>状态</th>
-            <th>结案日期</th>
-            <th>请购金额</th>
-            <th>子案对接人员</th>
-            <th>实际已付款</th>
-            <th>进度说明</th>
-            <th>更新人员</th>
-            <th>最后更新时间</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var project in Model)
-    {
-        var purchaseRequests = project.PurchaseRequests.Where(x => !x.IsDeleted).ToList();
-        <tr>
-            <td>@project.Year</td>
-            <td>@project.ParentCaseNumber</td>
-            <td>@project.ProjectNumber</td>
-            <td>@project.Name</td>
-            <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-            <td>@project.ProgressPercent.ToString("0.##")%</td>
-            <td>@project.ProjectAmount.ToString("N2")</td>
-            <td>@project.CollectionPercent.ToString("0.##")%</td>
-            <td><partial name="_StatusBadge" model="project.Status" /></td>
-            <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
-            <td>@purchaseRequests.Sum(x => x.PurchaseAmount).ToString("N2")</td>
-            <td>@string.Join("；", purchaseRequests.Select(x => x.SubCaseContact?.DisplayName ?? x.SubCaseContact?.UserName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())</td>
-            <td>@purchaseRequests.Sum(x => x.ActualPaidAmount).ToString("N2")</td>
-            <td>@project.ProgressDescription</td>
-            <td>@(project.UpdatedByUser?.DisplayName ?? project.UpdatedByUser?.UserName)</td>
-            <td>@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="data-table-wrap">
+    <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th>年</th>
+                <th>母案案号</th>
+                <th>项目工号</th>
+                <th>项目名称</th>
+                <th>专案人员</th>
+                <th class="numeric">进度</th>
+                <th class="numeric">项目金额</th>
+                <th class="numeric">收款比例</th>
+                <th>状态</th>
+                <th>结案日期</th>
+                <th class="numeric">请购金额</th>
+                <th>子案对接人员</th>
+                <th class="numeric">实际已付款</th>
+                <th>进度说明</th>
+                <th>更新人员</th>
+                <th>最后更新时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var project in Model)
+        {
+            var purchaseRequests = project.PurchaseRequests.Where(x => !x.IsDeleted).ToList();
+            <tr>
+                <td>@project.Year</td>
+                <td>@project.ParentCaseNumber</td>
+                <td>@project.ProjectNumber</td>
+                <td>@project.Name</td>
+                <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
+                <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
+                <td class="numeric">@project.CollectionPercent.ToString("0.##")%</td>
+                <td><partial name="_StatusBadge" model="project.Status" /></td>
+                <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
+                <td class="numeric">@purchaseRequests.Sum(x => x.PurchaseAmount).ToString("N2")</td>
+                <td>@string.Join("；", purchaseRequests.Select(x => x.SubCaseContact?.DisplayName ?? x.SubCaseContact?.UserName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())</td>
+                <td class="numeric">@purchaseRequests.Sum(x => x.ActualPaidAmount).ToString("N2")</td>
+                <td>@project.ProgressDescription</td>
+                <td>@(project.UpdatedByUser?.DisplayName ?? project.UpdatedByUser?.UserName)</td>
+                <td>@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

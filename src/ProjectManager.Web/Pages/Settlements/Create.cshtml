@@ -4,9 +4,14 @@
     ViewData["Title"] = "新增月结";
 }
 
-<h1 class="h3">新增月结</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">新增月结</h1>
+        <div class="page-subtitle">生成指定年月的项目快照批次</div>
+    </div>
+</div>
 
-<form method="post" class="row g-3 mt-1 mb-4">
+<form method="post" class="form-section row g-3">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="col-md-2">
         <label class="form-label">年</label>
@@ -25,36 +30,40 @@
     </div>
 </form>
 
-<h2 class="h5">当前项目预览</h2>
-<table class="table table-sm table-striped align-middle">
-    <thead>
-        <tr>
-            <th>年</th>
-            <th>母案案号</th>
-            <th>项目工号</th>
-            <th>项目名称</th>
-            <th>专案人员</th>
-            <th>进度</th>
-            <th>金额</th>
-            <th>状态</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var project in Model.PreviewProjects)
-    {
-        <tr>
-            <td>@project.Year</td>
-            <td>@project.ParentCaseNumber</td>
-            <td>@project.ProjectNumber</td>
-            <td>@project.Name</td>
-            <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-            <td>@project.ProgressPercent.ToString("0.##")%</td>
-            <td>@project.ProjectAmount.ToString("N2")</td>
-            <td>@project.Status?.Name</td>
-        </tr>
-    }
-    </tbody>
-</table>
+<section class="detail-panel">
+    <h2 class="detail-panel-title">当前项目预览</h2>
+    <div class="data-table-wrap">
+        <table class="table table-sm table-striped align-middle data-table">
+            <thead>
+                <tr>
+                    <th>年</th>
+                    <th>母案案号</th>
+                    <th>项目工号</th>
+                    <th>项目名称</th>
+                    <th>专案人员</th>
+                    <th class="numeric">进度</th>
+                    <th class="numeric">金额</th>
+                    <th>状态</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var project in Model.PreviewProjects)
+            {
+                <tr>
+                    <td>@project.Year</td>
+                    <td>@project.ParentCaseNumber</td>
+                    <td>@project.ProjectNumber</td>
+                    <td>@project.Name</td>
+                    <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
+                    <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                    <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
+                    <td><partial name="_StatusBadge" model="project.Status" /></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
