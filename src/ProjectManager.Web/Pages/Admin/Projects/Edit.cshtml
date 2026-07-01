@@ -4,12 +4,16 @@
     ViewData["Title"] = "编辑项目";
 }
 
-<div class="d-flex align-items-center justify-content-between">
-    <h1 class="h3 mb-0">编辑项目</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">编辑项目</h1>
+        <div class="page-subtitle">更新项目主档、状态、进度和请购资料</div>
+    </div>
     <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Input.Id" onsubmit="return confirm('确定删除这个项目吗？');">
         <button type="submit" class="btn btn-outline-danger">删除项目</button>
     </form>
 </div>
+
 <partial name="_ProjectForm" model="Model" />
 
 @section Scripts {
