@@ -7,8 +7,8 @@
 
 <div class="dashboard-header">
     <div>
-        <h1 class="h3 mb-1">项目管理系统</h1>
-        <div class="text-muted">公司内网项目、请购、月结和未结案报表工作台</div>
+        <h1 class="page-title">项目管理系统</h1>
+        <div class="dashboard-subtitle">集中管理公司内网项目、请购、月结和未结案报表</div>
     </div>
     <div class="dashboard-meta">
         <span>内网部署</span>
@@ -17,31 +17,31 @@
 </div>
 
 <div class="metric-grid mb-4">
-    <div class="metric-tile">
+    <div class="metric-card">
         <div class="metric-label">项目总数</div>
         <div class="metric-value">@Model.TotalProjectCount</div>
     </div>
-    <div class="metric-tile">
+    <div class="metric-card">
         <div class="metric-label">未结案项目</div>
         <div class="metric-value">@Model.OpenProjectCount</div>
     </div>
-    <div class="metric-tile">
+    <div class="metric-card">
         <div class="metric-label">启用状态</div>
         <div class="metric-value">@Model.ActiveStatusCount</div>
     </div>
-    <div class="metric-tile">
+    <div class="metric-card">
         <div class="metric-label">月结批次</div>
         <div class="metric-value">@Model.SettlementBatchCount</div>
     </div>
 </div>
 
-<div class="entrance-grid">
+<div class="module-grid">
     @if (User.IsInRole(RoleNames.Administrator))
     {
-        <section class="entrance-panel">
-            <div class="entrance-title">后台管理入口</div>
-            <div class="entrance-subtitle">维护用户、项目资料、请购记录和状态样式。</div>
-            <div class="entrance-actions">
+        <section class="module-card">
+            <div class="module-title">后台管理入口</div>
+            <div class="module-subtitle">维护用户、项目资料、请购记录和状态样式。</div>
+            <div class="module-actions">
                 <a class="btn btn-primary" asp-page="/Admin/Projects/Index">项目管理</a>
                 <a class="btn btn-outline-secondary" asp-page="/Admin/Users/Index">用户管理</a>
                 <a class="btn btn-outline-secondary" asp-page="/Admin/Statuses/Index">状态设置</a>
@@ -51,10 +51,10 @@
 
     @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
     {
-        <section class="entrance-panel">
-            <div class="entrance-title">WEB 工作台入口</div>
-            <div class="entrance-subtitle">查看项目状态图、更新项目进度、跟踪请购和收款情况。</div>
-            <div class="entrance-actions">
+        <section class="module-card">
+            <div class="module-title">WEB 工作台入口</div>
+            <div class="module-subtitle">查看项目状态图、更新项目进度、跟踪请购和收款情况。</div>
+            <div class="module-actions">
                 <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">我的项目</a>
                 <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Index">报表</a>
             </div>
@@ -63,10 +63,10 @@
 
     @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader))
     {
-        <section class="entrance-panel">
-            <div class="entrance-title">月结与统计</div>
-            <div class="entrance-subtitle">手动生成月度结算快照，导出 Excel，打印月结报表。</div>
-            <div class="entrance-actions">
+        <section class="module-card">
+            <div class="module-title">月结与统计</div>
+            <div class="module-subtitle">手动生成月度结算快照，导出 Excel，打印月结报表。</div>
+            <div class="module-actions">
                 <a class="btn btn-primary" asp-page="/Settlements/Create">生成月结</a>
                 <a class="btn btn-outline-secondary" asp-page="/Settlements/Index">月结</a>
                 <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Statistics">统计</a>
@@ -76,10 +76,10 @@
 
     @if (!User.Identity?.IsAuthenticated ?? true)
     {
-        <section class="entrance-panel">
-            <div class="entrance-title">请先登录</div>
-            <div class="entrance-subtitle">登录后会根据角色显示对应的后台管理和 WEB 工作台入口。</div>
-            <div class="entrance-actions">
+        <section class="module-card">
+            <div class="module-title">请先登录</div>
+            <div class="module-subtitle">登录后会根据角色显示对应的后台管理和 WEB 工作台入口。</div>
+            <div class="module-actions">
                 <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登录</a>
             </div>
         </section>
