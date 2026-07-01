@@ -373,6 +373,11 @@ h1.h3 {
   box-shadow: var(--app-shadow-soft);
 }
 
+.detail-panel .data-table-wrap,
+.form-section .data-table-wrap {
+  box-shadow: none;
+}
+
 .table,
 .data-table {
   --bs-table-striped-bg: #f8fafc;

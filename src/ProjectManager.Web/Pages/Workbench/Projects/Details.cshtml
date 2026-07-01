@@ -6,9 +6,12 @@
     ViewData["Title"] = "项目详情";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h3 mb-0">@Model.Project.ProjectNumber - @Model.Project.Name</h1>
+<div class="page-header">
     <div>
+        <h1 class="page-title">@Model.Project.ProjectNumber - @Model.Project.Name</h1>
+        <div class="page-subtitle">查看状态流转、进度、收款和请购摘要</div>
+    </div>
+    <div class="page-actions">
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
         @if (Model.CanEditProgress)
         {
@@ -19,58 +22,73 @@
 
 <partial name="_StatusTimeline" model="new StatusTimelineModel(Model.ActiveStatuses, Model.Project.StatusId)" />
 
-<dl class="row mt-4">
-    <dt class="col-md-2">母案案号</dt>
-    <dd class="col-md-4">@Model.Project.ParentCaseNumber</dd>
-    <dt class="col-md-2">状态</dt>
-    <dd class="col-md-4"><partial name="_StatusBadge" model="Model.Project.Status" /></dd>
-    <dt class="col-md-2">年</dt>
-    <dd class="col-md-4">@Model.Project.Year</dd>
-    <dt class="col-md-2">项目工号</dt>
-    <dd class="col-md-4">@Model.Project.ProjectNumber</dd>
-    <dt class="col-md-2">专案人员</dt>
-    <dd class="col-md-4">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</dd>
-    <dt class="col-md-2">进度</dt>
-    <dd class="col-md-4">@Model.Project.ProgressPercent.ToString("0.##")%</dd>
-    <dt class="col-md-2">专案金额</dt>
-    <dd class="col-md-4">@Model.Project.ProjectAmount.ToString("N2")</dd>
-    <dt class="col-md-2">收款比例</dt>
-    <dd class="col-md-4">@Model.Project.CollectionPercent.ToString("0.##")%</dd>
-    <dt class="col-md-2">结案日期</dt>
-    <dd class="col-md-4">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</dd>
-    <dt class="col-md-2">最后更新时间</dt>
-    <dd class="col-md-4">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
-    <dt class="col-md-2">进度说明</dt>
-    <dd class="col-md-10">@Model.Project.ProgressDescription</dd>
-</dl>
+<div class="summary-strip">
+    <div class="summary-item">
+        <div class="summary-label">当前状态</div>
+        <div class="summary-value"><partial name="_StatusBadge" model="Model.Project.Status" /></div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-label">专案进度</div>
+        <div class="summary-value">@Model.Project.ProgressPercent.ToString("0.##")%</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-label">专案金额</div>
+        <div class="summary-value">@Model.Project.ProjectAmount.ToString("N2")</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-label">收款比例</div>
+        <div class="summary-value">@Model.Project.CollectionPercent.ToString("0.##")%</div>
+    </div>
+</div>
 
-<h2 class="h5 mt-4">请购摘要</h2>
-<table class="table table-sm table-striped align-middle">
-    <thead>
-        <tr>
-            <th>请购号</th>
-            <th>类型</th>
-            <th>请购人员</th>
-            <th>请购金额</th>
-            <th>子案对接人员</th>
-            <th>付款比例</th>
-            <th>实际已付款</th>
-            <th>备注</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var request in Model.Project.PurchaseRequests.OrderBy(x => x.Id))
-    {
-        <tr>
-            <td>@request.RequestNumber</td>
-            <td>@(request.PurchaseType == PurchaseType.InternalPurchase ? "内购" : "外购")</td>
-            <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
-            <td>@request.PurchaseAmount.ToString("N2")</td>
-            <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
-            <td>@request.PaymentPercent.ToString("0.##")%</td>
-            <td>@request.ActualPaidAmount.ToString("N2")</td>
-            <td>@request.Notes</td>
-        </tr>
-    }
-    </tbody>
-</table>
+<section class="detail-panel">
+    <h2 class="detail-panel-title">项目资料</h2>
+    <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">母案案号</div><div class="detail-value">@Model.Project.ParentCaseNumber</div></div>
+        <div class="detail-item"><div class="detail-label">年</div><div class="detail-value">@Model.Project.Year</div></div>
+        <div class="detail-item"><div class="detail-label">项目工号</div><div class="detail-value">@Model.Project.ProjectNumber</div></div>
+        <div class="detail-item"><div class="detail-label">专案人员</div><div class="detail-value">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
+        <div class="detail-item"><div class="detail-label">结案日期</div><div class="detail-value">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</div></div>
+        <div class="detail-item"><div class="detail-label">最后更新时间</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
+    </div>
+</section>
+
+<section class="detail-panel">
+    <h2 class="detail-panel-title">进度说明</h2>
+    <div class="detail-value">@Model.Project.ProgressDescription</div>
+</section>
+
+<section class="detail-panel">
+    <h2 class="detail-panel-title">请购摘要</h2>
+    <div class="data-table-wrap">
+        <table class="table table-sm table-striped align-middle data-table">
+            <thead>
+                <tr>
+                    <th>请购号</th>
+                    <th>类型</th>
+                    <th>请购人员</th>
+                    <th class="numeric">请购金额</th>
+                    <th>子案对接人员</th>
+                    <th class="numeric">付款比例</th>
+                    <th class="numeric">实际已付款</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var request in Model.Project.PurchaseRequests.OrderBy(x => x.Id))
+            {
+                <tr>
+                    <td>@request.RequestNumber</td>
+                    <td>@(request.PurchaseType == PurchaseType.InternalPurchase ? "内购" : "外购")</td>
+                    <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
+                    <td class="numeric">@request.PurchaseAmount.ToString("N2")</td>
+                    <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
+                    <td class="numeric">@request.PaymentPercent.ToString("0.##")%</td>
+                    <td class="numeric">@request.ActualPaidAmount.ToString("N2")</td>
+                    <td>@request.Notes</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

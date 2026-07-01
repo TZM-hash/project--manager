@@ -4,42 +4,47 @@
     ViewData["Title"] = "工作台";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h3 mb-0">工作台</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">工作台</h1>
+        <div class="page-subtitle">查看项目状态、进度、收款比例和请购摘要</div>
+    </div>
 </div>
 
-<table class="table table-sm table-striped align-middle">
-    <thead>
-        <tr>
-            <th>母案案号</th>
-            <th>项目工号</th>
-            <th>项目名称</th>
-            <th>专案人员</th>
-            <th>状态</th>
-            <th>进度</th>
-            <th>金额</th>
-            <th>收款比例</th>
-            <th>结案日期</th>
-            <th class="text-end">操作</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var project in Model.Projects)
-    {
-        <tr>
-            <td>@project.ParentCaseNumber</td>
-            <td>@project.ProjectNumber</td>
-            <td>@project.Name</td>
-            <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-            <td><partial name="_StatusBadge" model="project.Status" /></td>
-            <td>@project.ProgressPercent.ToString("0.##")%</td>
-            <td>@project.ProjectAmount.ToString("N2")</td>
-            <td>@project.CollectionPercent.ToString("0.##")%</td>
-            <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
-            <td class="text-end">
-                <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="data-table-wrap">
+    <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th>母案案号</th>
+                <th>项目工号</th>
+                <th>项目名称</th>
+                <th>专案人员</th>
+                <th>状态</th>
+                <th class="numeric">进度</th>
+                <th class="numeric">金额</th>
+                <th class="numeric">收款比例</th>
+                <th>结案日期</th>
+                <th class="text-end">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var project in Model.Projects)
+        {
+            <tr>
+                <td>@project.ParentCaseNumber</td>
+                <td>@project.ProjectNumber</td>
+                <td>@project.Name</td>
+                <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
+                <td><partial name="_StatusBadge" model="project.Status" /></td>
+                <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
+                <td class="numeric">@project.CollectionPercent.ToString("0.##")%</td>
+                <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
+                <td class="text-end text-nowrap">
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

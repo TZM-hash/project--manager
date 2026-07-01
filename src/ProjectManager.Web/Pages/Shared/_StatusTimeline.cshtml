@@ -9,19 +9,21 @@
     var currentOrder = currentStatus?.SortOrder ?? int.MinValue;
 }
 
-<div class="status-timeline">
-    @foreach (var status in statuses)
-    {
-        var isCurrent = status.Id == Model.CurrentStatusId;
-        var isCompleted = currentStatus is not null && status.SortOrder < currentOrder;
-        var stateClass = isCurrent ? "is-current" : isCompleted ? "is-complete" : "is-pending";
-        var textColor = status.Style?.TextColor ?? "#1f2937";
-        var backgroundColor = status.Style?.BackgroundColor ?? "#e5e7eb";
-        var fontWeight = status.Style?.IsBold == true || isCurrent ? "700" : "500";
+<div class="status-timeline-panel">
+    <div class="status-timeline">
+        @foreach (var status in statuses)
+        {
+            var isCurrent = status.Id == Model.CurrentStatusId;
+            var isCompleted = currentStatus is not null && status.SortOrder < currentOrder;
+            var stateClass = isCurrent ? "is-current" : isCompleted ? "is-complete" : "is-pending";
+            var textColor = status.Style?.TextColor ?? "#1f2937";
+            var backgroundColor = status.Style?.BackgroundColor ?? "#e5e7eb";
+            var fontWeight = status.Style?.IsBold == true || isCurrent ? "700" : "500";
 
-        <div class="status-step @stateClass" style="--status-color:@textColor;--status-bg:@backgroundColor;font-weight:@fontWeight">
-            <span class="status-step-dot"></span>
-            <span class="status-step-label">@status.Name</span>
-        </div>
-    }
+            <div class="status-step @stateClass" style="--status-color:@textColor;--status-bg:@backgroundColor;font-weight:@fontWeight">
+                <span class="status-step-dot"></span>
+                <span class="status-step-label">@status.Name</span>
+            </div>
+        }
+    </div>
 </div>
