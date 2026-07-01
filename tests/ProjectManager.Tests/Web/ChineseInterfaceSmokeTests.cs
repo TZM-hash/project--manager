@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using FluentAssertions;
@@ -94,13 +95,37 @@ public sealed class ChineseInterfaceSmokeTests
     {
         var root = FindRepositoryRoot();
         var indexPath = Path.Combine(root.FullName, "index.html");
+        var launchSettingsPath = Path.Combine(
+            root.FullName,
+            "src",
+            "ProjectManager.Web",
+            "Properties",
+            "launchSettings.json");
 
         File.Exists(indexPath).Should().BeTrue("项目文件夹根目录需要一个 WEB 端入口文件");
+        File.Exists(launchSettingsPath).Should().BeTrue("入口文件必须和 ASP.NET Core 启动地址保持一致");
+
         var html = File.ReadAllText(indexPath);
+        var localHttpUrl = GetHttpApplicationUrl(launchSettingsPath);
 
         html.Should().Contain("项目管理系统 WEB 入口");
-        html.Should().Contain("http://localhost:62382/Workbench/Projects");
-        html.Should().Contain("http://localhost:62382/Identity/Account/Login");
+        html.Should().Contain("entry-brand-mark");
+        html.Should().Contain($"{localHttpUrl}/Workbench/Projects");
+        html.Should().Contain($"{localHttpUrl}/Identity/Account/Login");
+    }
+
+    private static string GetHttpApplicationUrl(string launchSettingsPath)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(launchSettingsPath));
+        var profiles = document.RootElement.GetProperty("profiles");
+        var httpProfile = profiles.GetProperty("http");
+        var applicationUrl = httpProfile.GetProperty("applicationUrl").GetString()
+            ?? throw new InvalidOperationException("Missing http applicationUrl.");
+
+        return applicationUrl
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Single(x => x.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            .TrimEnd('/');
     }
 
     private static DirectoryInfo FindRepositoryRoot()
