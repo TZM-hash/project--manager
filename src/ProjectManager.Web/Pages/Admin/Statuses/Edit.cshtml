@@ -4,9 +4,14 @@
     ViewData["Title"] = Model.Input.Id == 0 ? "新增状态" : "编辑状态";
 }
 
-<h1 class="h3">@ViewData["Title"]</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@ViewData["Title"]</h1>
+        <div class="page-subtitle">调整状态名称、顺序、结案规则和显示样式</div>
+    </div>
+</div>
 
-<form method="post" class="mt-3">
+<form method="post" class="form-section">
     <input asp-for="Input.Id" type="hidden" />
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row g-3">

@@ -216,6 +216,19 @@ a:hover {
   color: var(--app-text);
 }
 
+.btn-outline-danger {
+  border-color: #fecaca;
+  color: var(--app-danger);
+  background: #fff;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+  border-color: var(--app-danger);
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 .btn-sm {
   min-height: 1.9rem;
   padding: 0.24rem 0.58rem;
