@@ -37,6 +37,15 @@ public static class SeedData
         var db = scopedServices.GetRequiredService<ApplicationDbContext>();
         var configuration = scopedServices.GetRequiredService<IConfiguration>();
 
+        if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await db.Database.MigrateAsync();
+        }
+
         await SeedRolesAsync(roleManager);
         await SeedStatusesAsync(db);
         await SeedAdminUserAsync(userManager, configuration);

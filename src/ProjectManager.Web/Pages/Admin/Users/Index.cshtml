@@ -1,0 +1,39 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = "用户管理";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">用户管理</h1>
+    <a class="btn btn-primary" asp-page="./Create">新增用户</a>
+</div>
+
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>用户名</th>
+            <th>姓名</th>
+            <th>Email</th>
+            <th>启用</th>
+            <th>角色</th>
+            <th class="text-end">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var user in Model.Users)
+    {
+        <tr>
+            <td>@user.UserName</td>
+            <td>@user.DisplayName</td>
+            <td>@user.Email</td>
+            <td>@(user.IsActive ? "是" : "否")</td>
+            <td>@string.Join(", ", user.Roles)</td>
+            <td class="text-end">
+                <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@user.Id">编辑</a>
+                <a class="btn btn-sm btn-outline-secondary" asp-page="./ResetPassword" asp-route-id="@user.Id">重置密码</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
