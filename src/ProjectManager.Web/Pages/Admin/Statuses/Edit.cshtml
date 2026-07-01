@@ -1,0 +1,58 @@
+@page "{id:int?}"
+@model ProjectManager.Web.Pages.Admin.Statuses.EditModel
+@{
+    ViewData["Title"] = Model.Input.Id == 0 ? "新增状态" : "编辑状态";
+}
+
+<h1 class="h3">@ViewData["Title"]</h1>
+
+<form method="post" class="mt-3">
+    <input asp-for="Input.Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label" asp-for="Input.Code">代码</label>
+            <input class="form-control" asp-for="Input.Code" />
+            <span class="text-danger" asp-validation-for="Input.Code"></span>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" asp-for="Input.Name">状态名称</label>
+            <input class="form-control" asp-for="Input.Name" />
+            <span class="text-danger" asp-validation-for="Input.Name"></span>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="Input.SortOrder">排序</label>
+            <input class="form-control" asp-for="Input.SortOrder" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="Input.TextColor">文字颜色</label>
+            <input class="form-control form-control-color" asp-for="Input.TextColor" type="color" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" asp-for="Input.BackgroundColor">背景颜色</label>
+            <input class="form-control form-control-color" asp-for="Input.BackgroundColor" type="color" />
+        </div>
+        <div class="col-md-12 d-flex gap-4">
+            <label class="form-check-label">
+                <input class="form-check-input" asp-for="Input.IsClosed" />
+                结案状态
+            </label>
+            <label class="form-check-label">
+                <input class="form-check-input" asp-for="Input.IsActive" />
+                启用
+            </label>
+            <label class="form-check-label">
+                <input class="form-check-input" asp-for="Input.IsBold" />
+                字体加粗
+            </label>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

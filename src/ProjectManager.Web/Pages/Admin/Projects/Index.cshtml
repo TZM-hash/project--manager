@@ -1,0 +1,69 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Projects.IndexModel
+@{
+    ViewData["Title"] = "项目管理";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">项目管理</h1>
+    <a class="btn btn-primary" asp-page="./Create">新增项目</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-1"><input class="form-control" asp-for="Year" placeholder="年" /></div>
+    <div class="col-md-2"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案号" /></div>
+    <div class="col-md-2"><input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" /></div>
+    <div class="col-md-2"><input class="form-control" asp-for="ProjectName" placeholder="项目名称" /></div>
+    <div class="col-md-2">
+        <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
+            <option value="">专案人员</option>
+        </select>
+    </div>
+    <div class="col-md-1">
+        <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
+            <option value="">状态</option>
+        </select>
+    </div>
+    <div class="col-md-1">
+        <select class="form-select" asp-for="OpenOnly">
+            <option value="false">全部</option>
+            <option value="true">未结案</option>
+        </select>
+    </div>
+    <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
+</form>
+
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>年</th>
+            <th>母案案号</th>
+            <th>项目工号</th>
+            <th>项目名称</th>
+            <th>进度</th>
+            <th>金额</th>
+            <th>收款比例</th>
+            <th>状态</th>
+            <th class="text-end">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var project in Model.Projects)
+    {
+        <tr>
+            <td>@project.Year</td>
+            <td>@project.ParentCaseNumber</td>
+            <td>@project.ProjectNumber</td>
+            <td>@project.Name</td>
+            <td>@project.ProgressPercent.ToString("0.##")%</td>
+            <td>@project.ProjectAmount.ToString("N2")</td>
+            <td>@project.CollectionPercent.ToString("0.##")%</td>
+            <td>@project.Status?.Name</td>
+            <td class="text-end">
+                <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
+                <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

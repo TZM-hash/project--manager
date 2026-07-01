@@ -1,0 +1,12 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Projects.CreateModel
+@{
+    ViewData["Title"] = "新增项目";
+}
+
+<h1 class="h3">新增项目</h1>
+<partial name="_ProjectForm" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -26,6 +26,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ProjectQueryService>();
+builder.Services.AddScoped<ProjectMaintenanceService>();
+builder.Services.AddScoped<StatusMaintenanceService>();
 builder.Services.AddScoped<SettlementService>();
 builder.Services.AddScoped<ExcelReportService>();
 

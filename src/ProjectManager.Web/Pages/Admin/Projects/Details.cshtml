@@ -1,0 +1,81 @@
+@page "{id:int}"
+@model ProjectManager.Web.Pages.Admin.Projects.DetailsModel
+@{
+    ViewData["Title"] = "项目详情";
+    var statusStyle = Model.Project.Status?.Style;
+    var statusWeight = statusStyle?.IsBold == true ? "700" : "400";
+    var statusColor = statusStyle?.TextColor ?? "#1f2937";
+    var statusBackground = statusStyle?.BackgroundColor ?? "#e5e7eb";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">项目详情</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
+        <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Project.Id">编辑</a>
+    </div>
+</div>
+
+<dl class="row">
+    <dt class="col-md-2">年</dt>
+    <dd class="col-md-4">@Model.Project.Year</dd>
+    <dt class="col-md-2">状态</dt>
+    <dd class="col-md-4">
+        <span class="badge" style="color:@statusColor;background-color:@statusBackground;font-weight:@statusWeight">
+            @Model.Project.Status?.Name
+        </span>
+    </dd>
+    <dt class="col-md-2">母案案号</dt>
+    <dd class="col-md-4">@Model.Project.ParentCaseNumber</dd>
+    <dt class="col-md-2">项目工号</dt>
+    <dd class="col-md-4">@Model.Project.ProjectNumber</dd>
+    <dt class="col-md-2">项目名称</dt>
+    <dd class="col-md-4">@Model.Project.Name</dd>
+    <dt class="col-md-2">专案人员</dt>
+    <dd class="col-md-4">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</dd>
+    <dt class="col-md-2">进度</dt>
+    <dd class="col-md-4">@Model.Project.ProgressPercent.ToString("0.##")%</dd>
+    <dt class="col-md-2">专案金额</dt>
+    <dd class="col-md-4">@Model.Project.ProjectAmount.ToString("N2")</dd>
+    <dt class="col-md-2">收款比例</dt>
+    <dd class="col-md-4">@Model.Project.CollectionPercent.ToString("0.##")%</dd>
+    <dt class="col-md-2">结案日期</dt>
+    <dd class="col-md-4">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</dd>
+    <dt class="col-md-2">更新人员</dt>
+    <dd class="col-md-4">@Model.Project.UpdatedByUser?.DisplayName</dd>
+    <dt class="col-md-2">最后更新时间</dt>
+    <dd class="col-md-4">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+    <dt class="col-md-2">进度说明</dt>
+    <dd class="col-md-10">@Model.Project.ProgressDescription</dd>
+</dl>
+
+<h2 class="h5 mt-4">请购记录</h2>
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>请购号</th>
+            <th>类型</th>
+            <th>请购人员</th>
+            <th>请购金额</th>
+            <th>子案对接人员</th>
+            <th>付款比例</th>
+            <th>实际已付款</th>
+            <th>备注</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var request in Model.Project.PurchaseRequests.OrderBy(x => x.Id))
+    {
+        <tr>
+            <td>@request.RequestNumber</td>
+            <td>@(request.PurchaseType == ProjectManager.Web.Models.PurchaseType.InternalPurchase ? "内购" : "外购")</td>
+            <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
+            <td>@request.PurchaseAmount.ToString("N2")</td>
+            <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
+            <td>@request.PaymentPercent.ToString("0.##")%</td>
+            <td>@request.ActualPaidAmount.ToString("N2")</td>
+            <td>@request.Notes</td>
+        </tr>
+    }
+    </tbody>
+</table>

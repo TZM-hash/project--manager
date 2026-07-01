@@ -1,0 +1,52 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Statuses.IndexModel
+@{
+    ViewData["Title"] = "状态设置";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">状态设置</h1>
+    <a class="btn btn-primary" asp-page="./Edit">新增状态</a>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>排序</th>
+            <th>代码</th>
+            <th>状态名称</th>
+            <th>样式</th>
+            <th>结案</th>
+            <th>启用</th>
+            <th>使用项目数</th>
+            <th class="text-end">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var status in Model.Statuses)
+    {
+        var weight = status.IsBold ? "700" : "400";
+        <tr>
+            <td>@status.SortOrder</td>
+            <td>@status.Code</td>
+            <td>@status.Name</td>
+            <td>
+                <span class="badge" style="color:@status.TextColor;background-color:@status.BackgroundColor;font-weight:@weight">
+                    @status.Name
+                </span>
+            </td>
+            <td>@(status.IsClosed ? "是" : "否")</td>
+            <td>@(status.IsActive ? "是" : "否")</td>
+            <td>@status.ProjectCount</td>
+            <td class="text-end">
+                <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@status.Id">编辑</a>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" class="d-inline" onsubmit="return confirm('确定删除这个状态吗？');">
+                    <button class="btn btn-sm btn-outline-danger" type="submit" disabled="@(status.ProjectCount > 0)">删除</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
