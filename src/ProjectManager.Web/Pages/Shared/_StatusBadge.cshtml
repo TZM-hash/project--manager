@@ -1,0 +1,10 @@
+@model ProjectManager.Web.Models.ProjectStatus?
+@{
+    var textColor = Model?.Style?.TextColor ?? "#1f2937";
+    var backgroundColor = Model?.Style?.BackgroundColor ?? "#e5e7eb";
+    var fontWeight = Model?.Style?.IsBold == true ? "700" : "500";
+}
+
+<span class="status-badge" style="color:@textColor;background-color:@backgroundColor;font-weight:@fontWeight">
+    @(Model?.Name ?? "-")
+</span>
