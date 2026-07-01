@@ -27,6 +27,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ProjectQueryService>();
 builder.Services.AddScoped<SettlementService>();
+builder.Services.AddScoped<ExcelReportService>();
 
 var app = builder.Build();
 
