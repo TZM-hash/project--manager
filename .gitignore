@@ -1,6 +1,8 @@
 .superpowers/
 
 # .NET
+.dotnet/
+.dotnet-install.ps1
 bin/
 obj/
 TestResults/
@@ -13,4 +15,3 @@ appsettings.Development.json
 *.db
 *.db-shm
 *.db-wal
-
