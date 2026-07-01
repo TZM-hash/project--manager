@@ -12,7 +12,8 @@ namespace ProjectManager.Web.Pages.Admin.Projects;
 public sealed class CreateModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
-    ProjectMaintenanceService maintenanceService)
+    ProjectMaintenanceService maintenanceService,
+    AuditLogService auditLogService)
     : ProjectFormPageModel(db, userManager, maintenanceService)
 {
     public async Task OnGetAsync(CancellationToken cancellationToken)
@@ -46,6 +47,13 @@ public sealed class CreateModel(
 
         Db.Projects.Add(project);
         await Db.SaveChangesAsync(cancellationToken);
+        await auditLogService.LogAsync(
+            UserManager.GetUserId(User),
+            "Create",
+            "Project",
+            project.Id.ToString(),
+            $"Created project {project.ProjectNumber}.",
+            cancellationToken);
         return RedirectToPage("./Details", new { id = project.Id });
     }
 }

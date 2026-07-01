@@ -1,16 +1,21 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
+using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Statuses;
 
 [Authorize(Roles = RoleNames.Administrator)]
-public sealed class EditModel(ApplicationDbContext db) : PageModel
+public sealed class EditModel(
+    ApplicationDbContext db,
+    UserManager<ApplicationUser> userManager,
+    AuditLogService auditLogService) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -63,6 +68,7 @@ public sealed class EditModel(ApplicationDbContext db) : PageModel
         }
 
         ProjectStatus status;
+        var isNew = Input.Id == 0;
         if (Input.Id == 0)
         {
             status = new ProjectStatus
@@ -91,6 +97,13 @@ public sealed class EditModel(ApplicationDbContext db) : PageModel
         status.Style.IsBold = Input.IsBold;
 
         await db.SaveChangesAsync(cancellationToken);
+        await auditLogService.LogAsync(
+            userManager.GetUserId(User),
+            isNew ? "Create" : "Update",
+            "ProjectStatus",
+            status.Id.ToString(),
+            $"Saved status {status.Code}.",
+            cancellationToken);
         return RedirectToPage("./Index");
     }
 

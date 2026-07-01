@@ -12,7 +12,8 @@ namespace ProjectManager.Web.Pages.Settlements;
 public sealed class CreateModel(
     SettlementService settlementService,
     ProjectQueryService projectQueryService,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserManager<ApplicationUser> userManager,
+    AuditLogService auditLogService) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -56,6 +57,14 @@ public sealed class CreateModel(
             await LoadPreviewAsync(cancellationToken);
             return Page();
         }
+
+        await auditLogService.LogAsync(
+            userId,
+            "Create",
+            "MonthlySettlementBatch",
+            result.BatchId!.Value.ToString(),
+            $"Created settlement {Input.Year}-{Input.Month:00}.",
+            cancellationToken);
 
         return RedirectToPage("./Details", new { id = result.BatchId });
     }

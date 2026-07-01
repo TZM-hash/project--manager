@@ -13,7 +13,8 @@ namespace ProjectManager.Web.Pages.Admin.Projects;
 public sealed class EditModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
-    ProjectMaintenanceService maintenanceService)
+    ProjectMaintenanceService maintenanceService,
+    AuditLogService auditLogService)
     : ProjectFormPageModel(db, userManager, maintenanceService)
 {
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
@@ -53,6 +54,13 @@ public sealed class EditModel(
         SyncPurchaseRequests(project, now);
 
         await Db.SaveChangesAsync(cancellationToken);
+        await auditLogService.LogAsync(
+            UserManager.GetUserId(User),
+            "Update",
+            "Project",
+            project.Id.ToString(),
+            $"Updated project {project.ProjectNumber}.",
+            cancellationToken);
         return RedirectToPage("./Details", new { id });
     }
 
@@ -76,6 +84,13 @@ public sealed class EditModel(
         }
 
         await Db.SaveChangesAsync(cancellationToken);
+        await auditLogService.LogAsync(
+            UserManager.GetUserId(User),
+            "Delete",
+            "Project",
+            project.Id.ToString(),
+            $"Deleted project {project.ProjectNumber}.",
+            cancellationToken);
         return RedirectToPage("./Index");
     }
 
