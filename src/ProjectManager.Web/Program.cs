@@ -26,6 +26,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ProjectQueryService>();
+builder.Services.AddScoped<SettlementService>();
 
 var app = builder.Build();
 
