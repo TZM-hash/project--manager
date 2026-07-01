@@ -1,0 +1,18 @@
+@page "{id:int}"
+@model ProjectManager.Web.Pages.Settlements.PrintModel
+@{
+    ViewData["Title"] = "月结打印";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3 no-print">
+    <h1 class="h3 mb-0">月结打印</h1>
+    <button class="btn btn-primary" type="button" onclick="window.print()">打印</button>
+</div>
+
+<h1 class="h4">@Model.Batch.Year 年 @Model.Batch.Month 月 第 @Model.Batch.BatchNumber 批月结报表</h1>
+<div class="mb-3">
+    <span class="me-3">创建人：@(Model.Batch.CreatedByUser?.DisplayName ?? Model.Batch.CreatedByUser?.UserName)</span>
+    <span>创建时间：@Model.Batch.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+</div>
+
+<partial name="_SettlementItemsTable" model="Model.Batch" />

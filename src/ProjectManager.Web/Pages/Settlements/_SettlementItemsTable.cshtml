@@ -1,0 +1,49 @@
+@model ProjectManager.Web.Models.MonthlySettlementBatch
+
+<table class="table table-sm table-striped align-middle settlement-table">
+    <thead>
+        <tr>
+            <th>母案案号</th>
+            <th>项目工号</th>
+            <th>项目名称</th>
+            <th>专案人员</th>
+            <th>进度</th>
+            <th>金额</th>
+            <th>收款比例</th>
+            <th>状态</th>
+            <th>结案日期</th>
+            <th>请购号汇总</th>
+            <th>请购金额</th>
+            <th>子案对接人员</th>
+            <th>付款比例</th>
+            <th>实际已付款</th>
+            <th>进度说明</th>
+            <th>更新人员</th>
+            <th>来源更新时间</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model.Items.OrderBy(x => x.ProjectNumber))
+    {
+        <tr>
+            <td>@item.ParentCaseNumber</td>
+            <td>@item.ProjectNumber</td>
+            <td>@item.ProjectName</td>
+            <td>@item.ProjectPersonnelText</td>
+            <td>@item.ProgressPercent.ToString("0.##")%</td>
+            <td>@item.ProjectAmount.ToString("N2")</td>
+            <td>@item.CollectionPercent.ToString("0.##")%</td>
+            <td>@item.StatusName</td>
+            <td>@item.ClosedYearMonth?.ToString("yyyy-MM")</td>
+            <td>@item.PurchaseRequestSummary</td>
+            <td>@item.PurchaseAmountTotal.ToString("N2")</td>
+            <td>@item.SubCaseContactSummary</td>
+            <td>@item.PaymentPercentSummary</td>
+            <td>@item.ActualPaidAmountTotal.ToString("N2")</td>
+            <td>@item.ProgressDescription</td>
+            <td>@item.UpdatedByUserName</td>
+            <td>@item.SourceUpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+        </tr>
+    }
+    </tbody>
+</table>

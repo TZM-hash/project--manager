@@ -1,0 +1,22 @@
+@page "{id:int}"
+@model ProjectManager.Web.Pages.Settlements.DetailsModel
+@{
+    ViewData["Title"] = "月结详情";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">@Model.Batch.Year 年 @Model.Batch.Month 月 第 @Model.Batch.BatchNumber 批</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
+        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-id="@Model.Batch.Id">打印</a>
+        <a class="btn btn-primary" asp-page-handler="Export" asp-route-id="@Model.Batch.Id">导出 Excel</a>
+    </div>
+</div>
+
+<div class="mb-3">
+    <span class="me-3">创建人：@(Model.Batch.CreatedByUser?.DisplayName ?? Model.Batch.CreatedByUser?.UserName)</span>
+    <span class="me-3">创建时间：@Model.Batch.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+    <span>备注：@Model.Batch.Notes</span>
+</div>
+
+<partial name="_SettlementItemsTable" model="Model.Batch" />
