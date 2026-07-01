@@ -8,7 +8,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.Projects;
 
-[Authorize(Roles = RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class EditProgressModel(
     WorkbenchProjectService workbenchProjectService,
     UserManager<ApplicationUser> userManager) : PageModel
@@ -19,7 +19,7 @@ public sealed class EditProgressModel(
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canEditAll = User.IsInRole(RoleNames.Leader);
+        var canEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
         var project = await workbenchProjectService.GetProjectForUserAsync(
             id,
             userId,
@@ -56,7 +56,7 @@ public sealed class EditProgressModel(
             new UpdateProgressRequest(
                 id,
                 userId,
-                CanEditAll: User.IsInRole(RoleNames.Leader),
+                CanEditAll: User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader),
                 Input.ProgressPercent,
                 Input.ProgressDescription),
             cancellationToken);

@@ -10,7 +10,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.Projects;
 
-[Authorize(Roles = RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
+[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
 public sealed class DetailsModel(
     WorkbenchProjectService workbenchProjectService,
     ApplicationDbContext db,
@@ -25,7 +25,7 @@ public sealed class DetailsModel(
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
         var project = await workbenchProjectService.GetProjectForUserAsync(
             id,
             userId,
@@ -38,7 +38,7 @@ public sealed class DetailsModel(
         }
 
         Project = project;
-        CanEditProgress = User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
+        CanEditProgress = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
         ActiveStatuses = await db.ProjectStatuses
             .AsNoTracking()
             .Include(x => x.Style)

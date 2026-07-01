@@ -36,7 +36,7 @@
                                 <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Statuses/Index">状态设置</a>
                             </li>
                         }
-                        @if (User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
+                        @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-page="/Workbench/Projects/Index">工作台</a>
