@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>项目管理系统 WEB 入口</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --border: #d7dde6;
+      --text: #1f2937;
+      --muted: #64748b;
+      --primary: #1d4ed8;
+      --primary-dark: #1e40af;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-size: 15px;
+    }
+
+    main {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.25;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .entry-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .entry-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 148px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .entry-card:focus,
+    .entry-card:hover {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .entry-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .entry-desc {
+      flex: 1;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .entry-action {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .address {
+      margin-top: 18px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      font-family: Consolas, "Courier New", monospace;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>项目管理系统 WEB 入口</h1>
+      <p>公司内网项目、请购、月结和未结案报表统一入口。</p>
+    </header>
+
+    <section class="entry-panel" aria-label="系统入口">
+      <a class="entry-card" href="http://localhost:62382/Workbench/Projects">
+        <span class="entry-title">WEB 工作台</span>
+        <span class="entry-desc">项目人员和领导日常查看项目、更新进度、查看状态图。</span>
+        <span class="entry-action">打开工作台</span>
+      </a>
+      <a class="entry-card" href="http://localhost:62382/Admin/Projects">
+        <span class="entry-title">后台管理</span>
+        <span class="entry-desc">管理员维护项目资料、用户、状态样式和请购记录。</span>
+        <span class="entry-action">打开后台</span>
+      </a>
+      <a class="entry-card" href="http://localhost:62382/Identity/Account/Login">
+        <span class="entry-title">登录系统</span>
+        <span class="entry-desc">使用公司内网账号登录。默认管理员账号为 admin。</span>
+        <span class="entry-action">前往登录</span>
+      </a>
+    </section>
+
+    <div class="address">本地服务地址：http://localhost:62382/</div>
+  </main>
+</body>
+</html>

@@ -36,11 +36,7 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager)
         var result = await userManager.ResetPasswordAsync(user, token, Input.NewPassword);
         if (!result.Succeeded)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
+            ModelState.AddModelError(string.Empty, "密码重置失败，请检查新密码复杂度。");
             return Page();
         }
 
@@ -49,7 +45,9 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager)
 
     public sealed class InputModel
     {
-        [Required]
+        [Display(Name = "新密码")]
+        [Required(ErrorMessage = "请输入新密码。")]
+        [StringLength(100, ErrorMessage = "新密码至少需要 {2} 个字符。", MinimumLength = 8)]
         public string NewPassword { get; set; } = string.Empty;
     }
 }

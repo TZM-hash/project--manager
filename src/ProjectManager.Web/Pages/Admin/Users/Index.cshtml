@@ -1,4 +1,5 @@
 @page
+@using ProjectManager.Web.Security
 @model ProjectManager.Web.Pages.Admin.Users.IndexModel
 @{
     ViewData["Title"] = "用户管理";
@@ -14,7 +15,7 @@
         <tr>
             <th>用户名</th>
             <th>姓名</th>
-            <th>Email</th>
+            <th>邮箱</th>
             <th>启用</th>
             <th>角色</th>
             <th class="text-end">操作</th>
@@ -28,7 +29,7 @@
             <td>@user.DisplayName</td>
             <td>@user.Email</td>
             <td>@(user.IsActive ? "是" : "否")</td>
-            <td>@string.Join(", ", user.Roles)</td>
+            <td>@string.Join("、", user.Roles.Select(RoleNames.GetDisplayName))</td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@user.Id">编辑</a>
                 <a class="btn btn-sm btn-outline-secondary" asp-page="./ResetPassword" asp-route-id="@user.Id">重置密码</a>

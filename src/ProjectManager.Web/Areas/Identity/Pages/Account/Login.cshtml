@@ -1,0 +1,39 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "登录系统";
+}
+
+<div class="account-shell">
+    <section class="account-panel">
+        <h1 class="h3">登录系统</h1>
+        <p class="text-muted mb-3">请输入公司内网账号和密码。</p>
+
+        <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="mb-3">
+                <label asp-for="Input.UserName" class="form-label">账号</label>
+                <input asp-for="Input.UserName" class="form-control" autocomplete="username" autofocus />
+                <span asp-validation-for="Input.UserName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Password" class="form-label">密码</label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+            <div class="form-check mb-3">
+                <input asp-for="Input.RememberMe" class="form-check-input" />
+                <label asp-for="Input.RememberMe" class="form-check-label">保持登录</label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">登录</button>
+        </form>
+
+        <div class="account-help">
+            忘记密码或需要开通账号时，请联系系统管理员。
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

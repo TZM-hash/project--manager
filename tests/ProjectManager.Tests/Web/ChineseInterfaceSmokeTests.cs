@@ -1,8 +1,8 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
+using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -17,42 +17,104 @@ using ProjectManager.Web.Security;
 
 namespace ProjectManager.Tests.Web;
 
-public sealed class DashboardSmokeTests
+public sealed class ChineseInterfaceSmokeTests
 {
     [Fact]
-    public async Task Administrator_home_page_shows_admin_and_workbench_entrances()
+    public async Task Anonymous_home_page_uses_chinese_application_chrome()
     {
-        await using var factory = new DashboardWebFactory();
+        await using var factory = new ChineseInterfaceWebFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/");
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("项目管理系统");
+        html.Should().Contain("请先登录");
+        html.Should().Contain("登录");
+        html.Should().NotContain(">Project Manager<");
+        html.Should().NotContain(">Login<");
+        html.Should().NotContain(">Register<");
+        html.Should().NotContain("ASP.NET Core");
+    }
+
+    [Fact]
+    public async Task Login_page_uses_chinese_labels()
+    {
+        await using var factory = new ChineseInterfaceWebFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/Identity/Account/Login");
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("登录系统");
+        html.Should().Contain("账号");
+        html.Should().Contain("密码");
+        html.Should().NotContain(">Email<");
+        html.Should().NotContain(">Password<");
+        html.Should().NotContain("Register as a new user");
+    }
+
+    [Fact]
+    public async Task Error_page_uses_chinese_text()
+    {
+        await using var factory = new ChineseInterfaceWebFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/Error");
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("系统错误");
+        html.Should().Contain("请求编号");
+        html.Should().NotContain("An error occurred while processing your request.");
+        html.Should().NotContain("Development Mode");
+    }
+
+    [Fact]
+    public async Task Administrator_user_page_uses_chinese_email_and_role_labels()
+    {
+        await using var factory = new ChineseInterfaceWebFactory();
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.Administrator);
 
-        var response = await client.GetAsync("/");
-        var html = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync("/Admin/Users");
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("后台管理入口");
-        html.Should().Contain("WEB 工作台入口");
-        html.Should().Contain("项目管理");
-        html.Should().Contain("月结");
-        html.Should().Contain("报表");
+        html.Should().Contain("邮箱");
+        html.Should().Contain("系统管理员");
+        html.Should().NotContain("<th>Email</th>");
+        html.Should().NotContain(">Administrator<");
     }
 
     [Fact]
-    public async Task ProjectStaff_home_page_shows_workbench_entrance()
+    public void Project_root_contains_web_entry_index_file()
     {
-        await using var factory = new DashboardWebFactory();
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.ProjectStaff);
+        var root = FindRepositoryRoot();
+        var indexPath = Path.Combine(root.FullName, "index.html");
 
-        var response = await client.GetAsync("/");
-        var html = await response.Content.ReadAsStringAsync();
+        File.Exists(indexPath).Should().BeTrue("项目文件夹根目录需要一个 WEB 端入口文件");
+        var html = File.ReadAllText(indexPath);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("WEB 工作台入口");
-        html.Should().Contain("我的项目");
+        html.Should().Contain("项目管理系统 WEB 入口");
+        html.Should().Contain("http://localhost:62382/Workbench/Projects");
+        html.Should().Contain("http://localhost:62382/Identity/Account/Login");
     }
 
-    private sealed class DashboardWebFactory : WebApplicationFactory<Program>
+    private static DirectoryInfo FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ProjectManager.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory ?? throw new DirectoryNotFoundException("Cannot locate ProjectManager.sln.");
+    }
+
+    private sealed class ChineseInterfaceWebFactory : WebApplicationFactory<Program>
     {
         private readonly SqliteConnection connection = new("DataSource=:memory:");
 

@@ -39,11 +39,7 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
         var createResult = await userManager.CreateAsync(user, Input.Password);
         if (!createResult.Succeeded)
         {
-            foreach (var error in createResult.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
+            ModelState.AddModelError(string.Empty, "用户创建失败，请检查用户名、邮箱和密码复杂度。");
             return Page();
         }
 
@@ -58,15 +54,19 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
 
     public sealed class InputModel
     {
-        [Required]
+        [Display(Name = "用户名")]
+        [Required(ErrorMessage = "请输入用户名。")]
         public string UserName { get; set; } = string.Empty;
 
+        [Display(Name = "姓名")]
         public string DisplayName { get; set; } = string.Empty;
 
-        [EmailAddress]
+        [Display(Name = "邮箱")]
+        [EmailAddress(ErrorMessage = "邮箱格式不正确。")]
         public string? Email { get; set; }
 
-        [Required]
+        [Display(Name = "初始密码")]
+        [Required(ErrorMessage = "请输入初始密码。")]
         public string Password { get; set; } = string.Empty;
 
         public List<string> SelectedRoles { get; set; } = [];

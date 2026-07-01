@@ -56,11 +56,7 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
         var updateResult = await userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
         {
-            foreach (var error in updateResult.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
+            ModelState.AddModelError(string.Empty, "用户保存失败，请检查邮箱格式和账号状态。");
             return Page();
         }
 
@@ -77,13 +73,17 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
 
     public sealed class InputModel
     {
+        [Display(Name = "用户名")]
         public string UserName { get; set; } = string.Empty;
 
+        [Display(Name = "姓名")]
         public string DisplayName { get; set; } = string.Empty;
 
-        [EmailAddress]
+        [Display(Name = "邮箱")]
+        [EmailAddress(ErrorMessage = "邮箱格式不正确。")]
         public string? Email { get; set; }
 
+        [Display(Name = "启用账号")]
         public bool IsActive { get; set; } = true;
 
         public List<string> SelectedRoles { get; set; } = [];

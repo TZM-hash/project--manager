@@ -11,8 +11,8 @@
         <div class="text-muted">公司内网项目、请购、月结和未结案报表工作台</div>
     </div>
     <div class="dashboard-meta">
-        <span>SQL Server</span>
-        <span>ASP.NET Core</span>
+        <span>内网部署</span>
+        <span>WEB 工作台</span>
     </div>
 </div>
 
@@ -52,7 +52,7 @@
     @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
     {
         <section class="entrance-panel">
-            <div class="entrance-title">Web 工作台入口</div>
+            <div class="entrance-title">WEB 工作台入口</div>
             <div class="entrance-subtitle">查看项目状态图、更新项目进度、跟踪请购和收款情况。</div>
             <div class="entrance-actions">
                 <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">我的项目</a>
@@ -78,7 +78,7 @@
     {
         <section class="entrance-panel">
             <div class="entrance-title">请先登录</div>
-            <div class="entrance-subtitle">登录后会根据角色显示对应的后台管理和 Web 工作台入口。</div>
+            <div class="entrance-subtitle">登录后会根据角色显示对应的后台管理和 WEB 工作台入口。</div>
             <div class="entrance-actions">
                 <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登录</a>
             </div>

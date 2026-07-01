@@ -116,7 +116,7 @@ public static class SeedData
             {
                 UserName = userName,
                 Email = email,
-                DisplayName = "Administrator",
+                DisplayName = "系统管理员",
                 EmailConfirmed = true,
                 IsActive = true
             };
@@ -128,6 +128,11 @@ public static class SeedData
                     "Failed to create seed admin user: " +
                     string.Join("; ", createResult.Errors.Select(x => x.Description)));
             }
+        }
+        else if (string.IsNullOrWhiteSpace(admin.DisplayName) || admin.DisplayName == "Administrator")
+        {
+            admin.DisplayName = "系统管理员";
+            await userManager.UpdateAsync(admin);
         }
 
         if (!await userManager.IsInRoleAsync(admin, RoleNames.Administrator))

@@ -14,4 +14,16 @@ public static class RoleNames
         Leader,
         Viewer
     ];
+
+    public static string GetDisplayName(string roleName)
+    {
+        return roleName switch
+        {
+            Administrator => "系统管理员",
+            ProjectStaff => "项目人员",
+            Leader => "领导",
+            Viewer => "查询人员",
+            _ => roleName
+        };
+    }
 }
