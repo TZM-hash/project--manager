@@ -4,7 +4,7 @@
 
 Build a compact, efficient C# ASP.NET Core system for internal company project management. The system supports multi-user login, role-based access, project tracking, purchase request tracking, monthly manual settlement snapshots, Excel export, printable reports, project status visualization, and administrator-controlled display styling.
 
-The first version targets company intranet deployment with SQL Server or SQL Server Express.
+The first version targets company intranet deployment with SQL Server.
 
 ## 2. Recommended Architecture
 
@@ -18,7 +18,7 @@ Technology stack:
 - ASP.NET Core Razor Pages for server-rendered pages.
 - ASP.NET Core Identity for login, password hashing, password change, and role management.
 - Entity Framework Core for SQL Server data access.
-- SQL Server / SQL Server Express for the database.
+- SQL Server for the database.
 - ClosedXML for Excel export.
 - Browser print styles for printable reports.
 - Lightweight JavaScript and CSS for dynamic status charts and configurable status colors.
@@ -47,6 +47,7 @@ Password behavior:
 Each project stores:
 
 - Year
+- Parent case number
 - Project number
 - Project name
 - Project personnel
@@ -55,6 +56,7 @@ Each project stores:
 - Collection percentage
 - Project progress description
 - Updated by user
+- Closed year/month
 - Last updated time
 - Project settlement/status state
 
@@ -79,6 +81,7 @@ Each purchase request stores:
 - Purchase type: InternalPurchase or ExternalPurchase
 - Purchase staff
 - Purchase amount
+- Sub-case contact person
 - Payment percentage
 - Actual paid amount
 - Notes
@@ -95,7 +98,7 @@ Requirements:
 - Settlement can run multiple times for the same month.
 - Each run creates a new settlement batch rather than overwriting prior batches.
 - Each batch captures snapshot rows for projects at the time of settlement.
-- Snapshot data includes project progress, project amount, collection percentage, status, purchase request totals, payment percentage, actual paid amount, progress description, and updater.
+- Snapshot data includes parent case number, project progress, project amount, collection percentage, status, closed year/month, purchase request totals, sub-case contact summary, payment percentage, actual paid amount, progress description, and updater.
 - Batches record created by user and created time.
 
 This provides an auditable month-end history while still allowing repeated corrections.
@@ -113,9 +116,9 @@ Exports and printing:
 
 - Excel export for settlement and open-project reports.
 - Printable HTML pages with print-specific CSS.
-- Report filters for year, month, project number, project name, personnel, status, and closed/open state.
-- Default settlement Excel columns: year, month, batch number, project number, project name, personnel, progress percentage, project amount, collection percentage, status, purchase request summary, purchase total, payment percentage summary, actual paid total, progress description, updater, source update time.
-- Default open-project Excel columns: year, project number, project name, personnel, progress percentage, project amount, collection percentage, status, purchase total, actual paid total, progress description, updater, last updated time.
+- Report filters for year, month, parent case number, project number, project name, personnel, status, and closed/open state.
+- Default settlement Excel columns: year, month, batch number, parent case number, project number, project name, personnel, progress percentage, project amount, collection percentage, status, closed year/month, purchase request summary, purchase total, sub-case contact summary, payment percentage summary, actual paid total, progress description, updater, source update time.
+- Default open-project Excel columns: year, parent case number, project number, project name, personnel, progress percentage, project amount, collection percentage, status, closed year/month, purchase total, sub-case contact summary, actual paid total, progress description, updater, last updated time.
 
 ### 4.5 Project Dynamic Status Chart
 
@@ -161,6 +164,7 @@ Projects:
 
 - Id
 - Year
+- ParentCaseNumber
 - ProjectNumber
 - Name
 - ProgressPercent
@@ -169,6 +173,7 @@ Projects:
 - ProgressDescription
 - StatusId
 - UpdatedByUserId
+- ClosedYearMonth
 - UpdatedAt
 - CreatedAt
 - IsDeleted
@@ -205,6 +210,7 @@ PurchaseRequests:
 - PurchaseType
 - PurchaseStaffUserId
 - PurchaseAmount
+- SubCaseContactUserId
 - PaymentPercent
 - ActualPaidAmount
 - Notes
@@ -226,6 +232,7 @@ MonthlySettlementItems:
 - Id
 - BatchId
 - ProjectId
+- ParentCaseNumber
 - ProjectNumber
 - ProjectName
 - ProjectPersonnelText
@@ -234,8 +241,10 @@ MonthlySettlementItems:
 - CollectionPercent
 - StatusName
 - IsClosed
+- ClosedYearMonth
 - PurchaseRequestSummary
 - PurchaseAmountTotal
+- SubCaseContactSummary
 - PaymentPercentSummary
 - ActualPaidAmountTotal
 - ProgressDescription
@@ -288,9 +297,11 @@ Open project statistics:
 Validation rules:
 
 - Project number is required and unique within a year.
+- Parent case number is optional in version 1, but must be included in filters, detail pages, exports, and settlement snapshots when provided.
 - Project amount, purchase amount, actual paid amount, progress percentage, collection percentage, and payment percentage cannot be negative.
 - Percentage fields should be between 0 and 100.
 - Purchase request number is required for each purchase request.
+- Closed year/month must use month precision. When the current status has ProjectStatuses.IsClosed=true, closed year/month is required.
 - Settlement month must be between 1 and 12.
 - Closed status is controlled by the ProjectStatuses.IsClosed flag, not by hard-coded text.
 
@@ -305,7 +316,9 @@ Error handling:
 Initial tests should cover:
 
 - Project creation and validation.
+- Parent case number and closed year/month persistence.
 - Multiple purchase requests per project.
+- Sub-case contact person persistence on purchase requests.
 - Status style rendering rules.
 - Closed project filtering.
 - Monthly settlement batch creation with repeat runs.

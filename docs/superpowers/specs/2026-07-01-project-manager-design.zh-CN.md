@@ -4,7 +4,7 @@
 
 建设一个精简、高效的 C# ASP.NET Core 内部项目管理系统。系统支持多人登录、角色权限、项目跟踪、请购记录、每月手动结算快照、Excel 导出、打印报表、项目状态可视化，以及由管理员配置前台显示样式。
 
-第一版面向公司内网部署，数据库使用 SQL Server 或 SQL Server Express。
+第一版面向公司内网部署，数据库使用 SQL Server。
 
 ## 2. 推荐架构
 
@@ -18,7 +18,7 @@
 - ASP.NET Core Razor Pages：用于服务端渲染页面。
 - ASP.NET Core Identity：用于登录、密码加密、修改密码和角色管理。
 - Entity Framework Core：用于 SQL Server 数据访问。
-- SQL Server / SQL Server Express：作为数据库。
+- SQL Server：作为数据库。
 - ClosedXML：用于 Excel 导出。
 - 浏览器打印样式：用于打印报表。
 - 少量 JavaScript 和 CSS：用于动态状态图和可配置状态颜色。
@@ -47,6 +47,7 @@
 每个项目保存以下信息：
 
 - 年
+- 母案案号
 - 项目工号
 - 项目名称
 - 专案人员
@@ -55,6 +56,7 @@
 - 专案收款比例
 - 进度说明
 - 更新人员
+- 结案日期（精确到年月）
 - 最后更新时间
 - 专案状态 / 结案状态
 
@@ -79,6 +81,7 @@
 - 请购类型：内购或外购
 - 请购人员
 - 请购金额
+- 子案对接人员
 - 付款比例
 - 实际已付款
 - 备注
@@ -95,7 +98,7 @@
 - 同一个月份允许多次结算。
 - 每次结算创建一个新的结算批次，不覆盖以前的批次。
 - 每个批次保存当时项目数据的快照。
-- 快照数据包括：项目进度、项目金额、收款比例、状态、请购汇总、付款比例、实际已付款、进度说明和更新人员。
+- 快照数据包括：母案案号、项目进度、项目金额、收款比例、状态、结案日期、请购汇总、子案对接人员汇总、付款比例、实际已付款、进度说明和更新人员。
 - 批次保存创建人员和创建时间。
 
 这样可以保留可追溯的月末历史，同时允许后续多次修正和重结。
@@ -113,13 +116,14 @@
 
 - 月结报表和未结案项目报表支持 Excel 导出。
 - 报表页面支持浏览器打印，并提供打印专用样式。
-- 报表筛选条件包括：年、月、项目工号、项目名称、专案人员、状态、已结案 / 未结案。
+- 报表筛选条件包括：年、月、母案案号、项目工号、项目名称、专案人员、状态、已结案 / 未结案。
 
 默认月结 Excel 栏位：
 
 - 年
 - 月
 - 批次号
+- 母案案号
 - 项目工号
 - 项目名称
 - 专案人员
@@ -127,8 +131,10 @@
 - 项目金额
 - 收款比例
 - 状态
+- 结案日期
 - 请购号汇总
 - 请购金额合计
+- 子案对接人员汇总
 - 付款比例汇总
 - 实际已付款合计
 - 进度说明
@@ -138,6 +144,7 @@
 默认未结案 Excel 栏位：
 
 - 年
+- 母案案号
 - 项目工号
 - 项目名称
 - 专案人员
@@ -145,7 +152,9 @@
 - 项目金额
 - 收款比例
 - 状态
+- 结案日期
 - 请购金额合计
+- 子案对接人员汇总
 - 实际已付款合计
 - 进度说明
 - 更新人员
@@ -195,6 +204,7 @@ Projects：
 
 - Id
 - Year
+- ParentCaseNumber
 - ProjectNumber
 - Name
 - ProgressPercent
@@ -203,6 +213,7 @@ Projects：
 - ProgressDescription
 - StatusId
 - UpdatedByUserId
+- ClosedYearMonth
 - UpdatedAt
 - CreatedAt
 - IsDeleted
@@ -239,6 +250,7 @@ PurchaseRequests：
 - PurchaseType
 - PurchaseStaffUserId
 - PurchaseAmount
+- SubCaseContactUserId
 - PaymentPercent
 - ActualPaidAmount
 - Notes
@@ -260,6 +272,7 @@ MonthlySettlementItems：
 - Id
 - BatchId
 - ProjectId
+- ParentCaseNumber
 - ProjectNumber
 - ProjectName
 - ProjectPersonnelText
@@ -268,8 +281,10 @@ MonthlySettlementItems：
 - CollectionPercent
 - StatusName
 - IsClosed
+- ClosedYearMonth
 - PurchaseRequestSummary
 - PurchaseAmountTotal
+- SubCaseContactSummary
 - PaymentPercentSummary
 - ActualPaidAmountTotal
 - ProgressDescription
@@ -322,9 +337,11 @@ AuditLogs：
 校验规则：
 
 - 项目工号必填，并且在同一年内唯一。
+- 母案案号第一版可为空；如果填写，必须在筛选、详情页、导出和月结快照中保留。
 - 项目金额、请购金额、实际已付款、项目进度百分比、收款比例、付款比例不能为负数。
 - 百分比字段范围为 0 到 100。
 - 每笔请购记录必须填写请购号。
+- 结案日期精确到年月。当前状态的 `ProjectStatuses.IsClosed=true` 时，结案日期必填。
 - 结算月份必须在 1 到 12 之间。
 - 是否结案由 `ProjectStatuses.IsClosed` 控制，不能依赖写死的状态文字。
 
@@ -339,7 +356,9 @@ AuditLogs：
 初始自动化测试覆盖：
 
 - 项目创建和校验。
+- 母案案号和结案日期保存。
 - 一个项目下多笔请购记录。
+- 请购记录中的子案对接人员保存。
 - 状态样式渲染规则。
 - 已结案项目过滤。
 - 同一月份多次创建月结批次。
