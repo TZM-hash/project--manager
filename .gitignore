@@ -1,0 +1,16 @@
+.superpowers/
+
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+*.rsuser
+
+# Local development
+appsettings.Development.json
+*.db
+*.db-shm
+*.db-wal
+
