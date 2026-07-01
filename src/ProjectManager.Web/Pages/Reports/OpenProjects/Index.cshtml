@@ -1,0 +1,34 @@
+@page
+@model ProjectManager.Web.Pages.Reports.OpenProjects.IndexModel
+@{
+    ViewData["Title"] = "未结案项目报表";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">未结案项目报表</h1>
+    <div>
+        <a class="btn btn-outline-secondary" asp-page="./Statistics" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId">统计</a>
+        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId">打印</a>
+        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId">导出 Excel</a>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-1"><input class="form-control" asp-for="Year" placeholder="年" /></div>
+    <div class="col-md-2"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案号" /></div>
+    <div class="col-md-2"><input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" /></div>
+    <div class="col-md-2"><input class="form-control" asp-for="ProjectName" placeholder="项目名称" /></div>
+    <div class="col-md-2">
+        <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
+            <option value="">专案人员</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
+            <option value="">状态</option>
+        </select>
+    </div>
+    <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
+</form>
+
+<partial name="_OpenProjectsTable" model="Model.Projects" />

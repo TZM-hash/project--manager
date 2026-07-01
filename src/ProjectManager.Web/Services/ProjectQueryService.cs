@@ -41,6 +41,7 @@ public sealed class ProjectQueryService(ApplicationDbContext db)
         return db.Projects
             .AsNoTracking()
             .Include(x => x.Status)
+            .ThenInclude(x => x!.Style)
             .Include(x => x.Assignments)
             .ThenInclude(x => x.User)
             .Include(x => x.PurchaseRequests.Where(p => !p.IsDeleted))
