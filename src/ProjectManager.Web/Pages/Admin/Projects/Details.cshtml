@@ -1,4 +1,5 @@
 @page "{id:int}"
+@using ProjectManager.Web.Pages.Shared
 @model ProjectManager.Web.Pages.Admin.Projects.DetailsModel
 @{
     ViewData["Title"] = "项目详情";
@@ -48,6 +49,7 @@
     </div>
 </section>
 
+
 <section class="detail-panel">
     <h2 class="detail-panel-title">进度说明</h2>
     <div class="detail-value">@Model.Project.ProgressDescription</div>
@@ -86,4 +88,54 @@
             </tbody>
         </table>
     </div>
+</section>
+
+<section class="detail-panel">
+    <h2 class="detail-panel-title">操作记录</h2>
+    @if (Model.AuditLogs.Count == 0)
+    {
+        <div class="empty-state">暂无操作记录</div>
+    }
+    else
+    {
+        <div class="data-table-wrap">
+            <table class="table table-sm align-middle data-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>操作人</th>
+                        <th>动作</th>
+                        <th>内容</th>
+                        <th>明细</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var log in Model.AuditLogs)
+                {
+                    <tr>
+                        <td>@log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@log.Actor</td>
+                        <td>@log.Action</td>
+                        <td>@log.Summary</td>
+                        <td>
+                            @if (log.Details.Count == 0)
+                            {
+                                <span class="text-muted">无结构化明细</span>
+                            }
+                            else
+                            {
+                                <ul class="audit-detail-list">
+                                @foreach (var detail in log.Details)
+                                {
+                                    <li>@AuditLogDisplayModel.FormatDetail(detail)</li>
+                                }
+                                </ul>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>

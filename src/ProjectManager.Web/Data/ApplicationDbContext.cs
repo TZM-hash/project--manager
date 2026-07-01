@@ -137,6 +137,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.Action).HasMaxLength(80).IsRequired();
             entity.Property(x => x.EntityName).HasMaxLength(120).IsRequired();
             entity.Property(x => x.EntityId).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.ProjectNumber).HasMaxLength(64);
+            entity.Property(x => x.ChangeSummary).HasMaxLength(500);
+            entity.HasIndex(x => x.ProjectId);
 
             entity.HasOne(x => x.User)
                 .WithMany()

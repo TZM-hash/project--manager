@@ -47,12 +47,16 @@ public sealed class CreateModel(
 
         Db.Projects.Add(project);
         await Db.SaveChangesAsync(cancellationToken);
-        await auditLogService.LogAsync(
+
+        var changes = ProjectAuditChangeBuilder.BuildCreateChanges(
+            ProjectAuditChangeBuilder.CreateSnapshot(project));
+        await auditLogService.LogProjectChangeAsync(
             UserManager.GetUserId(User),
             "Create",
-            "Project",
-            project.Id.ToString(),
-            $"Created project {project.ProjectNumber}.",
+            project.Id,
+            project.ProjectNumber,
+            $"新增项目 {project.ProjectNumber}",
+            changes,
             cancellationToken);
         return RedirectToPage("./Details", new { id = project.Id });
     }

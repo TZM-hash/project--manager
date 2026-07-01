@@ -49,18 +49,26 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
+        var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         ApplyProjectValues(project, validation.Project, now);
         SyncAssignments(project);
         SyncPurchaseRequests(project, now);
 
         await Db.SaveChangesAsync(cancellationToken);
-        await auditLogService.LogAsync(
-            UserManager.GetUserId(User),
-            "Update",
-            "Project",
-            project.Id.ToString(),
-            $"Updated project {project.ProjectNumber}.",
-            cancellationToken);
+        var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
+        var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after);
+        if (changes.Count > 0)
+        {
+            await auditLogService.LogProjectChangeAsync(
+                UserManager.GetUserId(User),
+                "Update",
+                project.Id,
+                project.ProjectNumber,
+                $"修改项目 {project.ProjectNumber}",
+                changes,
+                cancellationToken);
+        }
+
         return RedirectToPage("./Details", new { id });
     }
 
@@ -73,6 +81,7 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
+        var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.IsDeleted = true;
         project.UpdatedAt = now;
         project.UpdatedByUserId = UserManager.GetUserId(User);
@@ -84,12 +93,13 @@ public sealed class EditModel(
         }
 
         await Db.SaveChangesAsync(cancellationToken);
-        await auditLogService.LogAsync(
+        await auditLogService.LogProjectChangeAsync(
             UserManager.GetUserId(User),
             "Delete",
-            "Project",
-            project.Id.ToString(),
-            $"Deleted project {project.ProjectNumber}.",
+            project.Id,
+            project.ProjectNumber,
+            $"删除项目 {project.ProjectNumber}",
+            ProjectAuditChangeBuilder.BuildDeleteChanges(before),
             cancellationToken);
         return RedirectToPage("./Index");
     }

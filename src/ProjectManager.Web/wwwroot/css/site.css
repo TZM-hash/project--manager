@@ -624,6 +624,17 @@ h1.h3 {
   text-align: start;
 }
 
+.audit-detail-list {
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--app-muted);
+  font-size: 0.9rem;
+}
+
+.audit-detail-list li + li {
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 767.98px) {
   .app-main {
     padding-top: 0.9rem;

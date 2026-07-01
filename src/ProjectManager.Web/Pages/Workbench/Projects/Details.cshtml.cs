@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
+using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
 
@@ -19,6 +20,8 @@ public sealed class DetailsModel(
     public Project Project { get; private set; } = new();
 
     public IReadOnlyList<ProjectStatus> ActiveStatuses { get; private set; } = [];
+
+    public IReadOnlyList<AuditLogDisplayModel> AuditLogs { get; private set; } = [];
 
     public bool CanEditProgress { get; private set; }
 
@@ -46,6 +49,14 @@ public sealed class DetailsModel(
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .ToListAsync(cancellationToken);
+        var auditLogs = await db.AuditLogs
+            .AsNoTracking()
+            .Include(x => x.User)
+            .Where(x => x.ProjectId == id || (x.EntityName == "Project" && x.EntityId == id.ToString()))
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+        AuditLogs = AuditLogDisplayModel.FromLogs(auditLogs);
 
         return Page();
     }

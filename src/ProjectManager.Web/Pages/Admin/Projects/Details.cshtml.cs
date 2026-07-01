@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
+using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
@@ -12,6 +13,8 @@ namespace ProjectManager.Web.Pages.Admin.Projects;
 public sealed class DetailsModel(ApplicationDbContext db) : PageModel
 {
     public Project Project { get; private set; } = new();
+
+    public IReadOnlyList<AuditLogDisplayModel> AuditLogs { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
@@ -34,6 +37,15 @@ public sealed class DetailsModel(ApplicationDbContext db) : PageModel
         }
 
         Project = project;
+        var auditLogs = await db.AuditLogs
+            .AsNoTracking()
+            .Include(x => x.User)
+            .Where(x => x.ProjectId == id || (x.EntityName == "Project" && x.EntityId == id.ToString()))
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+        AuditLogs = AuditLogDisplayModel.FromLogs(auditLogs);
+
         return Page();
     }
 }

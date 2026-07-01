@@ -16,5 +16,13 @@ public sealed class AuditLog
 
     public string Description { get; set; } = string.Empty;
 
+    public int? ProjectId { get; set; }
+
+    public string? ProjectNumber { get; set; }
+
+    public string? ChangeSummary { get; set; }
+
+    public string? ChangeDetailsJson { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

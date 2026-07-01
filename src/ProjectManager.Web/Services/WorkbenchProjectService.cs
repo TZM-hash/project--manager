@@ -4,7 +4,9 @@ using ProjectManager.Web.Models;
 
 namespace ProjectManager.Web.Services;
 
-public sealed class WorkbenchProjectService(ApplicationDbContext db)
+public sealed class WorkbenchProjectService(
+    ApplicationDbContext db,
+    AuditLogService auditLogService)
 {
     public async Task<IReadOnlyList<Project>> GetProjectsForUserAsync(
         string userId,
@@ -70,14 +72,31 @@ public sealed class WorkbenchProjectService(ApplicationDbContext db)
             return new UpdateProgressResult(false, errors);
         }
 
+        var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.ProgressPercent = request.ProgressPercent;
         project.ProgressDescription = string.IsNullOrWhiteSpace(request.ProgressDescription)
             ? null
             : request.ProgressDescription.Trim();
         project.UpdatedByUserId = request.UserId;
         project.UpdatedAt = DateTimeOffset.UtcNow;
+        var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
+        var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after)
+            .Where(x => x.Label is "项目进度" or "进度说明")
+            .ToList();
 
         await db.SaveChangesAsync(cancellationToken);
+        if (changes.Count > 0)
+        {
+            await auditLogService.LogProjectChangeAsync(
+                request.UserId,
+                "ProgressUpdate",
+                project.Id,
+                project.ProjectNumber,
+                $"更新进度 {project.ProjectNumber}",
+                changes,
+                cancellationToken);
+        }
+
         return new UpdateProgressResult(true, []);
     }
 

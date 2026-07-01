@@ -14,7 +14,7 @@ public sealed class WorkbenchProjectServiceTests
         await using var disposeDb = db;
         await using var disposeConnection = connection;
         var seed = await SeedWorkbenchProjectsAsync(db);
-        var service = new WorkbenchProjectService(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
 
         var projects = await service.GetProjectsForUserAsync(seed.StaffUserId, canViewAll: false, CancellationToken.None);
 
@@ -29,7 +29,7 @@ public sealed class WorkbenchProjectServiceTests
         await using var disposeDb = db;
         await using var disposeConnection = connection;
         var seed = await SeedWorkbenchProjectsAsync(db);
-        var service = new WorkbenchProjectService(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
 
         var projects = await service.GetProjectsForUserAsync(seed.LeaderUserId, canViewAll: true, CancellationToken.None);
 
@@ -43,7 +43,7 @@ public sealed class WorkbenchProjectServiceTests
         await using var disposeDb = db;
         await using var disposeConnection = connection;
         var seed = await SeedWorkbenchProjectsAsync(db);
-        var service = new WorkbenchProjectService(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
 
         var result = await service.UpdateProgressAsync(
             new UpdateProgressRequest(
@@ -64,13 +64,43 @@ public sealed class WorkbenchProjectServiceTests
     }
 
     [Fact]
+    public async Task UpdateProgressAsync_writes_project_audit_log()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var seed = await SeedWorkbenchProjectsAsync(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
+
+        var result = await service.UpdateProgressAsync(
+            new UpdateProgressRequest(
+                seed.AssignedProjectId,
+                seed.StaffUserId,
+                CanEditAll: false,
+                ProgressPercent: 65,
+                ProgressDescription: "现场调试完成"),
+            CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        var log = db.AuditLogs.Single();
+        log.UserId.Should().Be(seed.StaffUserId);
+        log.Action.Should().Be("ProgressUpdate");
+        log.ProjectId.Should().Be(seed.AssignedProjectId);
+        log.ProjectNumber.Should().Be("P-ASSIGNED");
+        log.ChangeSummary.Should().Contain("更新进度");
+        log.ChangeDetailsJson.Should().Contain("项目进度");
+        log.ChangeDetailsJson.Should().Contain("30%");
+        log.ChangeDetailsJson.Should().Contain("65%");
+    }
+
+    [Fact]
     public async Task UpdateProgressAsync_rejects_unassigned_project_staff()
     {
         var (db, connection) = await TestDbFactory.CreateAsync();
         await using var disposeDb = db;
         await using var disposeConnection = connection;
         var seed = await SeedWorkbenchProjectsAsync(db);
-        var service = new WorkbenchProjectService(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
 
         var result = await service.UpdateProgressAsync(
             new UpdateProgressRequest(
