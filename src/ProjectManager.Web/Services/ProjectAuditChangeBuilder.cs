@@ -5,6 +5,9 @@ namespace ProjectManager.Web.Services;
 
 public static class ProjectAuditChangeBuilder
 {
+    /// <summary>
+    /// 把 EF 实体压缩成稳定快照，避免保存后跟踪实体变化导致“前后值”混淆。
+    /// </summary>
     public static ProjectAuditSnapshot CreateSnapshot(Project project)
     {
         return new ProjectAuditSnapshot(
@@ -43,6 +46,7 @@ public static class ProjectAuditChangeBuilder
         AddIfChanged(changes, "收款比例", FormatPercent(before.CollectionPercent), FormatPercent(after.CollectionPercent));
         AddIfChanged(changes, "进度说明", before.ProgressDescription, after.ProgressDescription);
 
+        // 采购明细通过数据库 ID 对齐，新增、删除、修改分别生成不同类型的审计明细。
         var beforePurchases = before.Purchases.ToDictionary(x => x.Id);
         var afterPurchases = after.Purchases.ToDictionary(x => x.Id);
 
@@ -143,6 +147,7 @@ public static class ProjectAuditChangeBuilder
         string? before,
         string? after)
     {
+        // 审计记录只保存实际变化的字段，避免详情页出现无意义的重复行。
         if (string.Equals(before, after, StringComparison.Ordinal))
         {
             return;

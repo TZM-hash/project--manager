@@ -7,6 +7,7 @@ namespace ProjectManager.Web.Services;
 
 public sealed class AuditLogService(ApplicationDbContext db)
 {
+    // 审计 JSON 需要保留中文，方便数据库排查和页面直接展示。
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
@@ -42,6 +43,7 @@ public sealed class AuditLogService(ApplicationDbContext db)
         IReadOnlyCollection<AuditChangeDetail> details,
         CancellationToken cancellationToken)
     {
+        // 项目审计同时写入通用字段和项目专用字段，兼容旧日志查询与详情页按项目查询。
         db.AuditLogs.Add(new AuditLog
         {
             UserId = string.IsNullOrWhiteSpace(userId) ? null : userId,

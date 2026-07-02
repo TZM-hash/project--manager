@@ -48,6 +48,7 @@ public sealed class CreateModel(
         Db.Projects.Add(project);
         await Db.SaveChangesAsync(cancellationToken);
 
+        // 新增项目的审计明细以“空 -> 初始值”方式记录，方便后续回溯项目最初录入内容。
         var changes = ProjectAuditChangeBuilder.BuildCreateChanges(
             ProjectAuditChangeBuilder.CreateSnapshot(project));
         await auditLogService.LogProjectChangeAsync(

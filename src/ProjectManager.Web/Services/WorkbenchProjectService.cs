@@ -72,6 +72,7 @@ public sealed class WorkbenchProjectService(
             return new UpdateProgressResult(false, errors);
         }
 
+        // 工作台只能改进度相关字段，因此审计明细也只保留进度和进度说明。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.ProgressPercent = request.ProgressPercent;
         project.ProgressDescription = string.IsNullOrWhiteSpace(request.ProgressDescription)

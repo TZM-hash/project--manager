@@ -61,6 +61,7 @@ public abstract class ProjectFormPageModel(
 
     protected void EnsureBlankPurchaseRows(int minimumBlankRows)
     {
+        // 表单底部始终保留空白请购行，方便用户继续新增多条请购。
         var blankRows = Input.Purchases.Count(x => x.Id == 0 && !HasPurchaseData(x));
         while (blankRows < minimumBlankRows)
         {
@@ -162,6 +163,7 @@ public abstract class ProjectFormPageModel(
 
     protected void SyncAssignments(Project project)
     {
+        // 用表单勾选结果作为最终状态：未选中的旧人员删除，新选中的人员追加。
         var selectedUserIds = Input.AssignedUserIds
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.Ordinal)
@@ -190,6 +192,7 @@ public abstract class ProjectFormPageModel(
 
     protected void SyncPurchaseRequests(Project project, DateTimeOffset now)
     {
+        // 请购子表以隐藏的 Id 对齐已有记录；新增行没有 Id，删除行只打软删除标记。
         var existingById = project.PurchaseRequests.ToDictionary(x => x.Id);
 
         foreach (var input in Input.Purchases)

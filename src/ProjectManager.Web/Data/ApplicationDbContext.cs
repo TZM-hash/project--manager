@@ -7,6 +7,7 @@ namespace ProjectManager.Web.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
+    // 业务实体 DbSet 集中放在这里，Identity 相关表由 IdentityDbContext 自动提供。
     public DbSet<Project> Projects => Set<Project>();
 
     public DbSet<ProjectAssignment> ProjectAssignments => Set<ProjectAssignment>();
@@ -29,6 +30,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<Project>(entity =>
         {
+            // 项目工号只要求“未删除项目”内唯一，软删除后允许重新使用同年度工号。
             entity.HasIndex(x => new { x.Year, x.ProjectNumber })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
@@ -45,6 +47,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(x => x.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // 更新人是审计上下文，不允许删除用户时级联删除项目。
             entity.HasOne(x => x.UpdatedByUser)
                 .WithMany()
                 .HasForeignKey(x => x.UpdatedByUserId)
@@ -95,6 +98,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(x => x.PurchaseRequests)
                 .HasForeignKey(x => x.ProjectId);
 
+            // 人员类外键统一 Restrict，避免删除账号时影响历史项目和请购数据。
             entity.HasOne(x => x.PurchaseStaff)
                 .WithMany()
                 .HasForeignKey(x => x.PurchaseStaffUserId)
@@ -108,6 +112,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<MonthlySettlementBatch>(entity =>
         {
+            // 同一个年月可以生成多次月结，每次生成按 BatchNumber 递增。
             entity.HasIndex(x => new { x.Year, x.Month, x.BatchNumber }).IsUnique();
 
             entity.HasOne(x => x.CreatedByUser)
@@ -118,6 +123,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<MonthlySettlementItem>(entity =>
         {
+            // 月结明细保存生成当时的项目快照，因此保留较多文本汇总字段。
             entity.Property(x => x.ParentCaseNumber).HasMaxLength(64);
             entity.Property(x => x.ProjectNumber).HasMaxLength(64).IsRequired();
             entity.Property(x => x.ProjectName).HasMaxLength(200).IsRequired();
@@ -139,6 +145,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.EntityId).HasMaxLength(120).IsRequired();
             entity.Property(x => x.ProjectNumber).HasMaxLength(64);
             entity.Property(x => x.ChangeSummary).HasMaxLength(500);
+            // 项目详情页按 ProjectId 拉取操作记录，该索引避免历史日志增长后查询变慢。
             entity.HasIndex(x => x.ProjectId);
 
             entity.HasOne(x => x.User)

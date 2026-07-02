@@ -49,12 +49,14 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
+        // 修改前先取快照，后面 EF 跟踪实体会被表单值覆盖，不能再从实体读旧值。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         ApplyProjectValues(project, validation.Project, now);
         SyncAssignments(project);
         SyncPurchaseRequests(project, now);
 
         await Db.SaveChangesAsync(cancellationToken);
+        // 保存后再生成新快照，字段级和请购级差异都由统一 builder 计算。
         var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
         var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after);
         if (changes.Count > 0)
@@ -81,6 +83,7 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
+        // 删除日志需要保留删除前的工号、名称、金额等上下文。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.IsDeleted = true;
         project.UpdatedAt = now;
