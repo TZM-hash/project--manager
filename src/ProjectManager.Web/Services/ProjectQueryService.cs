@@ -11,11 +11,38 @@ public sealed class ProjectQueryService(ApplicationDbContext db)
         CancellationToken cancellationToken)
     {
         var query = ApplyFilters(BaseProjectQuery(), filter);
-
         return await query
             .OrderByDescending(x => x.Year)
             .ThenBy(x => x.ProjectNumber)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Project> Items, int TotalCount)> GetProjectsAsync(
+        ProjectFilter filter,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var pageResult = await GetProjectsPageAsync(filter, page, pageSize, cancellationToken);
+        return (pageResult.Items, pageResult.TotalCount);
+    }
+
+    public async Task<PagedResult<Project>> GetProjectsPageAsync(
+        ProjectFilter filter,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = ApplyFilters(BaseProjectQuery(), filter);
+        var orderedQuery = query
+            .OrderByDescending(x => x.Year)
+            .ThenBy(x => x.ProjectNumber);
+
+        return await PagedResult<Project>.CreateAsync(
+            orderedQuery,
+            pageNumber,
+            pageSize,
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<OpenProjectSummaryRow>> GetOpenProjectSummaryAsync(

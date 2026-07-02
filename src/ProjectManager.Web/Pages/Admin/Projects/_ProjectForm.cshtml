@@ -13,7 +13,9 @@
             <div class="col-md-4"><label class="form-label">项目名称</label><input class="form-control" asp-for="Input.Name" /></div>
             <div class="col-md-4">
                 <label class="form-label">专案人员</label>
-                <select class="form-select" asp-for="Input.AssignedUserIds" asp-items="Model.UserOptions" multiple></select>
+                <select class="form-select" asp-for="Input.AssignedUserId" asp-items="Model.UserOptions">
+                    <option value="">请选择</option>
+                </select>
             </div>
         </div>
     </section>
@@ -65,7 +67,7 @@
                         <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseType" asp-items="Model.PurchaseTypeOptions"></select></td>
                         <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseStaffUserId" asp-items="Model.UserOptions"><option value="">-</option></select></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].PurchaseAmount" /></td>
-                        <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].SubCaseContactUserId" asp-items="Model.UserOptions"><option value="">-</option></select></td>
+                        <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].SubCaseContactUserId" asp-items="Model.SubCaseContactOptions"><option value="">-</option></select></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].PaymentPercent" /></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].ActualPaidAmount" /></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].Notes" /></td>

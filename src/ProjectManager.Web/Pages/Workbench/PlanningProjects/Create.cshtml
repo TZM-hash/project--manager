@@ -1,0 +1,43 @@
+@page
+@model ProjectManager.Web.Pages.Workbench.PlanningProjects.CreateModel
+@{
+    ViewData["Title"] = "新增规划中专案";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">新增规划中专案</h1>
+        <div class="page-subtitle">创建新的项目意向</div>
+    </div>
+</div>
+
+<form method="post" class="form-section">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="Input.Name" class="form-label">项目名</label>
+            <input asp-for="Input.Name" class="form-control" />
+            <span asp-validation-for="Input.Name" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.LeaderUserIds" class="form-label">项目负责人（可多选）</label>
+            <select asp-for="Input.LeaderUserIds" asp-items="Model.UserOptions" class="form-select" multiple size="5"></select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.Vendor" class="form-label">厂商</label>
+            <input asp-for="Input.Vendor" class="form-control" />
+        </div>
+        <div class="col-12">
+            <label asp-for="Input.LatestDescription" class="form-label">最新说明</label>
+            <textarea asp-for="Input.LatestDescription" class="form-control" rows="5"></textarea>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

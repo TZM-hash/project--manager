@@ -1,0 +1,93 @@
+@page "{id:int}"
+@model ProjectManager.Web.Pages.Workbench.PlanningProjects.EditModel
+@{
+    ViewData["Title"] = "编辑规划中专案";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">编辑规划中专案</h1>
+        <div class="page-subtitle">维护项目资料并按月结算说明</div>
+    </div>
+</div>
+
+<form method="post" class="form-section">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input asp-for="Input.Id" type="hidden" />
+
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label asp-for="Input.Name" class="form-label form-label-sm">项目名</label>
+            <input asp-for="Input.Name" class="form-control form-control-sm" />
+            <span asp-validation-for="Input.Name" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.Vendor" class="form-label form-label-sm">厂商</label>
+            <input asp-for="Input.Vendor" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Input.RecordYear" class="form-label form-label-sm">年</label>
+            <input asp-for="Input.RecordYear" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-1">
+            <label asp-for="Input.RecordMonth" class="form-label form-label-sm">月</label>
+            <input asp-for="Input.RecordMonth" class="form-control form-control-sm" />
+        </div>
+    </div>
+
+    <div class="col-md-12 mb-3">
+        <label asp-for="Input.LeaderUserIds" class="form-label form-label-sm">项目负责人（可多选）</label>
+        <select asp-for="Input.LeaderUserIds" asp-items="Model.UserOptions" class="form-select form-select-sm" multiple size="4"></select>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label form-label-sm">上期说明</label>
+            <textarea class="form-control form-control-sm" rows="6" readonly>@(Model.Input.PreviousDescription ?? "-")</textarea>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.CurrentRecord" class="form-label form-label-sm">本期记录</label>
+            <textarea asp-for="Input.CurrentRecord" class="form-control form-control-sm current-record-input" rows="6"></textarea>
+            <div class="form-text">填写本期记录并选择年月后保存，将按月结算一条历史记录，同时更新最新说明。</div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
+    </div>
+</form>
+
+@if (Model.Project.HistoryRecords.Count > 0)
+{
+    <div class="data-table-wrap mt-4">
+        <h2 class="h5">历史记录</h2>
+        <table class="table table-sm table-striped align-middle data-table">
+            <thead>
+                <tr>
+                    <th>年月</th>
+                    <th>上期说明</th>
+                    <th>本期记录</th>
+                    <th>记录人</th>
+                    <th>记录时间</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var record in Model.Project.HistoryRecords)
+            {
+                <tr>
+                    <td>@record.Year-@record.Month.ToString("00")</td>
+                    <td>@(record.PreviousDescription ?? "-")</td>
+                    <td>@(record.CurrentRecord ?? "-")</td>
+                    <td>@(record.CreatedByUser?.DisplayName ?? record.CreatedByUser?.UserName ?? record.CreatedByUserId)</td>
+                    <td>@record.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

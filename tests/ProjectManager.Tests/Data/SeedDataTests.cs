@@ -25,6 +25,7 @@ public sealed class SeedDataTests
             RoleNames.Administrator,
             RoleNames.ProjectStaff,
             RoleNames.Leader,
-            RoleNames.Viewer);
+            RoleNames.Viewer,
+            RoleNames.SubCaseContact);
     }
 }

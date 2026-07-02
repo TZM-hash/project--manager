@@ -30,6 +30,7 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
             DisplayName = user.DisplayName,
             Email = user.Email,
             IsActive = user.IsActive,
+            IsWeakManaged = user.IsWeakManaged,
             SelectedRoles = [.. await userManager.GetRolesAsync(user)]
         };
 
@@ -52,6 +53,7 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
         user.DisplayName = Input.DisplayName;
         user.Email = Input.Email;
         user.IsActive = Input.IsActive;
+        user.IsWeakManaged = Input.IsWeakManaged;
 
         var updateResult = await userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
@@ -85,6 +87,9 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
 
         [Display(Name = "启用账号")]
         public bool IsActive { get; set; } = true;
+
+        [Display(Name = "弱管理")]
+        public bool IsWeakManaged { get; set; }
 
         public List<string> SelectedRoles { get; set; } = [];
     }

@@ -32,6 +32,8 @@ builder.Services.AddScoped<WorkbenchProjectService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<SettlementService>();
 builder.Services.AddScoped<ExcelReportService>();
+builder.Services.AddScoped<PlanningProjectService>();
+builder.Services.AddScoped<MaintenanceOrderService>();
 
 var app = builder.Build();
 

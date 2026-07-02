@@ -24,6 +24,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    public DbSet<PlanningProject> PlanningProjects => Set<PlanningProject>();
+
+    public DbSet<PlanningProjectHistoryRecord> PlanningProjectHistoryRecords => Set<PlanningProjectHistoryRecord>();
+
+    public DbSet<MaintenanceOrder> MaintenanceOrders => Set<MaintenanceOrder>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -151,6 +157,47 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<PlanningProject>(entity =>
+        {
+            entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Vendor).HasMaxLength(200);
+
+            entity.HasOne(x => x.Leader)
+                .WithMany()
+                .HasForeignKey(x => x.LeaderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<PlanningProjectHistoryRecord>(entity =>
+        {
+            entity.HasIndex(x => new { x.PlanningProjectId, x.Year, x.Month });
+
+            entity.HasOne(x => x.PlanningProject)
+                .WithMany(x => x.HistoryRecords)
+                .HasForeignKey(x => x.PlanningProjectId);
+
+            entity.HasOne(x => x.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<MaintenanceOrder>(entity =>
+        {
+            entity.Property(x => x.CustomerName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.HandoverPercent).HasPrecision(5, 2);
+
+            entity.HasOne(x => x.Executor)
+                .WithMany()
+                .HasForeignKey(x => x.ExecutorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.UpdatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

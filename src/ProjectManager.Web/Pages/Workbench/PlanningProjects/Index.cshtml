@@ -1,0 +1,115 @@
+@page
+@model ProjectManager.Web.Pages.Workbench.PlanningProjects.IndexModel
+@{
+    ViewData["Title"] = "规划中专案";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">规划中专案</h1>
+        <div class="page-subtitle">跟踪尚未正式立项的项目意向和月度说明</div>
+    </div>
+    <div class="page-actions">
+        <form method="post" asp-page-handler="BatchPrint" class="bulk-action-form" data-bulk-form>
+            <button type="submit" class="btn btn-outline-secondary">批量打印 <span data-selected-count>0</span></button>
+        </form>
+        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的项目吗？">
+            <input type="hidden" asp-for="PageNumber" />
+            <input type="hidden" asp-for="PageSize" />
+            <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
+        </form>
+        <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量导入</a>
+        <a class="btn btn-primary" asp-page="./Create">新增</a>
+    </div>
+</div>
+
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-title">负责人分布</div>
+        <div class="chart-subtitle">按负责人汇总规划中项目</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.LeaderSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-title">厂商分布</div>
+        <div class="chart-subtitle">辅助查看供应商覆盖情况</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.VendorSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="data-table-wrap">
+    <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
+                <th style="width: 60px;">项次</th>
+                <th>项目名</th>
+                <th>项目负责人</th>
+                <th>厂商</th>
+                <th>最新说明</th>
+                <th>最近更新</th>
+                <th class="text-end">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        @{ var idx = (Model.PageNumber - 1) * Model.PageSize + 1; }
+        @foreach (var project in Model.Projects)
+        {
+            <tr>
+                <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@project.Id" data-bulk-checkbox /></td>
+                <td>@idx</td>
+                <td>@project.Name</td>
+                <td>@Model.GetLeaderDisplayNames(project.LeaderUserId)</td>
+                <td>@(project.Vendor ?? "-")</td>
+                <td>@(project.LatestDescription ?? "-")</td>
+                <td>@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td class="text-end text-nowrap">
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@project.Id">打印</a>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该项目吗？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                    </form>
+                </td>
+            </tr>
+            idx++;
+        }
+        @if (!Model.Projects.Any())
+        {
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">暂无规划中专案</div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <partial name="_Pagination" model="Model.Pagination" />
+</div>

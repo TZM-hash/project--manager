@@ -1,0 +1,39 @@
+@model ProjectManager.Web.Pages.Shared.PaginationViewModel
+
+<div class="pagination-wrap">
+    <div class="pagination-info">
+        共 @Model.TotalCount 条，当前第 @Model.PageNumber 页，共 @Model.TotalPages 页
+    </div>
+    <div class="pagination-controls">
+        <form method="get" asp-page="@Model.PageName" class="pagination-size-form">
+            @foreach (var item in Model.RouteWithoutPaging())
+            {
+                <input type="hidden" name="@item.Key" value="@item.Value" />
+            }
+            <input type="hidden" name="PageNumber" value="1" />
+            <label class="visually-hidden" for="pageSizeSelect">每页条数</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" name="PageSize" onchange="this.form.submit()">
+                @foreach (var option in Model.PageSizeOptions)
+                {
+                    <option value="@option" selected="@(option == Model.PageSize)">@option 条/页</option>
+                }
+            </select>
+        </form>
+        <nav aria-label="列表分页">
+            <ul class="pagination pagination-sm">
+                <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(Model.PageNumber - 1)">上一页</a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(i)">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(Model.PageNumber + 1)">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>

@@ -26,6 +26,31 @@ public sealed class WorkbenchProjectService(
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<PagedResult<Project>> GetProjectsForUserPageAsync(
+        string userId,
+        bool canViewAll,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = BaseProjectQuery();
+
+        if (!canViewAll)
+        {
+            query = query.Where(x => x.Assignments.Any(a => a.UserId == userId));
+        }
+
+        var orderedQuery = query
+            .OrderByDescending(x => x.Year)
+            .ThenBy(x => x.ProjectNumber);
+
+        return await PagedResult<Project>.CreateAsync(
+            orderedQuery,
+            pageNumber,
+            pageSize,
+            cancellationToken);
+    }
+
     public async Task<Project?> GetProjectForUserAsync(
         int projectId,
         string userId,

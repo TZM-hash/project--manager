@@ -22,6 +22,11 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (Input.IsWeakManaged)
+        {
+            ModelState.Remove("Input.Password");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -33,10 +38,24 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
             Email = Input.Email,
             DisplayName = Input.DisplayName,
             EmailConfirmed = true,
-            IsActive = true
+            IsActive = true,
+            IsWeakManaged = Input.IsWeakManaged
         };
 
-        var createResult = await userManager.CreateAsync(user, Input.Password);
+        var password = Input.IsWeakManaged && string.IsNullOrWhiteSpace(Input.Password)
+            ? GenerateRandomPassword()
+            : Input.Password;
+
+        IdentityResult createResult;
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            createResult = await userManager.CreateAsync(user);
+        }
+        else
+        {
+            createResult = await userManager.CreateAsync(user, password);
+        }
+
         if (!createResult.Succeeded)
         {
             ModelState.AddModelError(string.Empty, "用户创建失败，请检查用户名、邮箱和密码复杂度。");
@@ -50,6 +69,14 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
         }
 
         return RedirectToPage("./Index");
+    }
+
+    private static string GenerateRandomPassword()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 20)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
     public sealed class InputModel
@@ -66,8 +93,10 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
         public string? Email { get; set; }
 
         [Display(Name = "初始密码")]
-        [Required(ErrorMessage = "请输入初始密码。")]
         public string Password { get; set; } = string.Empty;
+
+        [Display(Name = "弱管理")]
+        public bool IsWeakManaged { get; set; }
 
         public List<string> SelectedRoles { get; set; } = [];
     }

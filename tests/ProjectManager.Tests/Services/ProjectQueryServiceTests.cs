@@ -70,6 +70,28 @@ public sealed class ProjectQueryServiceTests
         summary[0].ActualPaidAmountTotal.Should().Be(750);
     }
 
+    [Fact]
+    public async Task GetProjectsPageAsync_normalizes_page_size_and_returns_total_count()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        await SeedProjectsAsync(db);
+        var service = new ProjectQueryService(db);
+
+        var page = await service.GetProjectsPageAsync(
+            new ProjectFilter(null, null, null, null, null, null, OpenOnly: false),
+            pageNumber: -2,
+            pageSize: 25,
+            CancellationToken.None);
+
+        page.PageNumber.Should().Be(1);
+        page.PageSize.Should().Be(20);
+        page.TotalCount.Should().Be(2);
+        page.TotalPages.Should().Be(1);
+        page.Items.Select(x => x.ProjectNumber).Should().Contain(["P-OPEN", "P-CLOSED"]);
+    }
+
     private static async Task<SeedIds> SeedProjectsAsync(ProjectManager.Web.Data.ApplicationDbContext db)
     {
         var staff = new ApplicationUser

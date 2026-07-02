@@ -31,7 +31,51 @@
             <option value="">状态</option>
         </select>
     </div>
+    <input type="hidden" asp-for="PageSize" />
     <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
 </form>
 
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-title">未结案状态分布</div>
+        <div class="chart-subtitle">按当前筛选条件统计</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.StatusSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-title">进度区间</div>
+        <div class="chart-subtitle">识别未结案项目推进状态</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.ProgressSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
 <partial name="_OpenProjectsTable" model="Model.Projects" />
+<partial name="_Pagination" model="Model.Pagination" />

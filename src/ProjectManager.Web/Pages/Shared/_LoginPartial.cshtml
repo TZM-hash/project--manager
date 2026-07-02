@@ -6,8 +6,10 @@
 <ul class="navbar-nav app-account-nav">
 @if (SignInManager.IsSignedIn(User))
 {
+    var user = await UserManager.GetUserAsync(User);
+    var displayName = !string.IsNullOrWhiteSpace(user?.DisplayName) ? user.DisplayName : (User.Identity?.Name ?? "用户");
     <li class="nav-item">
-        <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="账号管理">您好，@User.Identity?.Name</a>
+        <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="账号管理">您好，@displayName</a>
     </li>
     <li class="nav-item">
         <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">

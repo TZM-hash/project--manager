@@ -10,8 +10,70 @@
         <div class="page-subtitle">维护项目主档、请购记录、进度和状态资料</div>
     </div>
     <div class="page-actions">
+        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的项目吗？">
+            <input type="hidden" asp-for="Year" />
+            <input type="hidden" asp-for="ParentCaseNumber" />
+            <input type="hidden" asp-for="ProjectNumber" />
+            <input type="hidden" asp-for="ProjectName" />
+            <input type="hidden" asp-for="PersonnelUserId" />
+            <input type="hidden" asp-for="StatusId" />
+            <input type="hidden" asp-for="OpenOnly" />
+            <input type="hidden" asp-for="PageNumber" />
+            <input type="hidden" asp-for="PageSize" />
+            <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
+        </form>
         <a class="btn btn-primary" asp-page="./Create">新增项目</a>
     </div>
+</div>
+
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-title">状态分布</div>
+                <div class="chart-subtitle">按当前筛选条件统计</div>
+            </div>
+        </div>
+        <div class="bar-list">
+            @foreach (var slice in Model.StatusSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-title">进度区间</div>
+                <div class="chart-subtitle">识别推进节奏和完工占比</div>
+            </div>
+        </div>
+        <div class="bar-list">
+            @foreach (var slice in Model.ProgressSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
 </div>
 
 <form method="get" class="filter-panel row g-2">
@@ -35,6 +97,7 @@
             <option value="true">未结案</option>
         </select>
     </div>
+    <input type="hidden" asp-for="PageSize" />
     <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
 </form>
 
@@ -42,10 +105,12 @@
     <table class="table table-sm table-striped align-middle data-table">
         <thead>
             <tr>
+                <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
                 <th>年</th>
                 <th>母案案号</th>
                 <th>项目工号</th>
                 <th>项目名称</th>
+                <th>专案人员</th>
                 <th class="numeric">进度</th>
                 <th class="numeric">金额</th>
                 <th class="numeric">收款比例</th>
@@ -57,20 +122,35 @@
         @foreach (var project in Model.Projects)
         {
             <tr>
+                <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@project.Id" data-bulk-checkbox /></td>
                 <td>@project.Year</td>
                 <td>@project.ParentCaseNumber</td>
                 <td>@project.ProjectNumber</td>
                 <td>@project.Name</td>
-                <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
                 <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
-                <td class="numeric">@project.CollectionPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td><partial name="_StatusBadge" model="project.Status" /></td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
+                    <form method="post" asp-page="./Edit" asp-page-handler="Delete" asp-route-id="@project.Id" class="d-inline" onsubmit="return confirm('确定删除该项目吗？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        @if (!Model.Projects.Any())
+        {
+            <tr>
+                <td colspan="11">
+                    <div class="empty-state">暂无符合条件的项目</div>
                 </td>
             </tr>
         }
         </tbody>
     </table>
+
+    <partial name="_Pagination" model="Model.Pagination" />
 </div>

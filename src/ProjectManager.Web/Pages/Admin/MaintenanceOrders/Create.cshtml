@@ -1,0 +1,74 @@
+@page
+@model ProjectManager.Web.Pages.Admin.MaintenanceOrders.CreateModel
+@{
+    ViewData["Title"] = "新增保养订单";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">新增保养订单</h1>
+        <div class="page-subtitle">创建新的年度保养订单</div>
+    </div>
+</div>
+
+<form method="post" class="form-section">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-2">
+            <label asp-for="Input.Year" class="form-label">年度</label>
+            <input asp-for="Input.Year" class="form-control" />
+            <span asp-validation-for="Input.Year" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.CustomerName" class="form-label">客户名称</label>
+            <input asp-for="Input.CustomerName" class="form-control" />
+            <span asp-validation-for="Input.CustomerName" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.MaintenanceStartDate" class="form-label">保养开始日期</label>
+            <input asp-for="Input.MaintenanceStartDate" class="form-control" type="date" />
+            <span asp-validation-for="Input.MaintenanceStartDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.MaintenanceEndDate" class="form-label">保养结束日期</label>
+            <input asp-for="Input.MaintenanceEndDate" class="form-control" type="date" />
+            <span asp-validation-for="Input.MaintenanceEndDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.MaintenanceMethod" class="form-label">保养方式</label>
+            <select asp-for="Input.MaintenanceMethod" asp-items="Model.MethodOptions" class="form-select">
+                <option value="">请选择</option>
+            </select>
+            <span asp-validation-for="Input.MaintenanceMethod" class="text-danger"></span>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Input.OnSiteAnnualCount" class="form-label">现场次数</label>
+            <input asp-for="Input.OnSiteAnnualCount" class="form-control" type="number" min="0" />
+            <span asp-validation-for="Input.OnSiteAnnualCount" class="text-danger"></span>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="Input.RemoteAnnualCount" class="form-label">远程次数</label>
+            <input asp-for="Input.RemoteAnnualCount" class="form-control" type="number" min="0" />
+            <span asp-validation-for="Input.RemoteAnnualCount" class="text-danger"></span>
+        </div>
+        <div class="col-md-5">
+            <label asp-for="Input.ExecutorUserId" class="form-label">保养执行人</label>
+            <select asp-for="Input.ExecutorUserId" asp-items="Model.UserOptions" class="form-select">
+                <option value="">请选择</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.HandoverPercent" class="form-label">签收单移交百分比</label>
+            <input asp-for="Input.HandoverPercent" class="form-control" type="number" min="0" max="100" step="0.01" />
+            <span asp-validation-for="Input.HandoverPercent" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

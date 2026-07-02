@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="1; url=http://localhost:62382/">
   <title>项目管理系统 WEB 入口</title>
   <style>
     :root {
@@ -167,6 +168,37 @@
       overflow-wrap: anywhere;
     }
 
+    .direct-entry {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      border-radius: var(--app-radius);
+      background: rgba(234, 241, 255, 0.86);
+      color: var(--app-text-soft);
+      box-shadow: var(--app-shadow);
+    }
+
+    .direct-entry strong {
+      color: var(--app-text);
+    }
+
+    .direct-entry a {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      padding: 8px 13px;
+      border-radius: 6px;
+      background: var(--app-primary);
+      color: #fff;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
     @media (max-width: 720px) {
       main {
         padding: 32px 0;
@@ -186,6 +218,19 @@
       }
     }
   </style>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      var appUrl = "http://localhost:62382/";
+      var link = document.querySelector("[data-app-link]");
+      if (link) {
+        link.href = appUrl;
+      }
+
+      window.setTimeout(function () {
+        window.location.replace(appUrl);
+      }, 350);
+    });
+  </script>
 </head>
 <body>
   <main>
@@ -203,6 +248,11 @@
         <span>WEB 工作台</span>
       </div>
     </header>
+
+    <div class="direct-entry">
+      <div><strong>正在进入系统...</strong> 如果没有自动跳转，请点击右侧按钮。</div>
+      <a data-app-link href="http://localhost:62382/">打开系统</a>
+    </div>
 
     <section class="entry-panel" aria-label="系统入口">
       <a class="entry-card" href="http://localhost:62382/Workbench/Projects">

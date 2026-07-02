@@ -15,6 +15,49 @@
     </div>
 </div>
 
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-title">启用状态</div>
+        <div class="chart-subtitle">账号可用性概览</div>
+        <div class="donut-wrap">
+            <div class="donut-chart" style="--donut-color:@(Model.ActiveSlices.FirstOrDefault()?.Color ?? "#2563eb");--donut-percent:@(Model.ActiveSlices.FirstOrDefault()?.Percent ?? 0)">
+                <span>@(Model.ActiveSlices.FirstOrDefault()?.Percent.ToString("0.#") ?? "0")%</span>
+            </div>
+            <div class="legend-list">
+                @foreach (var slice in Model.ActiveSlices)
+                {
+                    <div class="legend-item"><span style="background:@slice.Color"></span>@slice.Label @slice.Value.ToString("0")</div>
+                }
+            </div>
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-title">角色分布</div>
+        <div class="chart-subtitle">按账号角色统计</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.RoleSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
 <div class="data-table-wrap">
     <table class="table table-sm table-striped align-middle data-table">
         <thead>
@@ -38,10 +81,22 @@
                 <td>@string.Join("、", user.Roles.Select(RoleNames.GetDisplayName))</td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@user.Id">编辑</a>
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./ResetPassword" asp-route-id="@user.Id">重置密码</a>
+                    @if (Model.CanManagePassword)
+                    {
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./ResetPassword" asp-route-id="@user.Id">重置密码</a>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!Model.Users.Any())
+        {
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">暂无用户资料</div>
                 </td>
             </tr>
         }
         </tbody>
     </table>
+    <partial name="_Pagination" model="Model.Pagination" />
 </div>

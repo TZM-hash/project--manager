@@ -33,9 +33,9 @@
                 <td>@project.ProjectNumber</td>
                 <td>@project.Name</td>
                 <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-                <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
                 <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
-                <td class="numeric">@project.CollectionPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td><partial name="_StatusBadge" model="project.Status" /></td>
                 <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
                 <td class="numeric">@purchaseRequests.Sum(x => x.PurchaseAmount).ToString("N2")</td>
@@ -44,6 +44,14 @@
                 <td>@project.ProgressDescription</td>
                 <td>@(project.UpdatedByUser?.DisplayName ?? project.UpdatedByUser?.UserName)</td>
                 <td>@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        }
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="16">
+                    <div class="empty-state">暂无符合条件的未结案项目</div>
+                </td>
             </tr>
         }
         </tbody>

@@ -7,32 +7,77 @@
 
 <div class="dashboard-header">
     <div>
-        <h1 class="page-title">项目管理系统</h1>
+        <h1 class="page-title">台塑电子项目管理系统</h1>
         <div class="dashboard-subtitle">集中管理公司内网项目、请购、月结和未结案报表</div>
     </div>
     <div class="dashboard-meta">
         <span>内网部署</span>
-        <span>WEB 工作台</span>
+        <span>WEB 专案管理</span>
     </div>
 </div>
 
-<div class="metric-grid mb-4">
-    <div class="metric-card">
-        <div class="metric-label">项目总数</div>
-        <div class="metric-value">@Model.TotalProjectCount</div>
-    </div>
-    <div class="metric-card">
-        <div class="metric-label">未结案项目</div>
-        <div class="metric-value">@Model.OpenProjectCount</div>
-    </div>
-    <div class="metric-card">
-        <div class="metric-label">启用状态</div>
-        <div class="metric-value">@Model.ActiveStatusCount</div>
-    </div>
-    <div class="metric-card">
-        <div class="metric-label">月结批次</div>
-        <div class="metric-value">@Model.SettlementBatchCount</div>
-    </div>
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="dashboard-visual-grid">
+    <section class="chart-card chart-card-feature">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-title">未结案占比</div>
+                <div class="chart-subtitle">整体项目推进压力</div>
+            </div>
+            <span class="meta-pill">@Model.OpenProjectCount / @Model.TotalProjectCount</span>
+        </div>
+        <div class="donut-wrap">
+            <div class="donut-chart" style="--donut-color:#2563eb;--donut-percent:@Model.OpenProjectPercent">
+                <span>@Model.OpenProjectPercent.ToString("0.#")%</span>
+            </div>
+            <div class="legend-list">
+                @foreach (var slice in Model.OpenClosedSlices)
+                {
+                    <div class="legend-item"><span style="background:@slice.Color"></span>@slice.Label @slice.Value.ToString("0")</div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="chart-card">
+        <div class="chart-title">项目状态分布</div>
+        <div class="chart-subtitle">按状态汇总当前有效项目</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.StatusSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="chart-card">
+        <div class="chart-title">月结批次趋势</div>
+        <div class="chart-subtitle">最近 6 个有批次月份</div>
+        <div class="mini-bars">
+            @foreach (var slice in Model.SettlementSlices)
+            {
+                <div class="mini-bar" style="--bar-height:@slice.Percent%;--bar-color:@slice.Color">
+                    <span></span>
+                    <strong>@slice.Value.ToString("0")</strong>
+                    <small>@slice.Label</small>
+                </div>
+            }
+        </div>
+    </section>
 </div>
 
 <div class="module-grid">
@@ -52,10 +97,10 @@
     @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
     {
         <section class="module-card">
-            <div class="module-title">WEB 工作台入口</div>
+            <div class="module-title">WEB 专案管理入口</div>
             <div class="module-subtitle">查看项目状态图、更新项目进度、跟踪请购和收款情况。</div>
             <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">我的项目</a>
+                <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">专案管理</a>
                 <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Index">报表</a>
             </div>
         </section>
@@ -78,7 +123,7 @@
     {
         <section class="module-card">
             <div class="module-title">请先登录</div>
-            <div class="module-subtitle">登录后会根据角色显示对应的后台管理和 WEB 工作台入口。</div>
+            <div class="module-subtitle">登录后会根据角色显示对应的后台管理和 WEB 专案管理入口。</div>
             <div class="module-actions">
                 <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登录</a>
             </div>

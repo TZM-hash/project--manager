@@ -17,7 +17,7 @@ namespace ProjectManager.Web.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -188,6 +188,9 @@ namespace ProjectManager.Web.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsWeakManaged")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -288,6 +291,65 @@ namespace ProjectManager.Web.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.MaintenanceOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ExecutorUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("HandoverPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("MaintenanceEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("MaintenanceMethod")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("MaintenanceStartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("OnSiteAnnualCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RemoteAnnualCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecutorUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("MaintenanceOrders");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.MonthlySettlementBatch", b =>
@@ -416,6 +478,83 @@ namespace ProjectManager.Web.Migrations
                     b.HasIndex("BatchId");
 
                     b.ToTable("MonthlySettlementItems");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.PlanningProject", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LatestDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LeaderUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Vendor")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaderUserId");
+
+                    b.ToTable("PlanningProjects");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.PlanningProjectHistoryRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CurrentRecord")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlanningProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PreviousDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PlanningProjectId", "Year", "Month");
+
+                    b.ToTable("PlanningProjectHistoryRecords");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.Project", b =>
@@ -707,6 +846,23 @@ namespace ProjectManager.Web.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectManager.Web.Models.MaintenanceOrder", b =>
+                {
+                    b.HasOne("ProjectManager.Web.Models.ApplicationUser", "Executor")
+                        .WithMany()
+                        .HasForeignKey("ExecutorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectManager.Web.Models.ApplicationUser", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Executor");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
             modelBuilder.Entity("ProjectManager.Web.Models.MonthlySettlementBatch", b =>
                 {
                     b.HasOne("ProjectManager.Web.Models.ApplicationUser", "CreatedByUser")
@@ -727,6 +883,34 @@ namespace ProjectManager.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Batch");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.PlanningProject", b =>
+                {
+                    b.HasOne("ProjectManager.Web.Models.ApplicationUser", "Leader")
+                        .WithMany()
+                        .HasForeignKey("LeaderUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Leader");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.PlanningProjectHistoryRecord", b =>
+                {
+                    b.HasOne("ProjectManager.Web.Models.ApplicationUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectManager.Web.Models.PlanningProject", "PlanningProject")
+                        .WithMany("HistoryRecords")
+                        .HasForeignKey("PlanningProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("PlanningProject");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.Project", b =>
@@ -805,6 +989,11 @@ namespace ProjectManager.Web.Migrations
             modelBuilder.Entity("ProjectManager.Web.Models.MonthlySettlementBatch", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.PlanningProject", b =>
+                {
+                    b.Navigation("HistoryRecords");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.Project", b =>

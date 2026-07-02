@@ -10,16 +10,64 @@
         <div class="page-subtitle">配置项目状态顺序、启用规则和前台显示样式</div>
     </div>
     <div class="page-actions">
+        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的状态吗？">
+            <input type="hidden" asp-for="PageNumber" />
+            <input type="hidden" asp-for="PageSize" />
+            <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
+        </form>
         <a class="btn btn-primary" asp-page="./Edit">新增状态</a>
     </div>
 </div>
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-title">启用状态</div>
+        <div class="chart-subtitle">状态是否可用于项目</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.ActiveSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-title">结案属性</div>
+        <div class="chart-subtitle">区分未结案与结案类状态</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.ClosedSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
 <div class="data-table-wrap">
     <table class="table table-sm table-striped align-middle data-table">
         <thead>
             <tr>
+                <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
                 <th>排序</th>
                 <th>代码</th>
                 <th>状态名称</th>
@@ -34,7 +82,11 @@
         @foreach (var status in Model.Statuses)
         {
             var weight = status.IsBold ? "700" : "400";
+            var canDelete = status.ProjectCount == 0;
             <tr>
+                <td class="checkbox-cell">
+                    <input class="form-check-input" type="checkbox" value="@status.Id" data-bulk-checkbox disabled="@(!canDelete)" />
+                </td>
                 <td>@status.SortOrder</td>
                 <td>@status.Code</td>
                 <td>@status.Name</td>
@@ -48,12 +100,21 @@
                 <td class="numeric">@status.ProjectCount</td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@status.Id">编辑</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" class="d-inline" onsubmit="return confirm('确定删除这个状态吗？');">
-                        <button class="btn btn-sm btn-outline-danger" type="submit" disabled="@(status.ProjectCount > 0)">删除</button>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除这个状态吗？');">
+                        <button class="btn btn-sm btn-outline-danger" type="submit" disabled="@(!canDelete)">删除</button>
                     </form>
+                </td>
+            </tr>
+        }
+        @if (!Model.Statuses.Any())
+        {
+            <tr>
+                <td colspan="9">
+                    <div class="empty-state">暂无状态配置</div>
                 </td>
             </tr>
         }
         </tbody>
     </table>
+    <partial name="_Pagination" model="Model.Pagination" />
 </div>

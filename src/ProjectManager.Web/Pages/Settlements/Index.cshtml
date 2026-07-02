@@ -10,6 +10,16 @@
         <div class="page-subtitle">查看历史月结批次并进入打印或导出流程</div>
     </div>
     <div class="page-actions">
+        @if (Model.IsAdministrator)
+        {
+            <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的月结批次吗？">
+                <input type="hidden" asp-for="Year" />
+                <input type="hidden" asp-for="Month" />
+                <input type="hidden" asp-for="PageNumber" />
+                <input type="hidden" asp-for="PageSize" />
+                <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
+            </form>
+        }
         <a class="btn btn-primary" asp-page="./Create">新增月结</a>
     </div>
 </div>
@@ -17,13 +27,46 @@
 <form method="get" class="filter-panel row g-2">
     <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
     <div class="col-md-2"><input class="form-control" asp-for="Month" placeholder="月" /></div>
+    <input type="hidden" asp-for="PageSize" />
     <div class="col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
 </form>
+
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid insight-grid-single">
+    <section class="chart-card">
+        <div class="chart-title">年月批次数量</div>
+        <div class="chart-subtitle">最近 6 个有月结批次的月份</div>
+        <div class="mini-bars">
+            @foreach (var slice in Model.MonthSlices)
+            {
+                <div class="mini-bar" style="--bar-height:@slice.Percent%;--bar-color:@slice.Color">
+                    <span></span>
+                    <strong>@slice.Value.ToString("0")</strong>
+                    <small>@slice.Label</small>
+                </div>
+            }
+        </div>
+    </section>
+</div>
 
 <div class="data-table-wrap">
     <table class="table table-sm table-striped align-middle data-table">
         <thead>
             <tr>
+                @if (Model.IsAdministrator)
+                {
+                    <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
+                }
                 <th>年</th>
                 <th>月</th>
                 <th>批次</th>
@@ -38,6 +81,10 @@
         @foreach (var batch in Model.Batches)
         {
             <tr>
+                @if (Model.IsAdministrator)
+                {
+                    <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@batch.Id" data-bulk-checkbox /></td>
+                }
                 <td>@batch.Year</td>
                 <td>@batch.Month</td>
                 <td>@batch.BatchNumber</td>
@@ -48,9 +95,24 @@
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@batch.Id">详情</a>
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@batch.Id">打印</a>
+                    @if (Model.IsAdministrator)
+                    {
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@batch.Id" asp-route-Year="@Model.Year" asp-route-Month="@Model.Month" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该月结批次吗？');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!Model.Batches.Any())
+        {
+            <tr>
+                <td colspan="@(Model.IsAdministrator ? 9 : 8)">
+                    <div class="empty-state">暂无月结批次</div>
                 </td>
             </tr>
         }
         </tbody>
     </table>
+    <partial name="_Pagination" model="Model.Pagination" />
 </div>

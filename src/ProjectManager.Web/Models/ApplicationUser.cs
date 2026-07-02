@@ -15,4 +15,7 @@ public sealed class ApplicationUser : IdentityUser
 
     /// <summary>账号创建时间。</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    /// <summary>是否为弱管理账号；弱管理账号不强制要求密码和邮箱。</summary>
+    public bool IsWeakManaged { get; set; }
 }

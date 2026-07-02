@@ -1,0 +1,115 @@
+@page
+@using ProjectManager.Web.Extensions
+@model ProjectManager.Web.Pages.Admin.MaintenanceOrders.IndexModel
+@{
+    ViewData["Title"] = "保养订单管理";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">保养订单管理</h1>
+        <div class="page-subtitle">管理年度保养订单，跟踪保养执行与签收移交进度</div>
+    </div>
+    <div class="page-actions">
+        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的保养订单吗？">
+            <input type="hidden" asp-for="PageNumber" />
+            <input type="hidden" asp-for="PageSize" />
+            <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
+        </form>
+        <a class="btn btn-primary" asp-page="./Create">新增</a>
+    </div>
+</div>
+
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-title">保养方式分布</div>
+        <div class="chart-subtitle">现场、远程或混合执行</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.MethodSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-title">移交百分比分布</div>
+        <div class="chart-subtitle">按移交进度分组</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.HandoverSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="data-table-wrap">
+    <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
+                <th>年度</th>
+                <th>客户名称</th>
+                <th>保养方式</th>
+                <th>现场次数</th>
+                <th>远程次数</th>
+                <th>保养执行人</th>
+                <th>移交百分比</th>
+                <th>更新日期</th>
+                <th>更新人员</th>
+                <th class="text-end">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var order in Model.Orders)
+        {
+            <tr>
+                <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@order.Id" data-bulk-checkbox /></td>
+                <td>@order.Year</td>
+                <td>@order.CustomerName</td>
+                <td>@order.MaintenanceMethod.GetDisplayName()</td>
+                <td>@order.OnSiteAnnualCount</td>
+                <td>@order.RemoteAnnualCount</td>
+                <td>@(order.Executor?.DisplayName ?? order.Executor?.UserName ?? order.ExecutorUserId)</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(order.HandoverPercent)" /></td>
+                <td>@order.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@(order.UpdatedByUser?.DisplayName ?? order.UpdatedByUser?.UserName ?? order.UpdatedByUserId)</td>
+                <td class="text-end text-nowrap">
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@order.Id">编辑</a>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该订单吗？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        @if (!Model.Orders.Any())
+        {
+            <tr>
+                <td colspan="11">
+                    <div class="empty-state">暂无保养订单</div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <partial name="_Pagination" model="Model.Pagination" />
+</div>

@@ -34,6 +34,12 @@
             </label>
         </div>
         <div class="col-12">
+            <label class="form-check-label">
+                <input asp-for="Input.IsWeakManaged" class="form-check-input" />
+                弱管理（不强制密码/邮箱）
+            </label>
+        </div>
+        <div class="col-12">
             <label class="form-label">角色</label>
             <div class="d-flex flex-wrap gap-3">
                 @foreach (var role in Model.AvailableRoles)

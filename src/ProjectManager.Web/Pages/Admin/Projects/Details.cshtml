@@ -16,6 +16,8 @@
     </div>
 </div>
 
+<partial name="_ProjectDetailVisual" model="Model.Project" />
+
 <div class="summary-strip">
     <div class="summary-item">
         <div class="summary-label">当前状态</div>
@@ -23,7 +25,7 @@
     </div>
     <div class="summary-item">
         <div class="summary-label">专案进度</div>
-        <div class="summary-value">@Model.Project.ProgressPercent.ToString("0.##")%</div>
+        <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.ProgressPercent, compact: false)" /></div>
     </div>
     <div class="summary-item">
         <div class="summary-label">专案金额</div>
@@ -31,7 +33,7 @@
     </div>
     <div class="summary-item">
         <div class="summary-label">收款比例</div>
-        <div class="summary-value">@Model.Project.CollectionPercent.ToString("0.##")%</div>
+        <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.CollectionPercent, compact: false)" /></div>
     </div>
 </div>
 
@@ -80,7 +82,7 @@
                     <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
                     <td class="numeric">@request.PurchaseAmount.ToString("N2")</td>
                     <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
-                    <td class="numeric">@request.PaymentPercent.ToString("0.##")%</td>
+                    <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(request.PaymentPercent)" /></td>
                     <td class="numeric">@request.ActualPaidAmount.ToString("N2")</td>
                     <td>@request.Notes</td>
                 </tr>

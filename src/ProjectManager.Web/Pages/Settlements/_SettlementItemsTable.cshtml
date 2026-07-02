@@ -31,9 +31,9 @@
                 <td>@item.ProjectNumber</td>
                 <td>@item.ProjectName</td>
                 <td>@item.ProjectPersonnelText</td>
-                <td class="numeric">@item.ProgressPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(item.ProgressPercent)" /></td>
                 <td class="numeric">@item.ProjectAmount.ToString("N2")</td>
-                <td class="numeric">@item.CollectionPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(item.CollectionPercent)" /></td>
                 <td>@item.StatusName</td>
                 <td>@item.ClosedYearMonth?.ToString("yyyy-MM")</td>
                 <td>@item.PurchaseRequestSummary</td>

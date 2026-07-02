@@ -35,7 +35,7 @@
                 <td class="numeric">@row.ProjectAmountTotal.ToString("N2")</td>
                 <td class="numeric">@row.PurchaseAmountTotal.ToString("N2")</td>
                 <td class="numeric">@row.ActualPaidAmountTotal.ToString("N2")</td>
-                <td class="numeric">@row.AverageCollectionPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(row.AverageCollectionPercent)" /></td>
             </tr>
         }
         </tbody>

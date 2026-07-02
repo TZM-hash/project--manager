@@ -1,0 +1,152 @@
+# 项目管理系统 SQL 数据字典
+
+本文档描述 `ProjectManager` 数据库的主要业务表、字段含义、关系和维护注意事项。系统同时使用 ASP.NET Core Identity 的内置表保存账号、角色和登录信息。
+
+## 表清单
+
+| 表名 | 中文名称 | 说明 |
+| --- | --- | --- |
+| `AspNetUsers` | 用户表 | Identity 用户基础字段，并扩展显示名称、启用状态、创建时间。 |
+| `AspNetRoles` | 角色表 | Identity 角色。系统角色常量见 `RoleNames`。 |
+| `AspNetUserRoles` | 用户角色关系表 | 用户与角色多对多关系。 |
+| `Projects` | 项目主表 | 项目主数据，包含工号、金额、进度、状态、结案年月等。 |
+| `ProjectAssignments` | 项目人员表 | 项目与专案人员的关系。 |
+| `ProjectStatuses` | 项目状态表 | 项目流程状态字典，如已立案、已请购、已结案。 |
+| `ProjectStatusStyles` | 状态样式表 | 状态在页面上的文字色、背景色和加粗配置。 |
+| `PurchaseRequests` | 请购记录表 | 项目下的内购/外购记录、金额、付款比例、实付金额。 |
+| `MonthlySettlementBatches` | 月结批次表 | 每次生成月结报表的批次头。 |
+| `MonthlySettlementItems` | 月结明细表 | 月结时从项目、人员、请购汇总出的快照明细。 |
+| `AuditLogs` | 操作日志表 | 记录项目新增、修改、删除、进度更新等留痕。 |
+
+## Projects 项目主表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `Year` | `int` | 否 | 项目年度。与 `ProjectNumber` 组成唯一业务键。 |
+| `ParentCaseNumber` | `nvarchar(64)` | 是 | 母案案号。 |
+| `ProjectNumber` | `nvarchar(64)` | 否 | 项目工号。同一年度未删除项目内唯一。 |
+| `Name` | `nvarchar(200)` | 否 | 项目名称。 |
+| `ProgressPercent` | `decimal(5,2)` | 否 | 项目进度百分比，范围由业务规则校验。 |
+| `ProjectAmount` | `decimal(18,2)` | 否 | 项目金额。 |
+| `CollectionPercent` | `decimal(5,2)` | 否 | 收款比例。 |
+| `ProgressDescription` | `nvarchar(max)` | 是 | 进度说明。 |
+| `StatusId` | `int` | 否 | 外键，关联 `ProjectStatuses.Id`。 |
+| `UpdatedByUserId` | `nvarchar(450)` | 是 | 最近更新人，关联 `AspNetUsers.Id`。 |
+| `ClosedYearMonth` | `date` | 是 | 结案年月，统一保存为当月 1 日。 |
+| `UpdatedAt` | `datetimeoffset` | 否 | 最近更新时间。 |
+| `CreatedAt` | `datetimeoffset` | 否 | 创建时间。 |
+| `IsDeleted` | `bit` | 否 | 软删除标记。 |
+
+关键索引：`IX_Projects_Year_ProjectNumber`，唯一索引，过滤条件为 `IsDeleted = 0`。
+
+## ProjectAssignments 项目人员表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `ProjectId` | `int` | 否 | 外键，关联 `Projects.Id`。 |
+| `UserId` | `nvarchar(450)` | 否 | 外键，关联 `AspNetUsers.Id`。 |
+| `RoleInProject` | `nvarchar(80)` | 否 | 项目内角色文本，目前主要为专案人员。 |
+
+## ProjectStatuses 项目状态表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `Code` | `nvarchar(64)` | 否 | 状态编码，唯一。 |
+| `Name` | `nvarchar(80)` | 否 | 状态名称。 |
+| `SortOrder` | `int` | 否 | 页面展示和流程时间线排序。 |
+| `IsClosed` | `bit` | 否 | 是否代表结案状态。 |
+| `IsActive` | `bit` | 否 | 是否可继续选择。 |
+
+## ProjectStatusStyles 状态样式表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `StatusId` | `int` | 否 | 外键，关联 `ProjectStatuses.Id`，一对一。 |
+| `TextColor` | `nvarchar(16)` | 否 | 状态徽标文字颜色。 |
+| `BackgroundColor` | `nvarchar(16)` | 否 | 状态徽标背景颜色。 |
+| `IsBold` | `bit` | 否 | 是否加粗显示。 |
+
+## PurchaseRequests 请购记录表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `ProjectId` | `int` | 否 | 外键，关联 `Projects.Id`。 |
+| `RequestNumber` | `nvarchar(64)` | 否 | 请购号。 |
+| `PurchaseType` | `int` | 否 | 请购类型：`1` 内购，`2` 外购。 |
+| `PurchaseStaffUserId` | `nvarchar(450)` | 是 | 请购人员，关联 `AspNetUsers.Id`。 |
+| `PurchaseAmount` | `decimal(18,2)` | 否 | 请购金额。 |
+| `SubCaseContactUserId` | `nvarchar(450)` | 是 | 子案对接人员，关联 `AspNetUsers.Id`。 |
+| `PaymentPercent` | `decimal(5,2)` | 否 | 付款比例。 |
+| `ActualPaidAmount` | `decimal(18,2)` | 否 | 实际已付款金额。 |
+| `Notes` | `nvarchar(max)` | 是 | 备注。 |
+| `CreatedAt` | `datetimeoffset` | 否 | 创建时间。 |
+| `UpdatedAt` | `datetimeoffset` | 否 | 更新时间。 |
+| `IsDeleted` | `bit` | 否 | 软删除标记。 |
+
+## MonthlySettlementBatches 月结批次表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `Year` | `int` | 否 | 月结年度。 |
+| `Month` | `int` | 否 | 月结月份。 |
+| `BatchNumber` | `int` | 否 | 同年同月内递增批次号。 |
+| `CreatedByUserId` | `nvarchar(450)` | 否 | 创建人，关联 `AspNetUsers.Id`。 |
+| `CreatedAt` | `datetimeoffset` | 否 | 创建时间。 |
+| `Notes` | `nvarchar(max)` | 是 | 批次备注。 |
+
+关键索引：`Year + Month + BatchNumber` 唯一。
+
+## MonthlySettlementItems 月结明细表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `BatchId` | `int` | 否 | 外键，关联 `MonthlySettlementBatches.Id`。 |
+| `ProjectId` | `int` | 否 | 来源项目 ID。 |
+| `ParentCaseNumber` | `nvarchar(64)` | 是 | 来源项目母案案号。 |
+| `ProjectNumber` | `nvarchar(64)` | 否 | 来源项目工号。 |
+| `ProjectName` | `nvarchar(200)` | 否 | 来源项目名称。 |
+| `ProjectPersonnelText` | `nvarchar(max)` | 否 | 月结时项目人员文本快照。 |
+| `ProgressPercent` | `decimal(5,2)` | 否 | 月结时项目进度。 |
+| `ProjectAmount` | `decimal(18,2)` | 否 | 月结时项目金额。 |
+| `CollectionPercent` | `decimal(5,2)` | 否 | 月结时收款比例。 |
+| `StatusName` | `nvarchar(max)` | 否 | 月结时状态名称。 |
+| `IsClosed` | `bit` | 否 | 月结时是否结案。 |
+| `ClosedYearMonth` | `date` | 是 | 月结时结案年月。 |
+| `PurchaseRequestSummary` | `nvarchar(max)` | 否 | 请购号汇总。 |
+| `PurchaseAmountTotal` | `decimal(18,2)` | 否 | 请购金额合计。 |
+| `SubCaseContactSummary` | `nvarchar(max)` | 否 | 子案对接人员汇总。 |
+| `PaymentPercentSummary` | `nvarchar(max)` | 否 | 付款比例汇总。 |
+| `ActualPaidAmountTotal` | `decimal(18,2)` | 否 | 实际已付款合计。 |
+| `ProgressDescription` | `nvarchar(max)` | 是 | 月结时进度说明。 |
+| `UpdatedByUserName` | `nvarchar(max)` | 否 | 来源项目最近更新人名称快照。 |
+| `SourceUpdatedAt` | `datetimeoffset` | 否 | 来源项目最近更新时间快照。 |
+
+## AuditLogs 操作日志表
+
+| 字段 | 类型 | 允许空 | 说明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主键。 |
+| `UserId` | `nvarchar(450)` | 是 | 操作人，关联 `AspNetUsers.Id`。 |
+| `Action` | `nvarchar(80)` | 否 | 操作类型，如 `Create`、`Update`、`Delete`、`ProgressUpdate`。 |
+| `EntityName` | `nvarchar(120)` | 否 | 被操作实体名称。项目留痕固定为 `Project`。 |
+| `EntityId` | `nvarchar(120)` | 否 | 被操作实体 ID，兼容通用审计。 |
+| `Description` | `nvarchar(max)` | 否 | 通用描述。 |
+| `ProjectId` | `int` | 是 | 项目 ID，便于详情页按项目查询操作记录。 |
+| `ProjectNumber` | `nvarchar(64)` | 是 | 项目工号快照。 |
+| `ChangeSummary` | `nvarchar(500)` | 是 | 人可读变更摘要。 |
+| `ChangeDetailsJson` | `nvarchar(max)` | 是 | 字段级和请购明细级变更 JSON。 |
+| `CreatedAt` | `datetimeoffset` | 否 | 操作时间。 |
+
+## 维护注意事项
+
+- 项目删除和请购删除均为软删除，查询业务数据时需要过滤 `IsDeleted = 0`。
+- 月结明细是快照表，生成后不随项目后续修改自动变化。
+- 审计明细 JSON 由 `AuditChangeDetail` 序列化生成，页面展示由 `AuditLogDisplayModel` 解析。
+- 若新增业务表，请同步更新本文档和 `scripts/sql-data-dictionary.sql`。

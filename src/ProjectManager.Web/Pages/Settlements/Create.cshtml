@@ -55,7 +55,7 @@
                     <td>@project.ProjectNumber</td>
                     <td>@project.Name</td>
                     <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-                    <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                    <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
                     <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
                     <td><partial name="_StatusBadge" model="project.Status" /></td>
                 </tr>

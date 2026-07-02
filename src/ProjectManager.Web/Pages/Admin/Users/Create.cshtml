@@ -32,6 +32,13 @@
             <label asp-for="Input.Password" class="form-label">初始密码</label>
             <input asp-for="Input.Password" class="form-control" type="password" />
             <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <div class="form-text">勾选弱管理后，密码可不填写。</div>
+        </div>
+        <div class="col-12">
+            <label class="form-check-label">
+                <input asp-for="Input.IsWeakManaged" class="form-check-input" />
+                弱管理（不强制密码/邮箱；子案对接人请勾选）
+            </label>
         </div>
         <div class="col-12">
             <label class="form-label">角色</label>

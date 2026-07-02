@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
+using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
@@ -25,6 +26,8 @@ public abstract class ProjectFormPageModel(
     public List<SelectListItem> StatusOptions { get; private set; } = [];
 
     public List<SelectListItem> UserOptions { get; private set; } = [];
+
+    public List<SelectListItem> SubCaseContactOptions { get; private set; } = [];
 
     public List<SelectListItem> PurchaseTypeOptions { get; } =
     [
@@ -48,6 +51,10 @@ public abstract class ProjectFormPageModel(
             })
             .ToList();
 
+        // 专案人员排除子案对接人角色
+        var subCaseContactUsers = await UserManager.GetUsersInRoleAsync(RoleNames.SubCaseContact);
+        var subCaseContactUserIds = subCaseContactUsers.Select(x => x.Id).ToHashSet();
+
         var users = await UserManager.Users
             .Where(x => x.IsActive)
             .OrderBy(x => x.DisplayName)
@@ -55,6 +62,12 @@ public abstract class ProjectFormPageModel(
             .ToListAsync(cancellationToken);
 
         UserOptions = users
+            .Where(x => !subCaseContactUserIds.Contains(x.Id))
+            .Select(user => new SelectListItem(DisplayUser(user), user.Id))
+            .ToList();
+
+        SubCaseContactOptions = users
+            .Where(x => subCaseContactUserIds.Contains(x.Id))
             .Select(user => new SelectListItem(DisplayUser(user), user.Id))
             .ToList();
     }
@@ -131,7 +144,7 @@ public abstract class ProjectFormPageModel(
             ProjectNumber = project.ProjectNumber,
             Name = project.Name,
             StatusId = project.StatusId,
-            AssignedUserIds = project.Assignments.Select(x => x.UserId).ToList(),
+            AssignedUserId = project.Assignments.FirstOrDefault()?.UserId,
             ClosedYearMonth = project.ClosedYearMonth?.ToString("yyyy-MM", CultureInfo.InvariantCulture),
             ProgressPercent = project.ProgressPercent,
             ProjectAmount = project.ProjectAmount,
@@ -163,28 +176,18 @@ public abstract class ProjectFormPageModel(
 
     protected void SyncAssignments(Project project)
     {
-        // 用表单勾选结果作为最终状态：未选中的旧人员删除，新选中的人员追加。
-        var selectedUserIds = Input.AssignedUserIds
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.Ordinal)
-            .ToHashSet(StringComparer.Ordinal);
-
-        foreach (var assignment in project.Assignments
-                     .Where(x => !selectedUserIds.Contains(x.UserId))
-                     .ToList())
+        // 专案人员改为单选：清空已有，设置新选中的唯一人员
+        var existingAssignments = project.Assignments.ToList();
+        foreach (var assignment in existingAssignments)
         {
             Db.ProjectAssignments.Remove(assignment);
         }
 
-        var existingUserIds = project.Assignments
-            .Select(x => x.UserId)
-            .ToHashSet(StringComparer.Ordinal);
-
-        foreach (var userId in selectedUserIds.Where(x => !existingUserIds.Contains(x)))
+        if (!string.IsNullOrWhiteSpace(Input.AssignedUserId))
         {
             project.Assignments.Add(new ProjectAssignment
             {
-                UserId = userId,
+                UserId = Input.AssignedUserId,
                 RoleInProject = "专案人员"
             });
         }
@@ -342,7 +345,7 @@ public sealed class ProjectInputModel
 
     public int StatusId { get; set; }
 
-    public List<string> AssignedUserIds { get; set; } = [];
+    public string? AssignedUserId { get; set; }
 
     public string? ClosedYearMonth { get; set; }
 

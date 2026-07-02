@@ -1,0 +1,63 @@
+@page
+@model ProjectManager.Web.Pages.Workbench.PlanningProjects.PrintListModel
+@{
+    ViewData["Title"] = "规划中专案清单";
+    Layout = "_PrintLayout";
+}
+
+<div class="print-report" id="printContent">
+    <div class="print-header">
+        <h1>规划中专案清单</h1>
+        <div class="print-date">打印日期：@DateTime.Now.ToString("yyyy-MM-dd")</div>
+    </div>
+
+    <table class="print-table print-table-list">
+        <thead>
+            <tr>
+                <th style="width: 50px;">项次</th>
+                <th>项目名</th>
+                <th>项目负责人</th>
+                <th>厂商</th>
+                <th>最新说明</th>
+                <th>最近更新</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ var idx = 1; }
+            @foreach (var project in Model.Projects)
+            {
+                <tr>
+                    <td style="text-align: center;">@idx</td>
+                    <td>@project.Name</td>
+                    <td>@Model.GetLeaderDisplayNames(project.LeaderUserId)</td>
+                    <td>@(project.Vendor ?? "-")</td>
+                    <td>@(project.LatestDescription ?? "-")</td>
+                    <td>@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+                idx++;
+            }
+        </tbody>
+    </table>
+
+    @if (Model.Projects.Count > 0)
+    {
+        <div class="print-summary" style="margin-top: 1rem; color: #64748b; font-size: 0.9rem;">
+            共 @Model.Projects.Count 笔专案
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.min.js"></script>
+    <script>
+        window.onload = function() {
+            if (typeof OpenCC !== 'undefined') {
+                var converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+                var content = document.getElementById('printContent');
+                converter.convertElement(content);
+                document.title = converter.convert(document.title);
+            }
+            setTimeout(function() { window.print(); }, 300);
+        };
+    </script>
+}

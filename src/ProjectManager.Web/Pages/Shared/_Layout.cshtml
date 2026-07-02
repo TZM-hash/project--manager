@@ -1,79 +1,94 @@
 @using ProjectManager.Web.Security
+@using ProjectManager.Web.Extensions
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - 项目管理系统</title>
+    <title>@ViewData["Title"] - 台塑电子项目管理系统</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ProjectManager.Web.styles.css" asp-append-version="true" />
 </head>
 <body class="app-shell">
-    <header class="app-header">
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm app-navbar">
-            <div class="container app-container">
-                <a class="navbar-brand app-brand" asp-area="" asp-page="/Index">
-                    <span class="app-brand-mark">PM</span>
-                    <span>项目管理系统</span>
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="切换导航">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1 app-nav">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-page="/Index">首页</a>
-                        </li>
-                        @if (User.IsInRole(RoleNames.Administrator))
-                        {
+    <aside class="app-sidebar">
+        <div class="app-sidebar-brand">
+            <a asp-area="" asp-page="/Index">
+                <span class="app-brand-mark">PM</span>
+                <span>台塑电子项目管理系统</span>
+            </a>
+        </div>
+        <nav class="app-sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="" asp-page="/Index">首页</a>
+                </li>
+                @if (User.IsInRole(RoleNames.Administrator))
+                {
+                    <li class="nav-item nav-group">
+                        <a class="nav-link nav-group-toggle" href="javascript:void(0)" onclick="toggleNavGroup(this)">
+                            <span>基础设定</span>
+                        </a>
+                        <ul class="nav nav-group-items">
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-page="/Admin/Users/Index">用户管理</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-page="/Admin/Projects/Index">项目管理</a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-page="/Admin/Statuses/Index">状态设置</a>
                             </li>
-                        }
-                        @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-page="/Workbench/Projects/Index">工作台</a>
-                            </li>
-                        }
-                        @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-page="/Settlements/Index">月结</a>
-                            </li>
-                        }
-                        @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-page="/Reports/OpenProjects/Index">报表</a>
-                            </li>
-                        }
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
-            </div>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Admin/Projects/Index">项目管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Admin/MaintenanceOrders/Index">保养订单</a>
+                    </li>
+                }
+                @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Workbench/Projects/Index">专案管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Workbench/PlanningProjects/Index">规划中专案</a>
+                    </li>
+                }
+                @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Settlements/Index">月结</a>
+                    </li>
+                }
+                @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Reports/OpenProjects/Index">报表</a>
+                    </li>
+                }
+            </ul>
         </nav>
-    </header>
-    <div class="container app-container">
+    </aside>
+    <div class="app-content">
+        <header class="app-header">
+            <div class="app-header-content">
+                <button class="app-sidebar-toggle" type="button" onclick="toggleSidebar()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="app-header-title">
+                    <span>@ViewData["Title"]</span>
+                </div>
+                <partial name="_LoginPartial" />
+            </div>
+        </header>
         <main role="main" class="app-main">
             @RenderBody()
         </main>
+        <footer class="footer app-footer text-muted">
+            &copy; 2026 - 台塑电子项目管理系统
+        </footer>
     </div>
-
-    <footer class="footer app-footer text-muted">
-        <div class="container app-container">
-            &copy; 2026 - 项目管理系统
-        </div>
-    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

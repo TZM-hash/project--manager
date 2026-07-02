@@ -1,14 +1,56 @@
 @page
 @model ProjectManager.Web.Pages.Workbench.Projects.IndexModel
 @{
-    ViewData["Title"] = "工作台";
+    ViewData["Title"] = "专案管理";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">工作台</h1>
+        <h1 class="page-title">专案管理</h1>
         <div class="page-subtitle">查看项目状态、进度、收款比例和请购摘要</div>
     </div>
+</div>
+
+<div class="metric-grid dashboard-grid">
+    @foreach (var metric in Model.Metrics)
+    {
+        <div class="metric-card metric-@metric.Accent">
+            <div class="metric-label">@metric.Label</div>
+            <div class="metric-value" data-countup>@metric.Value</div>
+            <div class="metric-hint">@metric.Hint</div>
+        </div>
+    }
+</div>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-title">状态分布</div>
+        <div class="chart-subtitle">当前账号可见项目</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.StatusSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-title">进度区间</div>
+        <div class="chart-subtitle">按进度百分比分组</div>
+        <div class="bar-list">
+            @foreach (var slice in Model.ProgressSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
 </div>
 
 <div class="data-table-wrap">
@@ -36,15 +78,28 @@
                 <td>@project.Name</td>
                 <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
                 <td><partial name="_StatusBadge" model="project.Status" /></td>
-                <td class="numeric">@project.ProgressPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
                 <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
-                <td class="numeric">@project.CollectionPercent.ToString("0.##")%</td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
+                    @if (Model.CanEditAll || project.Assignments.Any(x => x.UserId == Model.CurrentUserId))
+                    {
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./EditProgress" asp-route-id="@project.Id">编辑</a>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!Model.Projects.Any())
+        {
+            <tr>
+                <td colspan="10">
+                    <div class="empty-state">暂无可查看的专案资料</div>
                 </td>
             </tr>
         }
         </tbody>
     </table>
+    <partial name="_Pagination" model="Model.Pagination" />
 </div>
