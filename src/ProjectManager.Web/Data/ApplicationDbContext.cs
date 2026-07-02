@@ -40,6 +40,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasIndex(x => new { x.Year, x.ProjectNumber })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
+            entity.HasIndex(x => x.StatusId);
+            entity.HasIndex(x => x.UpdatedAt);
+            entity.HasIndex(x => x.ProjectNumber);
+            entity.HasIndex(x => x.ParentCaseNumber);
 
             entity.Property(x => x.ParentCaseNumber).HasMaxLength(64);
             entity.Property(x => x.ProjectNumber).HasMaxLength(64).IsRequired();
@@ -68,6 +72,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(x => x.Project)
                 .WithMany(x => x.Assignments)
                 .HasForeignKey(x => x.ProjectId);
+            entity.HasIndex(x => new { x.UserId, x.ProjectId });
 
             entity.HasOne(x => x.User)
                 .WithMany()
@@ -99,6 +104,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.PurchaseAmount).HasPrecision(18, 2);
             entity.Property(x => x.PaymentPercent).HasPrecision(5, 2);
             entity.Property(x => x.ActualPaidAmount).HasPrecision(18, 2);
+            entity.HasIndex(x => new { x.ProjectId, x.IsDeleted });
 
             entity.HasOne(x => x.Project)
                 .WithMany(x => x.PurchaseRequests)
@@ -153,6 +159,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.ChangeSummary).HasMaxLength(500);
             // 项目详情页按 ProjectId 拉取操作记录，该索引避免历史日志增长后查询变慢。
             entity.HasIndex(x => x.ProjectId);
+            entity.HasIndex(x => x.CreatedAt);
+            entity.HasIndex(x => new { x.ProjectId, x.CreatedAt });
+            entity.HasIndex(x => new { x.EntityName, x.EntityId });
 
             entity.HasOne(x => x.User)
                 .WithMany()

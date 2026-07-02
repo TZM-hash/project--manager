@@ -1,6 +1,11 @@
 namespace ProjectManager.Web.Services;
 
-public sealed record MetricInsight(string Label, string Value, string Hint = "", string Accent = "primary");
+public sealed record MetricInsight(
+    string Label,
+    string Value,
+    string Hint = "",
+    string Accent = "primary",
+    Dictionary<string, string?>? RouteValues = null);
 
 public sealed record ChartSlice(string Label, decimal Value, decimal Percent, string Color);
 

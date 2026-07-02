@@ -10,29 +10,56 @@
         <div class="page-subtitle">筛选、统计、打印并导出未结案项目资料</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page="./Statistics" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId">统计</a>
-        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId">打印</a>
-        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId">导出 Excel</a>
+        <a class="btn btn-outline-secondary" asp-page="./Statistics" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">统计</a>
+        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">打印</a>
+        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">导出 Excel</a>
     </div>
 </div>
 
-<form method="get" class="filter-panel row g-2">
-    <div class="col-md-1"><input class="form-control" asp-for="Year" placeholder="年" /></div>
-    <div class="col-md-2"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案号" /></div>
-    <div class="col-md-2"><input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" /></div>
-    <div class="col-md-2"><input class="form-control" asp-for="ProjectName" placeholder="项目名称" /></div>
-    <div class="col-md-2">
-        <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
-            <option value="">专案人员</option>
-        </select>
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+    <div class="filter-quick-row">
+        <div class="filter-quick-main">
+            <input class="form-control" asp-for="ProjectName" placeholder="搜索项目名称" />
+            <input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" />
+        </div>
+        <div class="filter-quick-actions">
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
+            <button class="btn btn-primary" type="submit">查询</button>
+        </div>
     </div>
-    <div class="col-md-2">
-        <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
-            <option value="">状态</option>
-        </select>
+    <div class="filter-drawer" data-filter-drawer-panel>
+        <div class="filter-drawer-header">
+            <div>
+                <div class="filter-drawer-title">高级筛选</div>
+                <div class="filter-drawer-subtitle">组合年度、母案、人员、状态和分析钻取条件</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
+            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案号" /></div>
+            <div class="col-md-3">
+                <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
+                    <option value="">专案人员</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
+                    <option value="">状态</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" asp-for="AnalysisType">
+                    <option value="">分析钻取</option>
+                    <option value="low-progress">需关注项目</option>
+                    <option value="collection-lag">回款滞后</option>
+                    <option value="stale-update">久未更新</option>
+                </select>
+            </div>
+        </div>
     </div>
     <input type="hidden" asp-for="PageSize" />
-    <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
+    <input type="hidden" name="PageNumber" value="1" />
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
@@ -58,11 +85,22 @@
     <div class="metric-grid report-analysis-grid">
         @foreach (var card in Model.AnalysisCards)
         {
-            <div class="metric-card metric-@card.Accent">
-                <div class="metric-label">@card.Label</div>
-                <div class="metric-value" data-countup>@card.Value</div>
-                <div class="metric-hint">@card.Hint</div>
-            </div>
+            if (card.RouteValues is null)
+            {
+                <div class="metric-card metric-@card.Accent">
+                    <div class="metric-label">@card.Label</div>
+                    <div class="metric-value" data-countup>@card.Value</div>
+                    <div class="metric-hint">@card.Hint</div>
+                </div>
+            }
+            else
+            {
+                <a class="metric-card metric-@card.Accent analysis-card-link" asp-page="./Index" asp-all-route-data="card.RouteValues">
+                    <div class="metric-label">@card.Label</div>
+                    <div class="metric-value" data-countup>@card.Value</div>
+                    <div class="metric-hint">@card.Hint</div>
+                </a>
+            }
         }
     </div>
 </section>
@@ -98,5 +136,7 @@
     </section>
 </div>
 
-<partial name="_OpenProjectsTable" model="Model.Projects" />
-<partial name="_Pagination" model="Model.Pagination" />
+<div class="data-list-card">
+    <partial name="_OpenProjectsTable" model="Model.Projects" />
+    <partial name="_Pagination" model="Model.Pagination" />
+</div>

@@ -38,6 +38,9 @@ public sealed class IndexModel(
     public int? StatusId { get; set; }
 
     [BindProperty(SupportsGet = true)]
+    public string? AnalysisType { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
@@ -109,7 +112,8 @@ public sealed class IndexModel(
             ProjectName,
             personnelUserId,
             StatusId,
-            OpenOnly: true);
+            OpenOnly: true,
+            NormalizeAnalysisType(AnalysisType));
     }
 
     private async Task LoadOptionsAsync(CancellationToken cancellationToken)
@@ -167,14 +171,30 @@ public sealed class IndexModel(
 
         AnalysisCards =
         [
-            new MetricInsight("需关注项目", lowProgressCount.ToString("N0"), "进度低于 30%", "danger"),
-            new MetricInsight("回款滞后", collectionLagCount.ToString("N0"), "收款比例落后进度 25% 以上", "warning"),
-            new MetricInsight("久未更新", staleCount.ToString("N0"), "超过 30 天未更新", "info"),
+            new MetricInsight(
+                "需关注项目",
+                lowProgressCount.ToString("N0"),
+                "进度低于 30%",
+                "danger",
+                BuildAnalysisRouteValues(ProjectAnalysisTypes.LowProgress)),
+            new MetricInsight(
+                "回款滞后",
+                collectionLagCount.ToString("N0"),
+                "收款比例落后进度 25% 以上",
+                "warning",
+                BuildAnalysisRouteValues(ProjectAnalysisTypes.CollectionLag)),
+            new MetricInsight(
+                "久未更新",
+                staleCount.ToString("N0"),
+                "超过 30 天未更新",
+                "info",
+                BuildAnalysisRouteValues(ProjectAnalysisTypes.StaleUpdate)),
             new MetricInsight(
                 "最高金额项目",
                 topAmountProject is null ? "-" : topAmountProject.ProjectAmount.ToString("N2"),
                 topAmountProject is null ? "暂无项目" : $"{topAmountProject.ProjectNumber} / {topAmountProject.Name}",
-                "success")
+                "success",
+                topAmountProject is null ? null : BuildTopAmountRouteValues(topAmountProject.ProjectNumber))
         ];
 
         var statusRows = await query
@@ -229,7 +249,17 @@ public sealed class IndexModel(
             query = query.Where(x => x.StatusId == filter.StatusId);
         }
 
-        return query.Where(x => x.Status != null && !x.Status.IsClosed);
+        query = query.Where(x => x.Status != null && !x.Status.IsClosed);
+
+        query = filter.AnalysisType switch
+        {
+            ProjectAnalysisTypes.LowProgress => query.Where(x => x.ProgressPercent < 30),
+            ProjectAnalysisTypes.CollectionLag => query.Where(x => x.CollectionPercent + 25 < x.ProgressPercent),
+            ProjectAnalysisTypes.StaleUpdate => query.Where(x => x.UpdatedAt < DateTimeOffset.UtcNow.AddDays(-30)),
+            _ => query
+        };
+
+        return query;
     }
 
     private Dictionary<string, string?> BuildRouteValues()
@@ -241,8 +271,28 @@ public sealed class IndexModel(
             [nameof(ProjectNumber)] = ProjectNumber,
             [nameof(ProjectName)] = ProjectName,
             [nameof(PersonnelUserId)] = PersonnelUserId,
-            [nameof(StatusId)] = StatusId?.ToString()
+            [nameof(StatusId)] = StatusId?.ToString(),
+            [nameof(AnalysisType)] = NormalizeAnalysisType(AnalysisType)
         };
+    }
+
+    private Dictionary<string, string?> BuildAnalysisRouteValues(string analysisType)
+    {
+        var routeValues = BuildRouteValues();
+        routeValues[nameof(PageNumber)] = "1";
+        routeValues[nameof(PageSize)] = PageSize.ToString();
+        routeValues[nameof(AnalysisType)] = analysisType;
+        return routeValues;
+    }
+
+    private Dictionary<string, string?> BuildTopAmountRouteValues(string projectNumber)
+    {
+        var routeValues = BuildRouteValues();
+        routeValues[nameof(PageNumber)] = "1";
+        routeValues[nameof(PageSize)] = PageSize.ToString();
+        routeValues[nameof(ProjectNumber)] = projectNumber;
+        routeValues[nameof(AnalysisType)] = null;
+        return routeValues;
     }
 
     private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
@@ -281,6 +331,30 @@ public sealed class IndexModel(
             items.Add(new FilterSummaryItem("状态", statusText));
         }
 
+        var analysisText = DisplayAnalysisType(NormalizeAnalysisType(AnalysisType));
+        if (!string.IsNullOrWhiteSpace(analysisText))
+        {
+            items.Add(new FilterSummaryItem("分析钻取", analysisText));
+        }
+
         return items;
+    }
+
+    private static string? NormalizeAnalysisType(string? analysisType)
+    {
+        return analysisType is ProjectAnalysisTypes.LowProgress or ProjectAnalysisTypes.CollectionLag or ProjectAnalysisTypes.StaleUpdate
+            ? analysisType
+            : null;
+    }
+
+    private static string? DisplayAnalysisType(string? analysisType)
+    {
+        return analysisType switch
+        {
+            ProjectAnalysisTypes.LowProgress => "需关注项目",
+            ProjectAnalysisTypes.CollectionLag => "回款滞后",
+            ProjectAnalysisTypes.StaleUpdate => "久未更新",
+            _ => null
+        };
     }
 }

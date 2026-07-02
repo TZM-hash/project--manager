@@ -31,6 +31,9 @@ public sealed class StatisticsModel(
     [BindProperty(SupportsGet = true)]
     public int? StatusId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? AnalysisType { get; set; }
+
     public IReadOnlyList<StatisticsRow> Rows { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
@@ -40,7 +43,7 @@ public sealed class StatisticsModel(
             : PersonnelUserId;
 
         var projects = await projectQueryService.GetProjectsAsync(
-            new ProjectFilter(Year, ParentCaseNumber, ProjectNumber, ProjectName, personnelUserId, StatusId, OpenOnly: true),
+            new ProjectFilter(Year, ParentCaseNumber, ProjectNumber, ProjectName, personnelUserId, StatusId, OpenOnly: true, AnalysisType),
             cancellationToken);
 
         Rows = projects

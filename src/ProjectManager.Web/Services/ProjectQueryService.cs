@@ -116,6 +116,14 @@ public sealed class ProjectQueryService(ApplicationDbContext db)
             query = query.Where(x => x.Status != null && !x.Status.IsClosed);
         }
 
+        query = filter.AnalysisType switch
+        {
+            ProjectAnalysisTypes.LowProgress => query.Where(x => x.ProgressPercent < 30),
+            ProjectAnalysisTypes.CollectionLag => query.Where(x => x.CollectionPercent + 25 < x.ProgressPercent),
+            ProjectAnalysisTypes.StaleUpdate => query.Where(x => x.UpdatedAt < DateTimeOffset.UtcNow.AddDays(-30)),
+            _ => query
+        };
+
         return query;
     }
 }
@@ -127,7 +135,15 @@ public sealed record ProjectFilter(
     string? ProjectName,
     string? PersonnelUserId,
     int? StatusId,
-    bool OpenOnly);
+    bool OpenOnly,
+    string? AnalysisType = null);
+
+public static class ProjectAnalysisTypes
+{
+    public const string LowProgress = "low-progress";
+    public const string CollectionLag = "collection-lag";
+    public const string StaleUpdate = "stale-update";
+}
 
 public sealed record OpenProjectSummaryRow(
     string StatusName,

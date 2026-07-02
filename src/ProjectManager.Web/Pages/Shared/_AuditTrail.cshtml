@@ -1,0 +1,54 @@
+@model ProjectManager.Web.Pages.Shared.AuditTrailViewModel
+
+<form method="get" class="audit-filter-panel">
+    <div class="audit-filter-main">
+        <input class="form-control" name="AuditKeyword" value="@Model.Keyword" placeholder="搜索操作人、内容或明细" />
+        <select class="form-select" name="AuditAction">
+            <option value="">全部动作</option>
+            @foreach (var option in Model.ActionOptions)
+            {
+                <option value="@option.Value" selected="@(option.Value == Model.Action)">@option.Text</option>
+            }
+        </select>
+        <input class="form-control" type="date" name="AuditFrom" value="@Model.From?.ToString("yyyy-MM-dd")" />
+        <input class="form-control" type="date" name="AuditTo" value="@Model.To?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="audit-filter-actions">
+        <button class="btn btn-outline-secondary" type="submit">筛选记录</button>
+        <a class="btn btn-outline-secondary" href="?">清空</a>
+    </div>
+</form>
+
+@if (Model.Logs.Count == 0)
+{
+    <div class="empty-state">暂无符合条件的操作记录</div>
+}
+else
+{
+    <div class="audit-timeline">
+        @foreach (var log in Model.Logs)
+        {
+            <article class="audit-timeline-item">
+                <div class="audit-timeline-dot" aria-hidden="true"></div>
+                <div class="audit-timeline-card">
+                    <div class="audit-timeline-head">
+                        <div>
+                            <div class="audit-timeline-title">@log.Action</div>
+                            <div class="audit-timeline-meta">@log.Actor · @log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                        </div>
+                    </div>
+                    <div class="audit-timeline-summary">@log.Summary</div>
+                    @if (log.Details.Count > 0)
+                    {
+                        <ul class="audit-detail-list">
+                            @foreach (var detail in log.Details)
+                            {
+                                <li>@AuditLogDisplayModel.FormatDetail(detail)</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+}

@@ -9,7 +9,8 @@ public sealed record AuditLogDisplayModel(
     string Actor,
     string Action,
     string Summary,
-    IReadOnlyList<AuditChangeDetail> Details)
+    IReadOnlyList<AuditChangeDetail> Details,
+    string ActionValue = "")
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -20,7 +21,8 @@ public sealed record AuditLogDisplayModel(
                 DisplayActor(log),
                 DisplayAction(log.Action),
                 string.IsNullOrWhiteSpace(log.ChangeSummary) ? log.Description : log.ChangeSummary,
-                DeserializeDetails(log.ChangeDetailsJson)))
+                DeserializeDetails(log.ChangeDetailsJson),
+                log.Action))
             .ToList();
     }
 

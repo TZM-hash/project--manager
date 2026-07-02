@@ -12,6 +12,9 @@ TestResults/
 *.rsuser
 
 # Local development
+.vs/
+logs/
+artifacts/
 appsettings.Development.json
 *.db
 *.db-shm

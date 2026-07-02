@@ -31,6 +31,9 @@ public sealed class PrintModel(
     [BindProperty(SupportsGet = true)]
     public int? StatusId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? AnalysisType { get; set; }
+
     public IReadOnlyList<Project> Projects { get; private set; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
@@ -40,7 +43,7 @@ public sealed class PrintModel(
             : PersonnelUserId;
 
         Projects = await projectQueryService.GetProjectsAsync(
-            new ProjectFilter(Year, ParentCaseNumber, ProjectNumber, ProjectName, personnelUserId, StatusId, OpenOnly: true),
+            new ProjectFilter(Year, ParentCaseNumber, ProjectNumber, ProjectName, personnelUserId, StatusId, OpenOnly: true, AnalysisType),
             cancellationToken);
     }
 }

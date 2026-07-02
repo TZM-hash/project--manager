@@ -113,51 +113,6 @@
 
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="audit">
         <h2 class="detail-panel-title">操作记录</h2>
-        @if (Model.AuditLogs.Count == 0)
-        {
-            <div class="empty-state">暂无操作记录</div>
-        }
-        else
-        {
-            <div class="data-table-wrap">
-                <table class="table table-sm align-middle data-table">
-                    <thead>
-                        <tr>
-                            <th>时间</th>
-                            <th>操作人</th>
-                            <th>动作</th>
-                            <th>内容</th>
-                            <th>明细</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var log in Model.AuditLogs)
-                    {
-                        <tr>
-                            <td>@log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                            <td>@log.Actor</td>
-                            <td>@log.Action</td>
-                            <td>@log.Summary</td>
-                            <td>
-                                @if (log.Details.Count == 0)
-                                {
-                                    <span class="text-muted">无结构化明细</span>
-                                }
-                                else
-                                {
-                                    <ul class="audit-detail-list">
-                                    @foreach (var detail in log.Details)
-                                    {
-                                        <li>@AuditLogDisplayModel.FormatDetail(detail)</li>
-                                    }
-                                    </ul>
-                                }
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        }
+        <partial name="_AuditTrail" model="Model.AuditTrail" />
     </section>
 </div>
