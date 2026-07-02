@@ -1,0 +1,17 @@
+@model ProjectManager.Web.Pages.Shared.FilterSummaryViewModel
+
+@if (Model.Items.Count > 0)
+{
+    <div class="filter-summary">
+        <div class="filter-summary-main">
+            <span class="filter-summary-label">当前筛选</span>
+            <div class="filter-chips">
+                @foreach (var item in Model.Items)
+                {
+                    <span class="filter-chip">@item.Label：@item.Value</span>
+                }
+            </div>
+        </div>
+        <a class="filter-clear-link" asp-page="@Model.PageName" asp-all-route-data="Model.ClearRouteValues">清空筛选</a>
+    </div>
+}

@@ -10,16 +10,6 @@
         <div class="page-subtitle">查看历史月结批次并进入打印或导出流程</div>
     </div>
     <div class="page-actions">
-        @if (Model.IsAdministrator)
-        {
-            <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的月结批次吗？">
-                <input type="hidden" asp-for="Year" />
-                <input type="hidden" asp-for="Month" />
-                <input type="hidden" asp-for="PageNumber" />
-                <input type="hidden" asp-for="PageSize" />
-                <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
-            </form>
-        }
         <a class="btn btn-primary" asp-page="./Create">新增月结</a>
     </div>
 </div>
@@ -30,6 +20,8 @@
     <input type="hidden" asp-for="PageSize" />
     <div class="col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
 </form>
+
+<partial name="_FilterSummary" model="Model.FilterSummary" />
 
 <div class="metric-grid dashboard-grid">
     @foreach (var metric in Model.Metrics)
@@ -59,8 +51,25 @@
     </section>
 </div>
 
+@if (Model.IsAdministrator)
+{
+    <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定删除选中的月结批次吗？">
+        <div class="bulk-toolbar-copy">
+            <span class="bulk-toolbar-count" data-selected-count>0</span>
+            <span>个批次已选择</span>
+        </div>
+        <div class="bulk-toolbar-actions">
+            <input type="hidden" asp-for="Year" />
+            <input type="hidden" asp-for="Month" />
+            <input type="hidden" asp-for="PageNumber" />
+            <input type="hidden" asp-for="PageSize" />
+            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
+        </div>
+    </form>
+}
+
 <div class="data-table-wrap">
-    <table class="table table-sm table-striped align-middle data-table">
+    <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
                 @if (Model.IsAdministrator)

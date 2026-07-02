@@ -37,6 +37,11 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public IReadOnlyList<ChartSlice> MonthSlices { get; private set; } = [];
 
+    public FilterSummaryViewModel FilterSummary => new(
+        "./Index",
+        BuildFilterSummaryItems(),
+        new Dictionary<string, string?> { [nameof(PageSize)] = PageSize.ToString() });
+
     public PaginationViewModel Pagination => new(
         PageNumber,
         PageSize,
@@ -168,5 +173,22 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
             [nameof(Year)] = Year?.ToString(),
             [nameof(Month)] = Month?.ToString()
         };
+    }
+
+    private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
+    {
+        var items = new List<FilterSummaryItem>();
+
+        if (Year is not null)
+        {
+            items.Add(new FilterSummaryItem("年", Year.Value.ToString()));
+        }
+
+        if (Month is not null)
+        {
+            items.Add(new FilterSummaryItem("月", Month.Value.ToString()));
+        }
+
+        return items;
     }
 }

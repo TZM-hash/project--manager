@@ -62,6 +62,11 @@ public sealed class IndexModel(
 
     public IReadOnlyList<ChartSlice> ProgressSlices { get; private set; } = [];
 
+    public FilterSummaryViewModel FilterSummary => new(
+        "./Index",
+        BuildFilterSummaryItems(),
+        new Dictionary<string, string?> { [nameof(PageSize)] = PageSize.ToString() });
+
     public PaginationViewModel Pagination => new(
         PageNumber,
         PageSize,
@@ -254,5 +259,49 @@ public sealed class IndexModel(
             [nameof(StatusId)] = StatusId?.ToString(),
             [nameof(OpenOnly)] = OpenOnly.ToString()
         };
+    }
+
+    private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
+    {
+        var items = new List<FilterSummaryItem>();
+
+        if (Year is not null)
+        {
+            items.Add(new FilterSummaryItem("年", Year.Value.ToString()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ParentCaseNumber))
+        {
+            items.Add(new FilterSummaryItem("母案案号", ParentCaseNumber));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProjectNumber))
+        {
+            items.Add(new FilterSummaryItem("项目工号", ProjectNumber));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProjectName))
+        {
+            items.Add(new FilterSummaryItem("项目名称", ProjectName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(PersonnelUserId))
+        {
+            var userText = UserOptions.FirstOrDefault(x => x.Value == PersonnelUserId)?.Text ?? PersonnelUserId;
+            items.Add(new FilterSummaryItem("专案人员", userText));
+        }
+
+        if (StatusId is not null)
+        {
+            var statusText = StatusOptions.FirstOrDefault(x => x.Value == StatusId.Value.ToString())?.Text ?? StatusId.Value.ToString();
+            items.Add(new FilterSummaryItem("状态", statusText));
+        }
+
+        if (OpenOnly)
+        {
+            items.Add(new FilterSummaryItem("范围", "未结案"));
+        }
+
+        return items;
     }
 }

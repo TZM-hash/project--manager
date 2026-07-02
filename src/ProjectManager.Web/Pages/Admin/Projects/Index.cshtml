@@ -10,18 +10,6 @@
         <div class="page-subtitle">维护项目主档、请购记录、进度和状态资料</div>
     </div>
     <div class="page-actions">
-        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的项目吗？">
-            <input type="hidden" asp-for="Year" />
-            <input type="hidden" asp-for="ParentCaseNumber" />
-            <input type="hidden" asp-for="ProjectNumber" />
-            <input type="hidden" asp-for="ProjectName" />
-            <input type="hidden" asp-for="PersonnelUserId" />
-            <input type="hidden" asp-for="StatusId" />
-            <input type="hidden" asp-for="OpenOnly" />
-            <input type="hidden" asp-for="PageNumber" />
-            <input type="hidden" asp-for="PageSize" />
-            <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
-        </form>
         <a class="btn btn-primary" asp-page="./Create">新增项目</a>
     </div>
 </div>
@@ -101,8 +89,29 @@
     <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
 </form>
 
+<partial name="_FilterSummary" model="Model.FilterSummary" />
+
+<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定删除选中的项目吗？">
+    <div class="bulk-toolbar-copy">
+        <span class="bulk-toolbar-count" data-selected-count>0</span>
+        <span>项已选择</span>
+    </div>
+    <div class="bulk-toolbar-actions">
+        <input type="hidden" asp-for="Year" />
+        <input type="hidden" asp-for="ParentCaseNumber" />
+        <input type="hidden" asp-for="ProjectNumber" />
+        <input type="hidden" asp-for="ProjectName" />
+        <input type="hidden" asp-for="PersonnelUserId" />
+        <input type="hidden" asp-for="StatusId" />
+        <input type="hidden" asp-for="OpenOnly" />
+        <input type="hidden" asp-for="PageNumber" />
+        <input type="hidden" asp-for="PageSize" />
+        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
+    </div>
+</form>
+
 <div class="data-table-wrap">
-    <table class="table table-sm table-striped align-middle data-table">
+    <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
                 <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
@@ -115,6 +124,7 @@
                 <th class="numeric">金额</th>
                 <th class="numeric">收款比例</th>
                 <th>状态</th>
+                <th>推进判断</th>
                 <th class="text-end">操作</th>
             </tr>
         </thead>
@@ -132,6 +142,7 @@
                 <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
                 <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td><partial name="_StatusBadge" model="project.Status" /></td>
+                <td><partial name="_ProgressRiskBadge" model="project" /></td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
@@ -144,7 +155,7 @@
         @if (!Model.Projects.Any())
         {
             <tr>
-                <td colspan="11">
+                <td colspan="12">
                     <div class="empty-state">暂无符合条件的项目</div>
                 </td>
             </tr>

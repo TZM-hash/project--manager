@@ -59,6 +59,13 @@ public sealed class IndexModel(
 
     public IReadOnlyList<ChartSlice> ProgressSlices { get; private set; } = [];
 
+    public IReadOnlyList<MetricInsight> AnalysisCards { get; private set; } = [];
+
+    public FilterSummaryViewModel FilterSummary => new(
+        "./Index",
+        BuildFilterSummaryItems(),
+        new Dictionary<string, string?> { [nameof(PageSize)] = PageSize.ToString() });
+
     public PaginationViewModel Pagination => new(
         PageNumber,
         PageSize,
@@ -136,6 +143,19 @@ public sealed class IndexModel(
             .SelectMany(x => x.PurchaseRequests.Where(p => !p.IsDeleted))
             .SumAsync(x => (decimal?)x.PurchaseAmount, cancellationToken) ?? 0;
         var averageProgress = await query.AverageAsync(x => (decimal?)x.ProgressPercent, cancellationToken) ?? 0;
+        var lowProgressCount = await query.CountAsync(x => x.ProgressPercent < 30, cancellationToken);
+        var collectionLagCount = await query.CountAsync(x => x.CollectionPercent + 25 < x.ProgressPercent, cancellationToken);
+        var staleDate = DateTimeOffset.UtcNow.AddDays(-30);
+        var updatedAtValues = await query
+            .Select(x => x.UpdatedAt)
+            .ToListAsync(cancellationToken);
+        var staleCount = updatedAtValues.Count(x => x < staleDate);
+        var amountRows = await query
+            .Select(x => new { x.ProjectNumber, x.Name, x.ProjectAmount })
+            .ToListAsync(cancellationToken);
+        var topAmountProject = amountRows
+            .OrderByDescending(x => x.ProjectAmount)
+            .FirstOrDefault();
 
         Metrics =
         [
@@ -143,6 +163,18 @@ public sealed class IndexModel(
             new MetricInsight("项目金额", totalAmount.ToString("N2"), "未结案汇总", "success"),
             new MetricInsight("请购金额", purchaseAmount.ToString("N2"), "未结案请购汇总", "info"),
             new MetricInsight("平均进度", $"{averageProgress:0.#}%", "当前筛选均值")
+        ];
+
+        AnalysisCards =
+        [
+            new MetricInsight("需关注项目", lowProgressCount.ToString("N0"), "进度低于 30%", "danger"),
+            new MetricInsight("回款滞后", collectionLagCount.ToString("N0"), "收款比例落后进度 25% 以上", "warning"),
+            new MetricInsight("久未更新", staleCount.ToString("N0"), "超过 30 天未更新", "info"),
+            new MetricInsight(
+                "最高金额项目",
+                topAmountProject is null ? "-" : topAmountProject.ProjectAmount.ToString("N2"),
+                topAmountProject is null ? "暂无项目" : $"{topAmountProject.ProjectNumber} / {topAmountProject.Name}",
+                "success")
         ];
 
         var statusRows = await query
@@ -211,5 +243,44 @@ public sealed class IndexModel(
             [nameof(PersonnelUserId)] = PersonnelUserId,
             [nameof(StatusId)] = StatusId?.ToString()
         };
+    }
+
+    private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
+    {
+        var items = new List<FilterSummaryItem>();
+
+        if (Year is not null)
+        {
+            items.Add(new FilterSummaryItem("年", Year.Value.ToString()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ParentCaseNumber))
+        {
+            items.Add(new FilterSummaryItem("母案案号", ParentCaseNumber));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProjectNumber))
+        {
+            items.Add(new FilterSummaryItem("项目工号", ProjectNumber));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProjectName))
+        {
+            items.Add(new FilterSummaryItem("项目名称", ProjectName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(PersonnelUserId) && !User.IsInRole(RoleNames.ProjectStaff))
+        {
+            var userText = UserOptions.FirstOrDefault(x => x.Value == PersonnelUserId)?.Text ?? PersonnelUserId;
+            items.Add(new FilterSummaryItem("专案人员", userText));
+        }
+
+        if (StatusId is not null)
+        {
+            var statusText = StatusOptions.FirstOrDefault(x => x.Value == StatusId.Value.ToString())?.Text ?? StatusId.Value.ToString();
+            items.Add(new FilterSummaryItem("状态", statusText));
+        }
+
+        return items;
     }
 }

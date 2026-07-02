@@ -35,6 +35,8 @@
     <div class="col-md-1"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
 </form>
 
+<partial name="_FilterSummary" model="Model.FilterSummary" />
+
 <div class="metric-grid dashboard-grid">
     @foreach (var metric in Model.Metrics)
     {
@@ -45,6 +47,25 @@
         </div>
     }
 </div>
+
+<section class="report-analysis-panel">
+    <div class="chart-card-header">
+        <div>
+            <div class="chart-title">报表分析视图</div>
+            <div class="chart-subtitle">从当前筛选结果中提取需要优先跟进的项目线索</div>
+        </div>
+    </div>
+    <div class="metric-grid report-analysis-grid">
+        @foreach (var card in Model.AnalysisCards)
+        {
+            <div class="metric-card metric-@card.Accent">
+                <div class="metric-label">@card.Label</div>
+                <div class="metric-value" data-countup>@card.Value</div>
+                <div class="metric-hint">@card.Hint</div>
+            </div>
+        }
+    </div>
+</section>
 
 <div class="insight-grid">
     <section class="chart-card">

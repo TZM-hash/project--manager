@@ -14,6 +14,7 @@
                 <th class="numeric">项目金额</th>
                 <th class="numeric">收款比例</th>
                 <th>状态</th>
+                <th>推进判断</th>
                 <th>结案日期</th>
                 <th class="numeric">请购金额</th>
                 <th>子案对接人员</th>
@@ -37,6 +38,7 @@
                 <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
                 <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td><partial name="_StatusBadge" model="project.Status" /></td>
+                <td><partial name="_ProgressRiskBadge" model="project" /></td>
                 <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
                 <td class="numeric">@purchaseRequests.Sum(x => x.PurchaseAmount).ToString("N2")</td>
                 <td>@string.Join("；", purchaseRequests.Select(x => x.SubCaseContact?.DisplayName ?? x.SubCaseContact?.UserName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())</td>
@@ -49,7 +51,7 @@
         @if (!Model.Any())
         {
             <tr>
-                <td colspan="16">
+                <td colspan="17">
                     <div class="empty-state">暂无符合条件的未结案项目</div>
                 </td>
             </tr>

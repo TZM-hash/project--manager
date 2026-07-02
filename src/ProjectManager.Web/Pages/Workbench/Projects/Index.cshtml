@@ -54,7 +54,7 @@
 </div>
 
 <div class="data-table-wrap">
-    <table class="table table-sm table-striped align-middle data-table">
+    <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
                 <th>母案案号</th>
@@ -66,6 +66,7 @@
                 <th class="numeric">金额</th>
                 <th class="numeric">收款比例</th>
                 <th>结案日期</th>
+                <th>推进判断</th>
                 <th class="text-end">操作</th>
             </tr>
         </thead>
@@ -82,6 +83,7 @@
                 <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
                 <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
+                <td><partial name="_ProgressRiskBadge" model="project" /></td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
                     @if (Model.CanEditAll || project.Assignments.Any(x => x.UserId == Model.CurrentUserId))
@@ -94,7 +96,7 @@
         @if (!Model.Projects.Any())
         {
             <tr>
-                <td colspan="10">
+                <td colspan="11">
                     <div class="empty-state">暂无可查看的专案资料</div>
                 </td>
             </tr>

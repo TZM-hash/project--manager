@@ -10,11 +10,6 @@
         <div class="page-subtitle">配置项目状态顺序、启用规则和前台显示样式</div>
     </div>
     <div class="page-actions">
-        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的状态吗？">
-            <input type="hidden" asp-for="PageNumber" />
-            <input type="hidden" asp-for="PageSize" />
-            <button type="submit" class="btn btn-outline-danger">批量删除 <span data-selected-count>0</span></button>
-        </form>
         <a class="btn btn-primary" asp-page="./Edit">新增状态</a>
     </div>
 </div>
@@ -63,8 +58,20 @@
     </section>
 </div>
 
+<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定删除选中的状态吗？">
+    <div class="bulk-toolbar-copy">
+        <span class="bulk-toolbar-count" data-selected-count>0</span>
+        <span>个状态已选择</span>
+    </div>
+    <div class="bulk-toolbar-actions">
+        <input type="hidden" asp-for="PageNumber" />
+        <input type="hidden" asp-for="PageSize" />
+        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
+    </div>
+</form>
+
 <div class="data-table-wrap">
-    <table class="table table-sm table-striped align-middle data-table">
+    <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
                 <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>

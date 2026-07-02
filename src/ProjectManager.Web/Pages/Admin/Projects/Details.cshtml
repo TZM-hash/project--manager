@@ -16,128 +16,148 @@
     </div>
 </div>
 
-<partial name="_ProjectDetailVisual" model="Model.Project" />
-
-<div class="summary-strip">
-    <div class="summary-item">
-        <div class="summary-label">当前状态</div>
-        <div class="summary-value"><partial name="_StatusBadge" model="Model.Project.Status" /></div>
+<div class="detail-tab-shell" data-detail-tabs>
+    <div class="detail-tabs" role="tablist" aria-label="项目详情分区">
+        <button type="button" class="detail-tab is-active" data-detail-tab-target="overview">概览</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="profile">项目资料</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="purchases">请购记录</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="audit">操作记录</button>
     </div>
-    <div class="summary-item">
-        <div class="summary-label">专案进度</div>
-        <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.ProgressPercent, compact: false)" /></div>
-    </div>
-    <div class="summary-item">
-        <div class="summary-label">专案金额</div>
-        <div class="summary-value">@Model.Project.ProjectAmount.ToString("N2")</div>
-    </div>
-    <div class="summary-item">
-        <div class="summary-label">收款比例</div>
-        <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.CollectionPercent, compact: false)" /></div>
-    </div>
-</div>
 
-<section class="detail-panel">
-    <h2 class="detail-panel-title">项目资料</h2>
-    <div class="detail-grid">
-        <div class="detail-item"><div class="detail-label">年</div><div class="detail-value">@Model.Project.Year</div></div>
-        <div class="detail-item"><div class="detail-label">母案案号</div><div class="detail-value">@Model.Project.ParentCaseNumber</div></div>
-        <div class="detail-item"><div class="detail-label">项目工号</div><div class="detail-value">@Model.Project.ProjectNumber</div></div>
-        <div class="detail-item"><div class="detail-label">项目名称</div><div class="detail-value">@Model.Project.Name</div></div>
-        <div class="detail-item"><div class="detail-label">专案人员</div><div class="detail-value">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
-        <div class="detail-item"><div class="detail-label">结案日期</div><div class="detail-value">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</div></div>
-        <div class="detail-item"><div class="detail-label">更新人员</div><div class="detail-value">@Model.Project.UpdatedByUser?.DisplayName</div></div>
-        <div class="detail-item"><div class="detail-label">最后更新时间</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
+    <div class="detail-tab-panel is-active" data-detail-tab-panel="overview">
+        <partial name="_ProjectDetailVisual" model="Model.Project" />
+
+        <div class="summary-strip">
+            <div class="summary-item">
+                <div class="summary-label">当前状态</div>
+                <div class="summary-value"><partial name="_StatusBadge" model="Model.Project.Status" /></div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">专案进度</div>
+                <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.ProgressPercent, compact: false)" /></div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">专案金额</div>
+                <div class="summary-value">@Model.Project.ProjectAmount.ToString("N2")</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">收款比例</div>
+                <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.CollectionPercent, compact: false)" /></div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">推进判断</div>
+                <div class="summary-value summary-value-compact"><partial name="_ProgressRiskBadge" model="Model.Project" /></div>
+            </div>
+        </div>
+
+        <section class="detail-panel">
+            <h2 class="detail-panel-title">进度说明</h2>
+            <div class="detail-value">@Model.Project.ProgressDescription</div>
+        </section>
     </div>
-</section>
 
+    <section class="detail-panel detail-tab-panel" data-detail-tab-panel="profile">
+        <h2 class="detail-panel-title">项目资料</h2>
+        <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">年</div><div class="detail-value">@Model.Project.Year</div></div>
+            <div class="detail-item"><div class="detail-label">母案案号</div><div class="detail-value">@Model.Project.ParentCaseNumber</div></div>
+            <div class="detail-item"><div class="detail-label">项目工号</div><div class="detail-value">@Model.Project.ProjectNumber</div></div>
+            <div class="detail-item"><div class="detail-label">项目名称</div><div class="detail-value">@Model.Project.Name</div></div>
+            <div class="detail-item"><div class="detail-label">专案人员</div><div class="detail-value">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
+            <div class="detail-item"><div class="detail-label">结案日期</div><div class="detail-value">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</div></div>
+            <div class="detail-item"><div class="detail-label">更新人员</div><div class="detail-value">@Model.Project.UpdatedByUser?.DisplayName</div></div>
+            <div class="detail-item"><div class="detail-label">最后更新时间</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
+        </div>
+    </section>
 
-<section class="detail-panel">
-    <h2 class="detail-panel-title">进度说明</h2>
-    <div class="detail-value">@Model.Project.ProgressDescription</div>
-</section>
-
-<section class="detail-panel">
-    <h2 class="detail-panel-title">请购记录</h2>
-    <div class="data-table-wrap">
-        <table class="table table-sm table-striped align-middle data-table">
-            <thead>
-                <tr>
-                    <th>请购号</th>
-                    <th>类型</th>
-                    <th>请购人员</th>
-                    <th class="numeric">请购金额</th>
-                    <th>子案对接人员</th>
-                    <th class="numeric">付款比例</th>
-                    <th class="numeric">实际已付款</th>
-                    <th>备注</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var request in Model.Project.PurchaseRequests.OrderBy(x => x.Id))
-            {
-                <tr>
-                    <td>@request.RequestNumber</td>
-                    <td>@(request.PurchaseType == ProjectManager.Web.Models.PurchaseType.InternalPurchase ? "内购" : "外购")</td>
-                    <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
-                    <td class="numeric">@request.PurchaseAmount.ToString("N2")</td>
-                    <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
-                    <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(request.PaymentPercent)" /></td>
-                    <td class="numeric">@request.ActualPaidAmount.ToString("N2")</td>
-                    <td>@request.Notes</td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<section class="detail-panel">
-    <h2 class="detail-panel-title">操作记录</h2>
-    @if (Model.AuditLogs.Count == 0)
-    {
-        <div class="empty-state">暂无操作记录</div>
-    }
-    else
-    {
+    <section class="detail-panel detail-tab-panel" data-detail-tab-panel="purchases">
+        <h2 class="detail-panel-title">请购记录</h2>
         <div class="data-table-wrap">
-            <table class="table table-sm align-middle data-table">
+            <table class="table table-sm table-striped align-middle data-table">
                 <thead>
                     <tr>
-                        <th>时间</th>
-                        <th>操作人</th>
-                        <th>动作</th>
-                        <th>内容</th>
-                        <th>明细</th>
+                        <th>请购号</th>
+                        <th>类型</th>
+                        <th>请购人员</th>
+                        <th class="numeric">请购金额</th>
+                        <th>子案对接人员</th>
+                        <th class="numeric">付款比例</th>
+                        <th class="numeric">实际已付款</th>
+                        <th>备注</th>
                     </tr>
                 </thead>
                 <tbody>
-                @foreach (var log in Model.AuditLogs)
+                @foreach (var request in Model.Project.PurchaseRequests.OrderBy(x => x.Id))
                 {
                     <tr>
-                        <td>@log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>@log.Actor</td>
-                        <td>@log.Action</td>
-                        <td>@log.Summary</td>
-                        <td>
-                            @if (log.Details.Count == 0)
-                            {
-                                <span class="text-muted">无结构化明细</span>
-                            }
-                            else
-                            {
-                                <ul class="audit-detail-list">
-                                @foreach (var detail in log.Details)
-                                {
-                                    <li>@AuditLogDisplayModel.FormatDetail(detail)</li>
-                                }
-                                </ul>
-                            }
-                        </td>
+                        <td>@request.RequestNumber</td>
+                        <td>@(request.PurchaseType == ProjectManager.Web.Models.PurchaseType.InternalPurchase ? "内购" : "外购")</td>
+                        <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
+                        <td class="numeric">@request.PurchaseAmount.ToString("N2")</td>
+                        <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
+                        <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(request.PaymentPercent)" /></td>
+                        <td class="numeric">@request.ActualPaidAmount.ToString("N2")</td>
+                        <td>@request.Notes</td>
+                    </tr>
+                }
+                @if (!Model.Project.PurchaseRequests.Any())
+                {
+                    <tr>
+                        <td colspan="8"><div class="empty-state">暂无请购记录</div></td>
                     </tr>
                 }
                 </tbody>
             </table>
         </div>
-    }
-</section>
+    </section>
+
+    <section class="detail-panel detail-tab-panel" data-detail-tab-panel="audit">
+        <h2 class="detail-panel-title">操作记录</h2>
+        @if (Model.AuditLogs.Count == 0)
+        {
+            <div class="empty-state">暂无操作记录</div>
+        }
+        else
+        {
+            <div class="data-table-wrap">
+                <table class="table table-sm align-middle data-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>操作人</th>
+                            <th>动作</th>
+                            <th>内容</th>
+                            <th>明细</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var log in Model.AuditLogs)
+                    {
+                        <tr>
+                            <td>@log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@log.Actor</td>
+                            <td>@log.Action</td>
+                            <td>@log.Summary</td>
+                            <td>
+                                @if (log.Details.Count == 0)
+                                {
+                                    <span class="text-muted">无结构化明细</span>
+                                }
+                                else
+                                {
+                                    <ul class="audit-detail-list">
+                                    @foreach (var detail in log.Details)
+                                    {
+                                        <li>@AuditLogDisplayModel.FormatDetail(detail)</li>
+                                    }
+                                    </ul>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
