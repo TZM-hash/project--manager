@@ -10,11 +10,35 @@ window.toggleNavGroup = function (el) {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  initPasswordToggles();
   initBulkSelection();
   initFilterDrawers();
   initDetailTabs();
   initRevealAnimations();
 });
+
+function initPasswordToggles() {
+  document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+    const field = button.closest(".password-field");
+    const input = field?.querySelector("[data-password-input]");
+    const text = button.querySelector("[data-password-toggle-text]");
+
+    if (!input) {
+      return;
+    }
+
+    button.addEventListener("click", () => {
+      const shouldShow = input.type === "password";
+      input.type = shouldShow ? "text" : "password";
+      button.setAttribute("aria-pressed", shouldShow ? "true" : "false");
+      button.setAttribute("aria-label", shouldShow ? "隐藏密码" : "显示密码");
+
+      if (text) {
+        text.textContent = shouldShow ? "隐藏" : "显示";
+      }
+    });
+  });
+}
 
 function initBulkSelection() {
   const checkboxes = Array.from(document.querySelectorAll("[data-bulk-checkbox]"));

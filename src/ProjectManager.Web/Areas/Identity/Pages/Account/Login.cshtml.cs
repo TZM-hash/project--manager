@@ -61,6 +61,6 @@ public sealed class LoginModel(SignInManager<ApplicationUser> signInManager) : P
         public string Password { get; set; } = string.Empty;
 
         [Display(Name = "保持登录")]
-        public bool RememberMe { get; set; }
+        public bool RememberMe { get; set; } = true;
     }
 }

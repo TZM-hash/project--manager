@@ -24,6 +24,14 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // 让“保持登录”真正跨浏览器重开生效，并在活跃使用时自动续期。
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+});
+
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ProjectQueryService>();
 builder.Services.AddScoped<ProjectMaintenanceService>();

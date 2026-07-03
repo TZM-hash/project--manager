@@ -7,7 +7,7 @@
 <div class="account-shell">
     <section class="account-panel">
         <div class="account-logo">
-            <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Formosa%20Plastics%20Group%20corporate%20logo%2C%20red%20geometric%20wave%20symbol%2C%20clean%20minimalist%20design%2C%20white%20background%2C%20professional%20brand%20identity%2C%20high%20quality&image_size=square_hd" alt="台塑企业 LOGO" />
+            <img src="~/img/logo.png" asp-append-version="true" alt="台塑电子项目管理系统 LOGO" />
         </div>
         <h1 class="h3">登录系统</h1>
         <p class="text-muted mb-3">请输入公司内网账号和密码。</p>
@@ -21,7 +21,12 @@
             </div>
             <div class="mb-3">
                 <label asp-for="Input.Password" class="form-label">密码</label>
-                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                <div class="password-field">
+                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" data-password-input />
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="显示密码" aria-pressed="false">
+                        <span data-password-toggle-text>显示</span>
+                    </button>
+                </div>
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
             <div class="form-check mb-3">

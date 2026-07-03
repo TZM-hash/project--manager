@@ -67,10 +67,11 @@ a:hover {
   left: 0;
   top: 0;
   z-index: 1030;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  color: #e2e8f0;
+  border-right: 1px solid var(--app-border);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  color: var(--app-text-soft);
   transition: width 0.3s ease;
-  box-shadow: 8px 0 24px rgba(15, 23, 42, 0.15);
+  box-shadow: 8px 0 24px rgba(15, 23, 42, 0.06);
 }
 
 .sidebar-collapsed .app-sidebar {
@@ -82,36 +83,47 @@ a:hover {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .app-sidebar-brand a {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #fff;
+  min-width: 0;
+  color: var(--app-text);
   text-decoration: none;
 }
 
 .app-sidebar-brand a:hover {
-  color: #fff;
+  color: var(--app-primary);
 }
 
 .app-sidebar-brand .app-brand-mark {
-  display: inline-grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--app-radius-md);
-  background: var(--app-primary);
-  color: #fff;
-  font-size: 0.76rem;
-  font-weight: 800;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--app-border), 0 8px 16px rgba(15, 23, 42, 0.06);
+}
+
+.app-sidebar-brand .app-brand-mark img {
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
 }
 
 .app-sidebar-brand span:last-child {
+  min-width: 0;
+  overflow: hidden;
   font-size: 1rem;
   font-weight: 750;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -133,7 +145,7 @@ a:hover {
   gap: 0.75rem;
   padding: 0.65rem 0.75rem;
   border-radius: var(--app-radius-sm);
-  color: #94a3b8;
+  color: var(--app-text-soft);
   font-size: 0.9rem;
   font-weight: 600;
   white-space: nowrap;
@@ -141,13 +153,14 @@ a:hover {
 }
 
 .app-sidebar-nav .nav-link:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f1f5f9;
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
 }
 
 .app-sidebar-nav .nav-link.active {
-  background: var(--app-primary);
+  background: linear-gradient(90deg, var(--app-primary), #14b8a6);
   color: #fff;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
 }
 
 .app-sidebar-nav .nav-group-toggle::after {
@@ -173,11 +186,19 @@ a:hover {
 .app-sidebar-nav .nav-group-items .nav-link {
   padding-left: 2rem;
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--app-muted);
 }
 
 .sidebar-collapsed .app-sidebar-brand span:last-child,
 .sidebar-collapsed .app-sidebar-nav .nav-link span {
+  display: none;
+}
+
+.sidebar-collapsed .app-sidebar-nav .nav-link {
+  font-size: 0;
+}
+
+.sidebar-collapsed .app-sidebar-nav .nav-group-toggle::after {
   display: none;
 }
 
@@ -1684,16 +1705,49 @@ h1.h3 {
 }
 
 .account-logo img {
-  width: 5rem;
-  height: 5rem;
+  width: 5.5rem;
+  height: 5.5rem;
   object-fit: contain;
   border-radius: var(--app-radius-md);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--app-border), 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
 .account-help {
   margin-top: 1rem;
   color: var(--app-muted);
   font-size: 0.9rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .form-control {
+  padding-right: 4.25rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  min-width: 3.35rem;
+  min-height: 1.72rem;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+  border-color: #bfdbfe;
+  background: #dbeafe;
+  color: var(--app-primary-hover);
 }
 
 .form-floating > .form-control-plaintext::placeholder,
