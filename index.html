@@ -7,17 +7,19 @@
   <title>项目管理系统 WEB 入口</title>
   <style>
     :root {
-      --app-bg: #f3f6fb;
+      --app-bg: #eef3fb;
       --app-surface: #ffffff;
-      --app-text: #111827;
+      --app-text: #0f172a;
       --app-text-soft: #334155;
       --app-muted: #64748b;
       --app-border: #dfe7f1;
       --app-primary: #2563eb;
       --app-primary-hover: #1d4ed8;
       --app-primary-soft: #eaf1ff;
+      --app-accent: #14b8a6;
+      --app-tech-gradient: linear-gradient(135deg, #2563eb 0%, #0ea5e9 45%, #14b8a6 100%);
       --app-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
-      --app-radius: 8px;
+      --app-radius: 12px;
     }
 
     * {
@@ -25,21 +27,93 @@
     }
 
     body {
+      position: relative;
       min-height: 100vh;
       margin: 0;
+      overflow-x: hidden;
       background:
-        linear-gradient(180deg, #eef4ff 0, rgba(238, 244, 255, 0) 260px),
+        radial-gradient(1100px 480px at 80% -10%, rgba(14, 165, 233, 0.12), transparent 60%),
+        radial-gradient(900px 460px at 6% 0%, rgba(37, 99, 235, 0.1), transparent 58%),
         var(--app-bg);
       color: var(--app-text);
       font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
       font-size: 15px;
-      letter-spacing: 0;
+    }
+
+    /* 动态科技背景层 */
+    .bg-fx {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg-fx::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background-image:
+        linear-gradient(rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: radial-gradient(ellipse 120% 80% at 50% -10%, #000 30%, transparent 78%);
+      -webkit-mask-image: radial-gradient(ellipse 120% 80% at 50% -10%, #000 30%, transparent 78%);
+      animation: grid-drift 60s linear infinite;
+    }
+
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(64px);
+      opacity: 0.55;
+    }
+
+    .bg-orb-1 {
+      top: -8rem;
+      left: 10%;
+      width: 26rem;
+      height: 26rem;
+      background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.34), transparent 68%);
+      animation: orb-a 22s ease-in-out infinite;
+    }
+
+    .bg-orb-2 {
+      top: 24%;
+      right: -6rem;
+      width: 22rem;
+      height: 22rem;
+      background: radial-gradient(circle at 60% 40%, rgba(20, 184, 166, 0.28), transparent 68%);
+      animation: orb-b 27s ease-in-out infinite;
+    }
+
+    @keyframes grid-drift {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(-46px, -46px, 0); }
+    }
+
+    @keyframes orb-a {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(2.5rem, 2rem) scale(1.08); }
+    }
+
+    @keyframes orb-b {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-2rem, 2.5rem) scale(1.1); }
     }
 
     main {
+      position: relative;
+      z-index: 1;
       width: min(1080px, calc(100% - 32px));
       margin: 0 auto;
       padding: 56px 0;
+      animation: fade-up 0.6s ease both;
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .entry-header {
@@ -59,15 +133,23 @@
     }
 
     .entry-brand-mark {
+      position: relative;
       display: inline-grid;
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       place-items: center;
-      border-radius: var(--app-radius);
-      background: var(--app-primary);
+      border-radius: 10px;
+      background: var(--app-tech-gradient);
+      background-size: 160% 160%;
       color: #fff;
       font-size: 13px;
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+      animation: mark-shift 5s ease infinite;
+    }
+
+    @keyframes mark-shift {
+      0%, 100% { background-position: 0% 0; }
+      50% { background-position: 100% 0; }
     }
 
     h1 {
@@ -95,11 +177,12 @@
       display: inline-flex;
       align-items: center;
       min-height: 30px;
-      padding: 4px 11px;
-      border: 1px solid var(--app-border);
+      padding: 4px 12px;
+      border: 1px solid rgba(37, 99, 235, 0.18);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.82);
-      color: var(--app-muted);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(8px);
+      color: var(--app-text-soft);
       font-size: 13px;
       font-weight: 700;
     }
@@ -107,30 +190,44 @@
     .entry-panel {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
+      gap: 16px;
+      perspective: 1200px;
     }
 
     .entry-card {
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 10px;
       min-height: 176px;
-      padding: 20px;
-      border: 1px solid var(--app-border);
+      padding: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.7);
       border-radius: var(--app-radius);
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(10px);
       color: inherit;
       text-decoration: none;
-      box-shadow: var(--app-shadow);
-      transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+      transform-style: preserve-3d;
+      box-shadow: var(--app-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      transition: border-color 0.3s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+    }
+
+    .entry-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      background: var(--app-tech-gradient);
+      opacity: 0.85;
     }
 
     .entry-card:focus,
     .entry-card:hover {
-      border-color: rgba(37, 99, 235, 0.55);
+      border-color: rgba(37, 99, 235, 0.32);
       outline: none;
-      transform: translateY(-2px);
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.11);
+      transform: perspective(1200px) rotateX(6deg) translateY(-6px) scale(1.03);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12), 0 28px 60px rgba(37, 99, 235, 0.22);
     }
 
     .entry-title {
@@ -150,8 +247,8 @@
       width: fit-content;
       min-height: 36px;
       align-items: center;
-      padding: 7px 12px;
-      border-radius: 6px;
+      padding: 7px 13px;
+      border-radius: 8px;
       background: var(--app-primary-soft);
       color: var(--app-primary-hover);
       font-weight: 800;
@@ -160,9 +257,10 @@
     .address {
       margin-top: 18px;
       padding: 13px 15px;
-      border: 1px solid var(--app-border);
+      border: 1px solid rgba(37, 99, 235, 0.14);
       border-radius: var(--app-radius);
-      background: rgba(255, 255, 255, 0.82);
+      background: rgba(255, 255, 255, 0.66);
+      backdrop-filter: blur(8px);
       color: var(--app-muted);
       font-family: Consolas, "Courier New", monospace;
       overflow-wrap: anywhere;
@@ -175,10 +273,11 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 18px;
-      padding: 14px 16px;
-      border: 1px solid rgba(37, 99, 235, 0.2);
+      padding: 15px 17px;
+      border: 1px solid rgba(37, 99, 235, 0.22);
       border-radius: var(--app-radius);
-      background: rgba(234, 241, 255, 0.86);
+      background: rgba(234, 241, 255, 0.7);
+      backdrop-filter: blur(8px);
       color: var(--app-text-soft);
       box-shadow: var(--app-shadow);
     }
@@ -187,16 +286,45 @@
       color: var(--app-text);
     }
 
+    .loading-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--app-accent);
+      box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.5);
+      animation: pulse-dot 1.4s ease-in-out infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes pulse-dot {
+      0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.5); }
+      70% { box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+    }
+
     .direct-entry a {
+      position: relative;
       display: inline-flex;
-      min-height: 38px;
+      min-height: 40px;
       align-items: center;
-      padding: 8px 13px;
-      border-radius: 6px;
-      background: var(--app-primary);
+      overflow: hidden;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--app-tech-gradient);
+      background-size: 160% 160%;
       color: #fff;
       font-weight: 800;
       text-decoration: none;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+      transition: transform 0.15s ease, box-shadow 0.25s ease, background-position 0.5s ease;
+    }
+
+    .direct-entry a:hover {
+      transform: translateY(-1px);
+      background-position: 100% 0;
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.36);
     }
 
     @media (max-width: 720px) {
@@ -217,6 +345,24 @@
         font-size: 26px;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg-fx::before,
+      .bg-orb,
+      .entry-brand-mark,
+      .direct-entry a,
+      main,
+      .loading-dot {
+        animation: none !important;
+      }
+
+      .entry-card,
+      .entry-card:hover,
+      .entry-card:focus {
+        transform: none !important;
+        transition: none !important;
+      }
+    }
   </style>
   <script>
     window.addEventListener("DOMContentLoaded", function () {
@@ -233,6 +379,10 @@
   </script>
 </head>
 <body>
+  <div class="bg-fx" aria-hidden="true">
+    <span class="bg-orb bg-orb-1"></span>
+    <span class="bg-orb bg-orb-2"></span>
+  </div>
   <main>
     <header class="entry-header">
       <div>
@@ -250,7 +400,7 @@
     </header>
 
     <div class="direct-entry">
-      <div><strong>正在进入系统...</strong> 如果没有自动跳转，请点击右侧按钮。</div>
+      <div><span class="loading-dot"></span><strong>正在进入系统...</strong> 如果没有自动跳转，请点击右侧按钮。</div>
       <a data-app-link href="http://localhost:62382/">打开系统</a>
     </div>
 

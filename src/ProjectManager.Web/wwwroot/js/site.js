@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initRichTextEditors();
   initGanttEditors();
   initRevealAnimations();
+  initCountUp();
+  initTiltCards();
 });
 
 function initPasswordToggles() {
@@ -346,6 +348,19 @@ function initRevealAnimations() {
 
   document.body.classList.add("reveal-ready");
 
+  // 为同一父容器内的兄弟元素设置交错延迟,形成瀑布式淡入
+  const groups = new Map();
+  targets.forEach((target) => {
+    const parent = target.parentElement;
+    if (!parent) {
+      return;
+    }
+    const index = groups.get(parent) ?? 0;
+    target.style.setProperty("--reveal-index", index.toString());
+    target.setAttribute("data-reveal-index", index.toString());
+    groups.set(parent, index + 1);
+  });
+
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
     targets.forEach((target) => target.classList.add("is-visible"));
     return;
@@ -364,4 +379,237 @@ function initRevealAnimations() {
   );
 
   targets.forEach((target) => observer.observe(target));
+}
+
+function initCountUp() {
+  const targets = Array.from(document.querySelectorAll("[data-countup]"));
+  if (targets.length === 0) {
+    return;
+  }
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // 将显示文本拆成 前缀 + 数字 + 后缀,只对数字部分做滚动
+  const parse = (raw) => {
+    const text = (raw ?? "").trim();
+    const match = text.match(/-?\d[\d,]*(\.\d+)?/);
+    if (!match) {
+      return null;
+    }
+    const numberText = match[0];
+    const start = match.index ?? 0;
+    return {
+      prefix: text.slice(0, start),
+      suffix: text.slice(start + numberText.length),
+      value: parseFloat(numberText.replace(/,/g, "")),
+      decimals: numberText.includes(".") ? numberText.split(".")[1].length : 0,
+      grouped: numberText.includes(","),
+    };
+  };
+
+  const format = (value, info) => {
+    const fixed = value.toFixed(info.decimals);
+    if (!info.grouped) {
+      return fixed;
+    }
+    const [intPart, decPart] = fixed.split(".");
+    const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return decPart ? `${grouped}.${decPart}` : grouped;
+  };
+
+  const animate = (el, info) => {
+    if (reduceMotion || info.value === 0) {
+      el.textContent = `${info.prefix}${format(info.value, info)}${info.suffix}`;
+      return;
+    }
+
+    const duration = 1100;
+    let startTime = null;
+
+    const step = (timestamp) => {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      // easeOutCubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = info.value * eased;
+      el.textContent = `${info.prefix}${format(current, info)}${info.suffix}`;
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        el.textContent = `${info.prefix}${format(info.value, info)}${info.suffix}`;
+      }
+    };
+
+    window.requestAnimationFrame(step);
+  };
+
+  const run = (el) => {
+    if (el.dataset.countupDone === "true") {
+      return;
+    }
+    const info = parse(el.textContent);
+    if (!info) {
+      return;
+    }
+    el.dataset.countupDone = "true";
+    animate(el, info);
+  };
+
+  if (reduceMotion || !("IntersectionObserver" in window)) {
+    targets.forEach(run);
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          run(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.35 }
+  );
+
+  targets.forEach((target) => observer.observe(target));
+}
+
+function initTiltCards() {
+  // 触摸设备或减弱动效偏好下不启用 3D 倾斜
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(hover: none)").matches
+  ) {
+    return;
+  }
+
+  const selector = [
+    ".metric-card",
+    ".chart-card",
+    ".module-card",
+    ".entrance-panel",
+    ".project-visual-card",
+    ".account-panel"
+  ].join(",");
+
+  const cards = Array.from(document.querySelectorAll(selector));
+  if (cards.length === 0) {
+    return;
+  }
+
+  const MAX_TILT = 7; // 最大倾斜角度(度),克制以保持商务感
+
+  cards.forEach((card) => {
+    card.classList.add("tilt-card");
+
+    // 注入光泽高光层
+    const glare = document.createElement("span");
+    glare.className = "tilt-glare";
+    glare.setAttribute("aria-hidden", "true");
+    card.appendChild(glare);
+
+    let frame = null;
+    let pending = null;
+
+    const apply = () => {
+      frame = null;
+      if (!pending) {
+        return;
+      }
+      const { rx, ry, gx, gy } = pending;
+      card.style.setProperty("--tilt-x", `${rx.toFixed(2)}deg`);
+      card.style.setProperty("--tilt-y", `${ry.toFixed(2)}deg`);
+      card.style.setProperty("--tilt-lift", "-6px");
+      card.style.setProperty("--tilt-scale", "1.02");
+      card.style.setProperty("--glare-x", `${gx.toFixed(1)}%`);
+      card.style.setProperty("--glare-y", `${gy.toFixed(1)}%`);
+    };
+
+    const onMove = (event) => {
+      const rect = card.getBoundingClientRect();
+      const px = (event.clientX - rect.left) / rect.width; // 0..1
+      const py = (event.clientY - rect.top) / rect.height; // 0..1
+      // 鼠标在上半 => 卡片上缘后仰;鼠标在右 => 右缘后仰
+      pending = {
+        rx: (0.5 - py) * (MAX_TILT * 2),
+        ry: (px - 0.5) * (MAX_TILT * 2),
+        gx: px * 100,
+        gy: py * 100
+      };
+      if (frame === null) {
+        frame = window.requestAnimationFrame(apply);
+      }
+    };
+
+    const onEnter = () => {
+      card.classList.add("is-tilting");
+    };
+
+    const onLeave = () => {
+      card.classList.remove("is-tilting");
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+        frame = null;
+      }
+      pending = null;
+      card.style.setProperty("--tilt-x", "0deg");
+      card.style.setProperty("--tilt-y", "0deg");
+      card.style.setProperty("--tilt-lift", "0px");
+      card.style.setProperty("--tilt-scale", "1");
+    };
+
+    card.addEventListener("mouseenter", onEnter);
+    card.addEventListener("mousemove", onMove);
+    card.addEventListener("mouseleave", onLeave);
+  });
+
+  initBackgroundParallax();
+}
+
+function initBackgroundParallax() {
+  if (
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(hover: none)").matches
+  ) {
+    return;
+  }
+
+  const layer = document.querySelector(".app-bg-fx");
+  if (!layer) {
+    return;
+  }
+
+  const orbs = Array.from(layer.querySelectorAll(".app-bg-orb"));
+  if (orbs.length === 0) {
+    return;
+  }
+
+  let frame = null;
+  let target = { x: 0, y: 0 };
+
+  const apply = () => {
+    frame = null;
+    // 视差写入 CSS 变量,由 CSS 与浮动动画通过 translate 叠加,避免覆盖 keyframes 的 transform
+    orbs.forEach((orb, index) => {
+      const depth = (index + 1) * 14;
+      orb.style.setProperty("--parallax-x", `${(target.x * depth).toFixed(1)}px`);
+      orb.style.setProperty("--parallax-y", `${(target.y * depth).toFixed(1)}px`);
+    });
+  };
+
+  window.addEventListener(
+    "mousemove",
+    (event) => {
+      // -0.5..0.5 归一化,反向移动营造景深
+      target.x = -(event.clientX / window.innerWidth - 0.5);
+      target.y = -(event.clientY / window.innerHeight - 0.5);
+      if (frame === null) {
+        frame = window.requestAnimationFrame(apply);
+      }
+    },
+    { passive: true }
+  );
 }

@@ -23,6 +23,14 @@
   --app-shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.06);
   --sidebar-width: 18rem;
   --sidebar-collapsed-width: 4.5rem;
+
+  /* 科技商务风增强令牌 */
+  --app-tech-gradient: linear-gradient(135deg, #2563eb 0%, #0ea5e9 45%, #14b8a6 100%);
+  --app-tech-glow: 0 0 0 1px rgba(37, 99, 235, 0.12), 0 12px 30px rgba(37, 99, 235, 0.14);
+  --app-tech-glow-strong: 0 0 22px rgba(20, 184, 166, 0.28), 0 18px 42px rgba(37, 99, 235, 0.2);
+  --app-grid-line: rgba(37, 99, 235, 0.06);
+  --app-glass: rgba(255, 255, 255, 0.72);
+  --app-glass-border: rgba(255, 255, 255, 0.65);
 }
 
 html {
@@ -923,7 +931,7 @@ h1.h3 {
 }
 
 .filter-drawer-enabled .filter-drawer:not(.is-open) {
-  display: none;
+  /* 折叠态由第三轮增强层的 max-height 过渡接管(见文件末尾),此处不再 display:none */
 }
 
 .filter-drawer-header {
@@ -1116,7 +1124,7 @@ h1.h3 {
 }
 
 .data-table.has-sticky-actions tbody tr:hover td:last-child {
-  background: #f8fbff;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.05), rgba(20, 184, 166, 0.035));
 }
 
 .empty-state {
@@ -2344,5 +2352,926 @@ h1.h3 {
   td {
     border: 1px solid #999;
     padding: 4px 6px;
+  }
+}
+
+/* =====================================================================
+   科技商务风增强层 (Tech-Business Skin)
+   —— 纯装饰,叠加在既有浅色设计系统之上,不改变布局与功能
+   ===================================================================== */
+
+/* --- 全局科技背景:动态网格 + 缓流光晕 --- */
+.app-bg-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.app-bg-fx::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background-image:
+    linear-gradient(var(--app-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--app-grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 120% 80% at 50% -10%, #000 30%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 80% at 50% -10%, #000 30%, transparent 78%);
+  animation: app-grid-drift 60s linear infinite;
+}
+
+.app-bg-fx .app-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  will-change: transform, translate;
+  /* 视差:独立 translate 属性,与 keyframes 的 transform 浮动合成,互不覆盖 */
+  translate: var(--parallax-x, 0px) var(--parallax-y, 0px);
+  transition: translate 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-bg-fx .app-bg-orb-1 {
+  top: -8rem;
+  left: 12%;
+  width: 26rem;
+  height: 26rem;
+  background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.32), transparent 68%);
+  animation: app-orb-float-a 22s ease-in-out infinite;
+}
+
+.app-bg-fx .app-bg-orb-2 {
+  top: 20%;
+  right: -6rem;
+  width: 22rem;
+  height: 22rem;
+  background: radial-gradient(circle at 60% 40%, rgba(20, 184, 166, 0.26), transparent 68%);
+  animation: app-orb-float-b 27s ease-in-out infinite;
+}
+
+.app-bg-fx .app-bg-orb-3 {
+  bottom: -10rem;
+  left: 40%;
+  width: 30rem;
+  height: 30rem;
+  background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.2), transparent 70%);
+  animation: app-orb-float-a 32s ease-in-out infinite reverse;
+}
+
+@keyframes app-grid-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-44px, -44px, 0); }
+}
+
+@keyframes app-orb-float-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(2.5rem, 2rem) scale(1.08); }
+}
+
+@keyframes app-orb-float-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-2rem, 2.5rem) scale(1.1); }
+}
+
+/* 内容浮于背景之上 */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+body {
+  background:
+    radial-gradient(1200px 480px at 78% -8%, rgba(14, 165, 233, 0.08), transparent 60%),
+    radial-gradient(900px 420px at 8% 4%, rgba(37, 99, 235, 0.07), transparent 55%),
+    var(--app-bg);
+}
+
+/* --- 侧边栏:发光品牌 + 导航流光 --- */
+.app-sidebar {
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f5f9ff 60%, #eef5ff 100%);
+}
+
+/* 导航线性图标 */
+.nav-icon {
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.72;
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.app-sidebar-nav .nav-link:hover .nav-icon {
+  opacity: 1;
+  transform: translateY(-1px) scale(1.06);
+}
+
+.app-sidebar-nav .nav-link.active .nav-icon {
+  opacity: 1;
+  filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.5));
+}
+
+/* 折叠态:文字归零但图标保持可见 */
+.sidebar-collapsed .app-sidebar-nav .nav-link .nav-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-basis: 1.35rem;
+}
+
+.app-sidebar-nav .nav-group-items .nav-icon {
+  flex-basis: 1.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  opacity: 0.6;
+}
+
+
+.app-sidebar-brand .app-brand-mark {
+  position: relative;
+  background: linear-gradient(135deg, #ffffff, #eef4ff);
+  box-shadow:
+    inset 0 0 0 1px rgba(37, 99, 235, 0.18),
+    0 8px 18px rgba(37, 99, 235, 0.14);
+}
+
+.app-sidebar-brand .app-brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--app-tech-gradient);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.55;
+  animation: app-brand-pulse 4.5s ease-in-out infinite;
+}
+
+@keyframes app-brand-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+.app-sidebar-nav .nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-sidebar-nav .nav-link.active {
+  position: relative;
+  background: var(--app-tech-gradient);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.24);
+  transform: translateY(-1px);
+}
+
+/* 激活项 3D 凸起层次 + hover 微推入 */
+.app-sidebar-nav .nav-link {
+  transform: translateZ(0);
+}
+
+.app-sidebar-nav .nav-link.active {
+  box-shadow:
+    0 2px 4px rgba(37, 99, 235, 0.2),
+    0 10px 22px rgba(37, 99, 235, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.app-sidebar-nav .nav-link:not(.active):hover {
+  transform: translateX(3px);
+}
+
+.app-sidebar-nav .nav-link.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-18deg);
+  animation: app-sheen 3.6s ease-in-out infinite;
+}
+
+.app-sidebar-nav .nav-link.active::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+@keyframes app-sheen {
+  0% { left: -60%; }
+  55%, 100% { left: 130%; }
+}
+
+/* --- 头部:底部渐变发光细线 --- */
+.app-header {
+  position: sticky;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.55), rgba(20, 184, 166, 0.55), transparent);
+  background-size: 200% 100%;
+  animation: app-line-flow 8s linear infinite;
+}
+
+@keyframes app-line-flow {
+  from { background-position: 0% 0; }
+  to { background-position: 200% 0; }
+}
+
+/* --- 卡片:玻璃拟态 + hover 发光上浮 --- */
+.metric-card,
+.metric-tile,
+.chart-card,
+.module-card,
+.entrance-panel,
+.project-visual-card {
+  background: var(--app-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    var(--app-shadow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, opacity 0.35s ease;
+}
+
+.metric-card:hover,
+.chart-card:hover,
+.module-card:hover,
+.project-visual-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: var(--app-tech-glow);
+}
+
+/* metric 卡角科技光点 */
+.metric-card::after,
+.metric-tile::after {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--app-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.metric-card:hover::after,
+.metric-tile:hover::after {
+  opacity: 1;
+  animation: app-dot-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes app-dot-blink {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14); }
+  50% { box-shadow: 0 0 0 5px rgba(20, 184, 166, 0.22); }
+}
+
+/* metric 顶部渐变条:hover 发光加宽 */
+.metric-card::before,
+.metric-tile::before {
+  transition: height 0.25s ease, filter 0.25s ease;
+}
+
+.metric-card:hover::before,
+.metric-tile:hover::before {
+  height: 4px;
+  filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.5));
+}
+
+.metric-value {
+  background: linear-gradient(120deg, var(--app-text) 30%, var(--app-primary) 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 兜底:不支持 background-clip:text 时回填文字色,避免数字隐形 */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .metric-value,
+  .detail-kpi strong {
+    -webkit-text-fill-color: currentColor;
+    color: var(--app-text);
+    background: none;
+  }
+}
+
+/* --- 按钮:主按钮微光扫过 + 发光 --- */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  background: var(--app-tech-gradient);
+  border-color: transparent;
+  background-size: 160% 160%;
+  transition: box-shadow 0.25s ease, transform 0.15s ease, background-position 0.5s ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--app-tech-gradient);
+  background-size: 160% 160%;
+  background-position: 100% 0;
+  border-color: transparent;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32), 0 0 0 1px rgba(20, 184, 166, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+}
+
+.btn-primary:hover::after {
+  left: 130%;
+}
+
+/* --- 进度/图表:完成态柔和辉光脉冲 --- */
+.percent-progress.is-complete .percent-progress-track span {
+  animation: app-progress-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes app-progress-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.18), 0 0 8px rgba(34, 197, 94, 0.2); }
+  50% { box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.28), 0 0 16px rgba(34, 197, 94, 0.45); }
+}
+
+.donut-chart {
+  filter: drop-shadow(0 6px 14px rgba(37, 99, 235, 0.12));
+}
+
+/* 甘特进度条流动光泽 */
+.gantt-bar i {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #2563eb, #0ea5e9, #14b8a6);
+  background-size: 200% 100%;
+  animation: app-line-flow 6s linear infinite;
+}
+
+/* --- 表格:渐变发光表头 + 行 hover 高亮 --- */
+.table thead th,
+.data-table thead th {
+  background: linear-gradient(180deg, #f4f8ff 0%, #eaf1fb 100%);
+  color: #334155;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.18);
+}
+
+.data-table tbody tr {
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.data-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.06), rgba(20, 184, 166, 0.03));
+  box-shadow: inset 3px 0 0 var(--app-primary);
+}
+
+/* --- 详情页小组件:玻璃拟态 + 微交互统一 --- */
+.detail-kpi,
+.summary-item {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(244, 248, 255, 0.85));
+  border-color: rgba(37, 99, 235, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.detail-kpi::before,
+.summary-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--app-tech-gradient);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.detail-kpi:hover,
+.summary-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: var(--app-tech-glow);
+}
+
+.detail-kpi:hover::before,
+.summary-item:hover::before {
+  opacity: 1;
+}
+
+.detail-kpi strong {
+  background: linear-gradient(120deg, var(--app-text) 40%, var(--app-primary) 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* meta-pill / filter-chip 微光 hover */
+.meta-pill,
+.filter-chip {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.meta-pill:hover,
+.filter-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
+}
+
+/* --- 状态徽章微光 --- */
+.status-badge {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.status-badge:hover {
+  transform: translateY(-1px);
+}
+
+/* --- 空状态:插画式图标 + 呼吸动效 --- */
+.empty-state {
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.6rem 1rem;
+}
+.empty-state::before {
+  content: "";
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(37, 99, 235, 0.16), transparent 62%),
+    var(--app-primary-soft);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='3.5' width='13' height='17' rx='2'/%3E%3Cpath d='M8 8h5M8 12h5M8 16h3'/%3E%3Ccircle cx='17' cy='17' r='3.2'/%3E%3Cpath d='m19.4 19.4 1.6 1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  animation: app-empty-breathe 3s ease-in-out infinite;
+}
+
+@keyframes app-empty-breathe {
+  0%, 100% { transform: translateY(0); box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18), 0 0 0 0 rgba(37, 99, 235, 0.14); }
+  50% { transform: translateY(-3px); box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.24), 0 8px 18px rgba(37, 99, 235, 0.14); }
+}
+
+/* --- 登录页:沉浸式入场 --- */
+.account-shell {
+  animation: app-account-in 0.5s ease both;
+}
+
+.account-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--app-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 24px 60px rgba(37, 99, 235, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.account-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--app-tech-gradient);
+  background-size: 200% 100%;
+  animation: app-line-flow 8s linear infinite;
+}
+
+.account-logo img {
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16), 0 14px 28px rgba(37, 99, 235, 0.16);
+  animation: app-logo-float 5s ease-in-out infinite;
+}
+
+@keyframes app-account-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes app-logo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* --- 交错淡入延迟(与 site.js 配合) --- */
+.reveal-ready [data-reveal-index] {
+  transition-delay: calc(var(--reveal-index, 0) * 60ms);
+}
+
+/* --- 降级:尊重系统减弱动效偏好 --- */
+@media (prefers-reduced-motion: reduce) {
+  .app-bg-fx::before,
+  .app-bg-fx .app-bg-orb,
+  .app-sidebar-brand .app-brand-mark::after,
+  .app-sidebar-nav .nav-link.active::before,
+  .app-header::after,
+  .empty-state::before,
+  .metric-card:hover::after,
+  .metric-tile:hover::after,
+  .percent-progress.is-complete .percent-progress-track span,
+  .gantt-bar i,
+  .btn-primary::after,
+  .account-shell,
+  .account-panel::before,
+  .account-logo img {
+    animation: none !important;
+  }
+}
+
+/* =====================================================================
+   第三轮:交互组件科技化
+   ===================================================================== */
+
+/* --- 1. 表单区块 --- */
+.form-section {
+  position: relative;
+  overflow: hidden;
+  background: var(--app-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: var(--app-shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.form-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--app-tech-gradient);
+  opacity: 0.85;
+}
+
+.form-section-title,
+.detail-panel-title {
+  position: relative;
+  padding-left: 0.7rem;
+}
+
+.form-section-title::before,
+.detail-panel-title::before {
+  content: "";
+  position: absolute;
+  top: 0.1em;
+  bottom: 0.1em;
+  left: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--app-tech-gradient);
+}
+
+/* 输入框 focus 发光上浮 */
+.form-control,
+.form-select {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.15), 0 6px 16px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+/* label 随聚焦高亮(表单组内) */
+.mb-3:focus-within > .form-label,
+.form-group:focus-within > .form-label,
+.rich-text-field:focus-within .form-label {
+  color: var(--app-primary);
+}
+
+.rich-text-editor:focus {
+  box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.15), 0 6px 16px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+/* --- 2. 详情标签页 --- */
+.detail-tab {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.detail-tab.is-active {
+  background: var(--app-tech-gradient);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+}
+
+.detail-tab.is-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-18deg);
+  animation: app-sheen 3.6s ease-in-out infinite;
+}
+
+.detail-tab-panel.is-active {
+  animation: app-tab-fade 0.35s ease both;
+}
+
+@keyframes app-tab-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 3. 状态时间线 --- */
+.status-step.is-complete:not(:last-child)::after,
+.status-step.is-current:not(:last-child)::after {
+  background: linear-gradient(90deg, var(--status-color), color-mix(in srgb, var(--status-color) 55%, #14b8a6));
+  background-size: 200% 100%;
+  animation: app-line-flow 6s linear infinite;
+}
+
+.status-step.is-complete .status-step-dot {
+  box-shadow: 0 0 0 4px var(--status-bg), 0 0 10px color-mix(in srgb, var(--status-color) 60%, transparent);
+}
+
+.status-step.is-current .status-step-dot {
+  animation: app-step-pulse 2s ease-in-out infinite;
+}
+
+@keyframes app-step-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--status-bg), 0 0 0 0 color-mix(in srgb, var(--status-color) 45%, transparent); }
+  50% { box-shadow: 0 0 0 4px var(--status-bg), 0 0 0 6px color-mix(in srgb, var(--status-color) 22%, transparent); }
+}
+
+.status-step-label {
+  transition: transform 0.18s ease;
+}
+
+.status-step:hover .status-step-label {
+  transform: translateY(-1px);
+}
+
+/* --- 4. 审计时间线 --- */
+.audit-timeline::before {
+  background: linear-gradient(180deg, var(--app-primary), rgba(20, 184, 166, 0.4), transparent);
+}
+
+.audit-timeline-dot {
+  box-shadow: 0 0 0 3px var(--app-primary-soft), 0 0 8px rgba(37, 99, 235, 0.4);
+}
+
+.audit-timeline-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.audit-timeline-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.24);
+  box-shadow: var(--app-tech-glow);
+}
+
+/* --- 5. 筛选器 --- */
+.filter-panel {
+  position: relative;
+}
+
+.filter-drawer {
+  overflow: hidden;
+}
+
+.filter-drawer-enabled .filter-drawer {
+  display: block;
+  max-height: 0;
+  padding-top: 0;
+  margin-top: 0;
+  border-top-color: transparent;
+  opacity: 0;
+  transition: max-height 0.32s ease, opacity 0.28s ease, padding-top 0.32s ease;
+}
+
+.filter-drawer-enabled .filter-drawer.is-open {
+  max-height: 60rem;
+  padding-top: 0.65rem;
+  opacity: 1;
+  border-top-color: var(--app-border);
+}
+
+.filter-quick-actions .is-active {
+  background: var(--app-tech-gradient);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.22);
+}
+
+/* --- 6. 甘特图 --- */
+.gantt-chart-months {
+  background: linear-gradient(180deg, #f4f8ff, #eaf1fb);
+}
+
+.gantt-chart-months span {
+  color: #475569;
+}
+
+.gantt-chart-row {
+  transition: background 0.18s ease;
+}
+
+.gantt-chart-row:hover {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.gantt-chart-row:hover .gantt-chart-label {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+/* --- 7. 分页 --- */
+.pagination-controls .page-link {
+  color: var(--app-text-soft);
+  border-color: var(--app-border);
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}
+
+.pagination-controls .page-link:hover {
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.14);
+}
+
+.pagination-controls .page-item.active .page-link {
+  background: var(--app-tech-gradient);
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.24);
+}
+
+/* --- 第三轮 reduced-motion 降级 --- */
+@media (prefers-reduced-motion: reduce) {
+  .detail-tab.is-active::before,
+  .detail-tab-panel.is-active,
+  .status-step.is-complete:not(:last-child)::after,
+  .status-step.is-current:not(:last-child)::after,
+  .status-step.is-current .status-step-dot {
+    animation: none !important;
+  }
+
+  .filter-drawer-enabled .filter-drawer {
+    transition: none !important;
+  }
+}
+
+/* =====================================================================
+   第四轮:3D 景深与动态
+   —— 仅作用于展示型元素,数据表格/表单保持稳定可读
+   ===================================================================== */
+
+/* 为卡片网格建立透视上下文 */
+.metric-grid,
+.dashboard-visual-grid,
+.module-grid,
+.entrance-grid,
+.project-visual-grid,
+.account-shell {
+  perspective: 1200px;
+  perspective-origin: center -10%;
+}
+
+/* 可倾斜卡片:3D 变换基座 */
+.tilt-card {
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(var(--tilt-lift, 0px)) scale(var(--tilt-scale, 1));
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+  will-change: transform;
+}
+
+/* 提高特异性,压过旧的 hover / is-visible translateY 规则,统一交给 3D 变量驱动 */
+.tilt-card.tilt-card,
+.tilt-card.is-visible,
+.tilt-card.is-visible:hover,
+.metric-card.tilt-card:hover,
+.chart-card.tilt-card:hover,
+.module-card.tilt-card:hover,
+.project-visual-card.tilt-card:hover {
+  transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(var(--tilt-lift, 0px)) scale(var(--tilt-scale, 1));
+}
+
+/* 悬停时的多层景深阴影 */
+.tilt-card.is-tilting {
+  transition: box-shadow 0.35s ease;
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.06),
+    0 12px 24px rgba(37, 99, 235, 0.12),
+    0 28px 60px rgba(37, 99, 235, 0.16);
+}
+
+/* 光泽高光层:跟随鼠标位置 */
+.tilt-card .tilt-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    22rem 22rem at var(--glare-x, 50%) var(--glare-y, 0%),
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 45%
+  );
+  transition: opacity 0.3s ease;
+  mix-blend-mode: soft-light;
+}
+
+.tilt-card.is-tilting .tilt-glare {
+  opacity: 1;
+}
+
+/* 卡片内容随倾斜浮起(景深分层) */
+.tilt-card .metric-label,
+.tilt-card .metric-value,
+.tilt-card .metric-hint,
+.tilt-card .chart-title,
+.tilt-card .chart-subtitle,
+.tilt-card .module-title,
+.tilt-card .module-subtitle,
+.tilt-card .entrance-title,
+.tilt-card .entrance-subtitle,
+.tilt-card .module-actions,
+.tilt-card .donut-wrap {
+  transform: translateZ(28px);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tilt-card .metric-value {
+  transform: translateZ(46px);
+}
+
+/* 顶部渐变条在 3D 中略微前浮 */
+.tilt-card::before {
+  transform: translateZ(6px);
+}
+
+/* 降级:减弱动效 / 触摸设备 关闭 3D */
+@media (prefers-reduced-motion: reduce) {
+  .tilt-card {
+    transform: none !important;
+  }
+  .tilt-card .tilt-glare {
+    display: none;
+  }
+  .tilt-card .metric-value,
+  .tilt-card .metric-label,
+  .tilt-card .chart-title {
+    transform: none !important;
+  }
+}
+
+@media (hover: none) {
+  .tilt-card {
+    transform: none !important;
+  }
+  .tilt-card .tilt-glare {
+    display: none;
+  }
+}
+
+/* --- 打印:隐藏所有科技装饰 --- */
+@media print {
+  .app-bg-fx {
+    display: none !important;
+  }
+
+  .metric-card,
+  .chart-card,
+  .module-card,
+  .project-visual-card {
+    background: #fff;
+    backdrop-filter: none;
+    box-shadow: none;
   }
 }
