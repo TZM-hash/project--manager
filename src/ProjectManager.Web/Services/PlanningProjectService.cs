@@ -18,7 +18,20 @@ public sealed class PlanningProjectService(ApplicationDbContext db)
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var orderedQuery = OrderForList(BaseQuery());
+        return await GetPlanningProjectsPageAsync(
+            new PlanningProjectFilter(null, null, null),
+            pageNumber,
+            pageSize,
+            cancellationToken);
+    }
+
+    public async Task<PagedResult<PlanningProject>> GetPlanningProjectsPageAsync(
+        PlanningProjectFilter filter,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var orderedQuery = OrderForList(ApplyFilter(BaseQuery(), filter));
 
         return await PagedResult<PlanningProject>.CreateAsync(
             orderedQuery,
@@ -84,24 +97,25 @@ public sealed class PlanningProjectService(ApplicationDbContext db)
         project.LeaderUserId = leaderUserId;
         project.Vendor = string.IsNullOrWhiteSpace(vendor) ? null : vendor.Trim();
 
-        if (recordYear.HasValue && recordMonth.HasValue && !string.IsNullOrWhiteSpace(currentRecord))
+        var normalizedCurrentRecord = RichTextSanitizer.Normalize(currentRecord);
+        var normalizedLatestDescription = RichTextSanitizer.Normalize(latestDescription);
+
+        if (recordYear.HasValue && recordMonth.HasValue && !string.IsNullOrWhiteSpace(normalizedCurrentRecord))
         {
             project.HistoryRecords.Add(new PlanningProjectHistoryRecord
             {
                 Year = recordYear.Value,
                 Month = recordMonth.Value,
                 PreviousDescription = project.LatestDescription,
-                CurrentRecord = currentRecord.Trim(),
+                CurrentRecord = normalizedCurrentRecord,
                 CreatedByUserId = currentUserId,
                 CreatedAt = now
             });
-            project.LatestDescription = currentRecord.Trim();
+            project.LatestDescription = normalizedCurrentRecord;
         }
         else if (latestDescription is not null)
         {
-            project.LatestDescription = string.IsNullOrWhiteSpace(latestDescription)
-                ? null
-                : latestDescription.Trim();
+            project.LatestDescription = normalizedLatestDescription;
         }
 
         project.UpdatedAt = now;
@@ -183,4 +197,31 @@ public sealed class PlanningProjectService(ApplicationDbContext db)
             ? query.OrderByDescending(x => x.Id).ThenBy(x => x.Name)
             : query.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Name);
     }
+
+    private static IQueryable<PlanningProject> ApplyFilter(
+        IQueryable<PlanningProject> query,
+        PlanningProjectFilter filter)
+    {
+        if (!string.IsNullOrWhiteSpace(filter.Name))
+        {
+            query = query.Where(x => x.Name.Contains(filter.Name));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.LeaderUserId))
+        {
+            query = query.Where(x => x.LeaderUserId != null && x.LeaderUserId.Contains(filter.LeaderUserId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Vendor))
+        {
+            query = query.Where(x => x.Vendor != null && x.Vendor.Contains(filter.Vendor));
+        }
+
+        return query;
+    }
 }
+
+public sealed record PlanningProjectFilter(
+    string? Name,
+    string? LeaderUserId,
+    string? Vendor);

@@ -27,7 +27,7 @@
             </tr>
             <tr>
                 <th>最新说明</th>
-                <td>@(Model.Project.LatestDescription ?? "-")</td>
+                <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Project.LatestDescription) ?? "-")</td>
             </tr>
             <tr>
                 <th>最近更新</th>
@@ -54,8 +54,8 @@
                 {
                     <tr>
                         <td>@record.Year-@record.Month.ToString("00")</td>
-                        <td>@(record.PreviousDescription ?? "-")</td>
-                        <td>@(record.CurrentRecord ?? "-")</td>
+                        <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(record.PreviousDescription) ?? "-")</td>
+                        <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(record.CurrentRecord) ?? "-")</td>
                         <td>@(record.CreatedByUser?.DisplayName ?? record.CreatedByUser?.UserName ?? record.CreatedByUserId)</td>
                         <td>@record.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                     </tr>

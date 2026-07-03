@@ -9,7 +9,8 @@ namespace ProjectManager.Web.Services;
 
 public sealed class DataExchangeService(
     ApplicationDbContext db,
-    UserManager<ApplicationUser> userManager)
+    UserManager<ApplicationUser> userManager,
+    UserLookupService userLookup)
 {
     private const string ExcelContentType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -290,7 +291,7 @@ public sealed class DataExchangeService(
                 result.UsersUpdated++;
             }
 
-            var roles = SplitList(CellText(row, 6))
+            var roles = UserLookupService.SplitNames(CellText(row, 6))
                 .Select(ResolveRoleName)
                 .Where(x => x is not null)
                 .Cast<string>()
@@ -503,7 +504,7 @@ public sealed class DataExchangeService(
             }
 
             var leaderIds = new List<string>();
-            foreach (var leader in SplitList(CellText(row, 2)))
+            foreach (var leader in UserLookupService.SplitNames(CellText(row, 2)))
             {
                 var id = await ResolveUserIdAsync(leader, cancellationToken);
                 if (!string.IsNullOrWhiteSpace(id))
@@ -590,21 +591,7 @@ public sealed class DataExchangeService(
 
     private async Task<string?> ResolveUserIdAsync(string value, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        var user = await userManager.FindByNameAsync(value);
-        if (user is not null)
-        {
-            return user.Id;
-        }
-
-        return await userManager.Users
-            .Where(x => x.Id == value || x.DisplayName == value || x.Email == value)
-            .Select(x => x.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        return await userLookup.ResolveUserIdAsync(value, cancellationToken);
     }
 
     private async Task<Dictionary<string, string>> LoadUserLookupAsync(CancellationToken cancellationToken)

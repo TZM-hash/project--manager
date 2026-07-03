@@ -53,6 +53,52 @@
     </section>
 </div>
 
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+    <div class="filter-quick-row">
+        <div class="filter-quick-main">
+            <input class="form-control" asp-for="ProjectName" placeholder="搜索项目名称" />
+            <input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" />
+        </div>
+        <div class="filter-quick-actions">
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
+            <button class="btn btn-primary" type="submit">查询</button>
+        </div>
+    </div>
+    <div class="filter-drawer" data-filter-drawer-panel>
+        <div class="filter-drawer-header">
+            <div>
+                <div class="filter-drawer-title">高级筛选</div>
+                <div class="filter-drawer-subtitle">按年度、母档案号、专案人员和状态定位项目</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
+            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母档案号" /></div>
+            <div class="col-md-3">
+                <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
+                    <option value="">专案人员</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
+                    <option value="">状态</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" asp-for="OpenOnly">
+                    <option value="false">全部</option>
+                    <option value="true">未结案</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" asp-for="PageSize" />
+    <input type="hidden" name="PageNumber" value="1" />
+</form>
+
+<partial name="_FilterSummary" model="Model.FilterSummary" />
+
 <div class="data-list-card">
     <div class="data-table-wrap">
         <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
@@ -89,7 +135,7 @@
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
                     @if (Model.CanEditAll || project.Assignments.Any(x => x.UserId == Model.CurrentUserId))
                     {
-                        <a class="btn btn-sm btn-outline-secondary" asp-page="./EditProgress" asp-route-id="@project.Id">编辑</a>
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
                     }
                 </td>
             </tr>

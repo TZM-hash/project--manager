@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initGanttEditors();
   initRevealAnimations();
   initCountUp();
-  initTiltCards();
+  initCardHoverEffects();
 });
 
 function initPasswordToggles() {
@@ -477,16 +477,8 @@ function initCountUp() {
   targets.forEach((target) => observer.observe(target));
 }
 
-function initTiltCards() {
-  // 触摸设备或减弱动效偏好下不启用 3D 倾斜
-  if (
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-    window.matchMedia("(hover: none)").matches
-  ) {
-    return;
-  }
-
-  const selector = [
+function initCardHoverEffects() {
+  const hoverSelector = [
     ".metric-card",
     ".chart-card",
     ".module-card",
@@ -495,121 +487,12 @@ function initTiltCards() {
     ".account-panel"
   ].join(",");
 
-  const cards = Array.from(document.querySelectorAll(selector));
-  if (cards.length === 0) {
-    return;
-  }
-
-  const MAX_TILT = 7; // 最大倾斜角度(度),克制以保持商务感
-
-  cards.forEach((card) => {
-    card.classList.add("tilt-card");
-
-    // 注入光泽高光层
-    const glare = document.createElement("span");
-    glare.className = "tilt-glare";
-    glare.setAttribute("aria-hidden", "true");
-    card.appendChild(glare);
-
-    let frame = null;
-    let pending = null;
-
-    const apply = () => {
-      frame = null;
-      if (!pending) {
-        return;
-      }
-      const { rx, ry, gx, gy } = pending;
-      card.style.setProperty("--tilt-x", `${rx.toFixed(2)}deg`);
-      card.style.setProperty("--tilt-y", `${ry.toFixed(2)}deg`);
-      card.style.setProperty("--tilt-lift", "-6px");
-      card.style.setProperty("--tilt-scale", "1.02");
-      card.style.setProperty("--glare-x", `${gx.toFixed(1)}%`);
-      card.style.setProperty("--glare-y", `${gy.toFixed(1)}%`);
-    };
-
-    const onMove = (event) => {
-      const rect = card.getBoundingClientRect();
-      const px = (event.clientX - rect.left) / rect.width; // 0..1
-      const py = (event.clientY - rect.top) / rect.height; // 0..1
-      // 鼠标在上半 => 卡片上缘后仰;鼠标在右 => 右缘后仰
-      pending = {
-        rx: (0.5 - py) * (MAX_TILT * 2),
-        ry: (px - 0.5) * (MAX_TILT * 2),
-        gx: px * 100,
-        gy: py * 100
-      };
-      if (frame === null) {
-        frame = window.requestAnimationFrame(apply);
-      }
-    };
-
-    const onEnter = () => {
-      card.classList.add("is-tilting");
-    };
-
-    const onLeave = () => {
-      card.classList.remove("is-tilting");
-      if (frame !== null) {
-        window.cancelAnimationFrame(frame);
-        frame = null;
-      }
-      pending = null;
-      card.style.setProperty("--tilt-x", "0deg");
-      card.style.setProperty("--tilt-y", "0deg");
-      card.style.setProperty("--tilt-lift", "0px");
-      card.style.setProperty("--tilt-scale", "1");
-    };
-
-    card.addEventListener("mouseenter", onEnter);
-    card.addEventListener("mousemove", onMove);
-    card.addEventListener("mouseleave", onLeave);
+  document.querySelectorAll(hoverSelector).forEach((card) => {
+    card.classList.add("hover-card");
+    card.classList.remove("tilt-card", "is-tilting");
+    card.style.removeProperty("--tilt-x");
+    card.style.removeProperty("--tilt-y");
+    card.style.removeProperty("--tilt-lift");
+    card.style.removeProperty("--tilt-scale");
   });
-
-  initBackgroundParallax();
-}
-
-function initBackgroundParallax() {
-  if (
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-    window.matchMedia("(hover: none)").matches
-  ) {
-    return;
-  }
-
-  const layer = document.querySelector(".app-bg-fx");
-  if (!layer) {
-    return;
-  }
-
-  const orbs = Array.from(layer.querySelectorAll(".app-bg-orb"));
-  if (orbs.length === 0) {
-    return;
-  }
-
-  let frame = null;
-  let target = { x: 0, y: 0 };
-
-  const apply = () => {
-    frame = null;
-    // 视差写入 CSS 变量,由 CSS 与浮动动画通过 translate 叠加,避免覆盖 keyframes 的 transform
-    orbs.forEach((orb, index) => {
-      const depth = (index + 1) * 14;
-      orb.style.setProperty("--parallax-x", `${(target.x * depth).toFixed(1)}px`);
-      orb.style.setProperty("--parallax-y", `${(target.y * depth).toFixed(1)}px`);
-    });
-  };
-
-  window.addEventListener(
-    "mousemove",
-    (event) => {
-      // -0.5..0.5 归一化,反向移动营造景深
-      target.x = -(event.clientX / window.innerWidth - 0.5);
-      target.y = -(event.clientY / window.innerHeight - 0.5);
-      if (frame === null) {
-        frame = window.requestAnimationFrame(apply);
-      }
-    },
-    { passive: true }
-  );
 }

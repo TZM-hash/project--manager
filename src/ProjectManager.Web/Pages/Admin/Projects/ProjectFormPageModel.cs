@@ -29,6 +29,8 @@ public abstract class ProjectFormPageModel(
 
     public List<SelectListItem> SubCaseContactOptions { get; private set; } = [];
 
+    public virtual bool IsBasicInfoReadOnly => false;
+
     public List<SelectListItem> PurchaseTypeOptions { get; } =
     [
         new("内购", ((int)PurchaseType.InternalPurchase).ToString(CultureInfo.InvariantCulture)),

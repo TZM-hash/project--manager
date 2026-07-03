@@ -270,7 +270,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         var visibleTaskCount = Math.Max(tasks.Count, 1);
         var lastTaskRow = firstTaskRow + visibleTaskCount - 1;
         var noteTopRow = lastTaskRow + 1;
-        var noteBottomRow = noteTopRow + 4;
+        var noteBottomRow = noteTopRow + 6;
 
         sheet.Style.Font.FontName = "Microsoft YaHei";
         sheet.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
@@ -292,20 +292,21 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         usedRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
         sheet.Column(1).Width = 5;
-        sheet.Column(2).Width = 24;
+        sheet.Column(2).Width = 30;
         sheet.Column(3).Width = 5;
         for (var column = monthStartColumn; column < ratioColumn; column++)
         {
-            sheet.Column(column).Width = 4.2;
+            sheet.Column(column).Width = 7.5;
         }
 
         sheet.Column(ratioColumn).Width = 10;
-        sheet.Column(actualColumn).Width = 12;
-        sheet.Rows(firstTaskRow, lastTaskRow).Height = 22;
+        sheet.Column(actualColumn).Width = 13;
+        sheet.Rows(firstTaskRow, lastTaskRow).Height = 28;
+        sheet.Rows(noteTopRow, noteBottomRow).Height = 24;
         sheet.SheetView.FreezeRows(monthRow);
         sheet.SheetView.FreezeColumns(leftColumns);
         sheet.PageSetup.PageOrientation = XLPageOrientation.Landscape;
-        sheet.PageSetup.PagesWide = 1;
+        sheet.PageSetup.PagesWide = 2;
         sheet.PageSetup.Margins.Top = 0.35;
         sheet.PageSetup.Margins.Bottom = 0.35;
         sheet.PageSetup.Margins.Left = 0.25;
@@ -332,6 +333,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         sheet.Cell(topRow, monthStartColumn).Style.Font.Bold = true;
         sheet.Cell(topRow, monthStartColumn).Style.Font.FontSize = 14;
         sheet.Cell(topRow, monthStartColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        sheet.Cell(topRow, monthStartColumn).Style.Alignment.WrapText = true;
 
         sheet.Cell(topRow, rightStartColumn).Value = "专案编号";
         SetMergedText(sheet, topRow, rightStartColumn + 1, topRow, rightStartColumn + 2, project.ProjectNumber);
@@ -353,6 +355,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             lastColumn,
             $"整体开始日：{plan?.StartDate?.ToString("yyyy-MM-dd") ?? "-"}    整体完成日：{plan?.FinishDate?.ToString("yyyy-MM-dd") ?? "-"}    状态：{project.Status?.Name ?? "-"}");
         sheet.Cell(topRow + 2, monthStartColumn).Style.Fill.BackgroundColor = XLColor.FromHtml("#eff6ff");
+        sheet.Cell(topRow + 2, monthStartColumn).Style.Alignment.WrapText = true;
     }
 
     private static void WriteGanttTimeHeader(
@@ -380,7 +383,9 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
         for (var i = 0; i < months.Count; i++)
         {
-            sheet.Cell(monthRow, monthStartColumn + i).Value = months[i].Month.Month;
+            sheet.Cell(monthRow, monthStartColumn + i).Value = months[i].StepMonths == 1
+                ? months[i].Month.Month.ToString()
+                : months[i].Label;
             sheet.Cell(monthRow, monthStartColumn + i).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         }
 
@@ -425,6 +430,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             sheet.Cell(row, actualColumn).Style.NumberFormat.Format = "0.00%";
             sheet.Range(row, 1, row, actualColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             sheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+            sheet.Cell(row, 2).Style.Alignment.WrapText = true;
             PaintTaskBar(sheet, task, months, row, monthStartColumn);
         }
     }

@@ -40,14 +40,24 @@
         <select asp-for="Input.LeaderUserIds" asp-items="Model.UserOptions" class="form-select form-select-sm" multiple size="4"></select>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 planning-note-grid">
         <div class="col-md-6">
             <label class="form-label form-label-sm">上期说明</label>
-            <textarea class="form-control form-control-sm" rows="6" readonly>@(Model.Input.PreviousDescription ?? "-")</textarea>
+            <div class="planning-note-preview rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Input.PreviousDescription) ?? "-")</div>
         </div>
         <div class="col-md-6">
             <label asp-for="Input.CurrentRecord" class="form-label form-label-sm">本期记录</label>
-            <textarea asp-for="Input.CurrentRecord" class="form-control form-control-sm current-record-input" rows="6"></textarea>
+            <div class="rich-text-field planning-note-editor" data-rich-text>
+                <div class="rich-text-toolbar" aria-label="本期记录颜色">
+                    @foreach (var color in RichTextSanitizer.ColorOptions)
+                    {
+                        <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
+                    }
+                    <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+                </div>
+                <textarea asp-for="Input.CurrentRecord" hidden data-rich-text-source></textarea>
+                <div class="rich-text-editor current-record-input" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.CurrentRecord))</div>
+            </div>
             <div class="form-text">填写本期记录并选择年月后保存，将按月结算一条历史记录，同时更新最新说明。</div>
         </div>
     </div>
@@ -77,8 +87,8 @@
             {
                 <tr>
                     <td>@record.Year-@record.Month.ToString("00")</td>
-                    <td>@(record.PreviousDescription ?? "-")</td>
-                    <td>@(record.CurrentRecord ?? "-")</td>
+                    <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(record.PreviousDescription) ?? "-")</td>
+                    <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(record.CurrentRecord) ?? "-")</td>
                     <td>@(record.CreatedByUser?.DisplayName ?? record.CreatedByUser?.UserName ?? record.CreatedByUserId)</td>
                     <td>@record.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 </tr>

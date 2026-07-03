@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
@@ -14,7 +12,7 @@ namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class ImportModel(
     PlanningProjectService planningProjectService,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserLookupService userLookup) : PageModel
 {
     [BindProperty]
     [Required(ErrorMessage = "请选择 Excel 文件。")]
@@ -37,6 +35,12 @@ public sealed class ImportModel(
             return Page();
         }
 
+        if (!string.Equals(Path.GetExtension(UploadFile.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            ErrorMessage = "当前仅支持 .xlsx 文件，请下载模板后重新上传。";
+            return Page();
+        }
+
         try
         {
             using var stream = UploadFile.OpenReadStream();
@@ -49,11 +53,6 @@ public sealed class ImportModel(
                 ErrorMessage = "Excel 文件中没有数据行。";
                 return Page();
             }
-
-            var users = await userManager.Users
-                .Where(x => x.IsActive)
-                .ToListAsync(cancellationToken);
-            var userByUserName = users.ToDictionary(x => x.UserName ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
             var projects = new List<PlanningProject>();
 
@@ -69,31 +68,17 @@ public sealed class ImportModel(
                 var vendor = row.Cell(3).GetString().Trim();
                 var latestDescription = row.Cell(4).GetString().Trim();
 
-                string? leaderUserId = null;
-                if (!string.IsNullOrWhiteSpace(leaderUserNames))
-                {
-                    var userNames = leaderUserNames.Split(new[] { ',', '，', ';', '；' }, StringSplitOptions.RemoveEmptyEntries);
-                    var ids = new List<string>();
-                    foreach (var userName in userNames)
-                    {
-                        var trimmedName = userName.Trim();
-                        if (userByUserName.TryGetValue(trimmedName, out var user))
-                        {
-                            ids.Add(user.Id);
-                        }
-                    }
-                    if (ids.Count > 0)
-                    {
-                        leaderUserId = string.Join(",", ids);
-                    }
-                }
+                var resolvedLeaderIds = await userLookup.ResolveUserIdsAsync(leaderUserNames, cancellationToken);
+                var leaderUserId = resolvedLeaderIds.Count > 0
+                    ? string.Join(",", resolvedLeaderIds)
+                    : null;
 
                 projects.Add(new PlanningProject
                 {
                     Name = name,
                     LeaderUserId = leaderUserId,
                     Vendor = string.IsNullOrWhiteSpace(vendor) ? null : vendor,
-                    LatestDescription = string.IsNullOrWhiteSpace(latestDescription) ? null : latestDescription
+                    LatestDescription = RichTextSanitizer.Normalize(latestDescription)
                 });
             }
 

@@ -44,9 +44,7 @@ public sealed class CreateModel(
             Name = Input.Name.Trim(),
             LeaderUserId = leaderUserId,
             Vendor = string.IsNullOrWhiteSpace(Input.Vendor) ? null : Input.Vendor.Trim(),
-            LatestDescription = string.IsNullOrWhiteSpace(Input.LatestDescription)
-                ? null
-                : Input.LatestDescription.Trim()
+            LatestDescription = RichTextSanitizer.Normalize(Input.LatestDescription)
         };
 
         await planningProjectService.CreateAsync(project, cancellationToken);

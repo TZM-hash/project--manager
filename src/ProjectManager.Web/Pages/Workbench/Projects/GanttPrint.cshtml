@@ -1,0 +1,98 @@
+@page "{id:int}"
+@using ProjectManager.Web.Services
+@model ProjectManager.Web.Pages.Workbench.Projects.GanttPrintModel
+@{
+    ViewData["Title"] = "甘特图报表";
+    Layout = "_PrintLayout";
+    var months = ProjectGanttService.BuildMonths(Model.GanttInput);
+    var tasks = Model.GanttInput.Tasks
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name) || x.PlannedStartDate is not null || x.PlannedFinishDate is not null || x.ProgressPercent > 0 || !string.IsNullOrWhiteSpace(x.ProgressDescription))
+        .ToList();
+}
+
+<div class="gantt-print-report">
+    <div class="gantt-print-title">@Model.Project.ProjectNumber @Model.Project.Name - 预计进度</div>
+
+    <div class="gantt-print-info">
+        <div class="gantt-print-logo">台塑<br />电子材料部</div>
+        <div class="gantt-print-project">@Model.Project.Name</div>
+        <div class="gantt-print-meta">
+            <div><span>专案编号</span><strong>@Model.Project.ProjectNumber</strong></div>
+            <div><span>客户/负责人</span><strong>@string.Join("; ", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</strong></div>
+            <div><span>档案日期</span><strong>@DateTime.Today.ToString("yyyy/M/d")</strong></div>
+            <div><span>状态</span><strong>@Model.Project.Status?.Name</strong></div>
+        </div>
+    </div>
+
+    <div class="gantt-print-range">
+        整体开始日：@(Model.GanttInput.StartDate?.ToString("yyyy-MM-dd") ?? "-")
+        &nbsp;&nbsp;整体完成日：@(Model.GanttInput.FinishDate?.ToString("yyyy-MM-dd") ?? "-")
+    </div>
+
+    <div class="gantt-print-scroll">
+        <table class="gantt-print-table">
+            <thead>
+                <tr>
+                    <th class="gantt-print-index">项次</th>
+                    <th class="gantt-print-name">名称</th>
+                    @foreach (var month in months)
+                    {
+                        <th>@month.Label</th>
+                    }
+                    <th>比例</th>
+                    <th>实际完成</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (tasks.Count == 0)
+                {
+                    <tr>
+                        <td>1</td>
+                        <td>请先维护细分工作</td>
+                        @foreach (var _ in months)
+                        {
+                            <td></td>
+                        }
+                        <td>0%</td>
+                        <td>0%</td>
+                    </tr>
+                }
+                @for (var i = 0; i < tasks.Count; i++)
+                {
+                    var task = tasks[i];
+                    var bar = ProjectGanttService.BuildBar(task, months);
+                    var startCell = (int)Math.Floor(bar.LeftPercent / 100 * months.Count);
+                    var cells = (int)Math.Ceiling(bar.WidthPercent / 100 * months.Count);
+                    var doneCells = (int)Math.Ceiling(cells * bar.ProgressPercent / 100);
+                    <tr>
+                        <td>@(i + 1)</td>
+                        <td class="gantt-print-task">@task.Name</td>
+                        @for (var m = 0; m < months.Count; m++)
+                        {
+                            var inBar = bar.WidthPercent > 0 && m >= startCell && m < startCell + cells;
+                            var done = inBar && m < startCell + doneCells;
+                            <td class="@(done ? "gantt-print-done" : inBar ? "gantt-print-plan" : null)"></td>
+                        }
+                        <td>@(tasks.Count == 0 ? "0%" : $"{(100m / Math.Max(tasks.Count, 1)):0.#}%")</td>
+                        <td>@task.ProgressPercent.ToString("0.##")%</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="gantt-print-note">
+        <strong>进度说明</strong>
+        <div>@(string.IsNullOrWhiteSpace(Model.GanttInput.ProgressNote) ? "暂无进度说明。" : Model.GanttInput.ProgressNote)</div>
+        @foreach (var task in tasks.Where(x => !string.IsNullOrWhiteSpace(x.ProgressDescription)))
+        {
+            <div>@task.Name：@task.ProgressDescription</div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.setTimeout(function () { window.print(); }, 300);
+    </script>
+}

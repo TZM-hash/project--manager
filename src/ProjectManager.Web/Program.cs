@@ -44,6 +44,7 @@ builder.Services.AddScoped<DataExchangeService>();
 builder.Services.AddScoped<PlanningProjectService>();
 builder.Services.AddScoped<MaintenanceOrderService>();
 builder.Services.AddScoped<ProjectGanttService>();
+builder.Services.AddScoped<UserLookupService>();
 
 var app = builder.Build();
 

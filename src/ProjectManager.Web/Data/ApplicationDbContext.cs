@@ -34,6 +34,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<ProjectGanttTask> ProjectGanttTasks => Set<ProjectGanttTask>();
 
+    public DbSet<ProjectSkippedStatus> ProjectSkippedStatuses => Set<ProjectSkippedStatus>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -239,6 +241,25 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(x => x.ProjectGanttPlan)
                 .WithMany(x => x.Tasks)
                 .HasForeignKey(x => x.ProjectGanttPlanId);
+        });
+
+        builder.Entity<ProjectSkippedStatus>(entity =>
+        {
+            entity.HasIndex(x => new { x.ProjectId, x.StatusId }).IsUnique();
+
+            entity.HasOne(x => x.Project)
+                .WithMany(x => x.SkippedStatuses)
+                .HasForeignKey(x => x.ProjectId);
+
+            entity.HasOne(x => x.Status)
+                .WithMany()
+                .HasForeignKey(x => x.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

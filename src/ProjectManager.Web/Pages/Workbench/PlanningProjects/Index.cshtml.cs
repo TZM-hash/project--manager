@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
@@ -23,9 +24,20 @@ public sealed class IndexModel(
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = PageSizeOptions.DefaultPageSize;
 
+    [BindProperty(SupportsGet = true)]
+    public string? Name { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? LeaderUserId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? Vendor { get; set; }
+
     public IReadOnlyList<PlanningProject> Projects { get; private set; } = [];
 
     public Dictionary<string, string> UserDisplayNames { get; private set; } = [];
+
+    public List<SelectListItem> UserOptions { get; private set; } = [];
 
     public int TotalCount { get; private set; }
 
@@ -43,12 +55,18 @@ public sealed class IndexModel(
         TotalCount,
         TotalPages,
         "./Index",
-        new Dictionary<string, string?>());
+        BuildRouteValues());
+
+    public FilterSummaryViewModel FilterSummary => new(
+        "./Index",
+        BuildFilterSummaryItems(),
+        new Dictionary<string, string?> { [nameof(PageSize)] = PageSize.ToString() });
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         await LoadUserDisplayNamesAsync(cancellationToken);
         var page = await planningProjectService.GetPlanningProjectsPageAsync(
+            new PlanningProjectFilter(Name, LeaderUserId, Vendor),
             PageNumber,
             PageSize,
             cancellationToken);
@@ -78,13 +96,13 @@ public sealed class IndexModel(
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
         await planningProjectService.DeleteAsync(id, cancellationToken);
-        return RedirectToPage("./Index", new { PageNumber, PageSize });
+        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
         await planningProjectService.DeleteManyAsync(ids, cancellationToken);
-        return RedirectToPage("./Index", new { PageNumber, PageSize });
+        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     public IActionResult OnPostBatchPrint(int[] ids)
@@ -106,13 +124,20 @@ public sealed class IndexModel(
         UserDisplayNames = users.ToDictionary(
             x => x.Id,
             x => string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName);
+        UserOptions = users
+            .Where(x => x.IsActive)
+            .Select(x => new SelectListItem(
+                string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
+                x.Id))
+            .OrderBy(x => x.Text)
+            .ToList();
     }
 
     private async Task LoadInsightsAsync(CancellationToken cancellationToken)
     {
-        var projects = await db.PlanningProjects
+        var projects = await ApplyFilter(db.PlanningProjects
             .AsNoTracking()
-            .Where(x => !x.IsDeleted)
+            .Where(x => !x.IsDeleted))
             .Select(x => new
             {
                 x.LeaderUserId,
@@ -164,5 +189,65 @@ public sealed class IndexModel(
     private string ResolveLeaderName(string id)
     {
         return UserDisplayNames.TryGetValue(id, out var name) ? name : id;
+    }
+
+    private IQueryable<PlanningProject> ApplyFilter(IQueryable<PlanningProject> query)
+    {
+        if (!string.IsNullOrWhiteSpace(Name))
+        {
+            query = query.Where(x => x.Name.Contains(Name));
+        }
+
+        if (!string.IsNullOrWhiteSpace(LeaderUserId))
+        {
+            query = query.Where(x => x.LeaderUserId != null && x.LeaderUserId.Contains(LeaderUserId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Vendor))
+        {
+            query = query.Where(x => x.Vendor != null && x.Vendor.Contains(Vendor));
+        }
+
+        return query;
+    }
+
+    private Dictionary<string, string?> BuildRouteValues()
+    {
+        return new Dictionary<string, string?>
+        {
+            [nameof(Name)] = Name,
+            [nameof(LeaderUserId)] = LeaderUserId,
+            [nameof(Vendor)] = Vendor
+        };
+    }
+
+    private Dictionary<string, string?> BuildRouteValuesWithPaging()
+    {
+        var values = BuildRouteValues();
+        values[nameof(PageNumber)] = PageNumber.ToString();
+        values[nameof(PageSize)] = PageSize.ToString();
+        return values;
+    }
+
+    private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
+    {
+        var items = new List<FilterSummaryItem>();
+        if (!string.IsNullOrWhiteSpace(Name))
+        {
+            items.Add(new FilterSummaryItem("项目名称", Name));
+        }
+
+        if (!string.IsNullOrWhiteSpace(LeaderUserId))
+        {
+            var userText = UserOptions.FirstOrDefault(x => x.Value == LeaderUserId)?.Text ?? LeaderUserId;
+            items.Add(new FilterSummaryItem("项目负责人", userText));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Vendor))
+        {
+            items.Add(new FilterSummaryItem("厂商", Vendor));
+        }
+
+        return items;
     }
 }

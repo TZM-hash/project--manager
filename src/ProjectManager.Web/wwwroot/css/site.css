@@ -1622,6 +1622,63 @@ h1.h3 {
   white-space: normal;
 }
 
+.planning-note-grid {
+  align-items: stretch;
+}
+
+.planning-note-grid > [class*="col-"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.planning-note-preview,
+.planning-note-editor .rich-text-editor {
+  min-height: 15rem;
+}
+
+.planning-note-preview {
+  flex: 1;
+  padding: 0.7rem 0.8rem;
+  overflow: auto;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  background: #fff;
+  color: var(--app-text-soft);
+  font-size: 0.92rem;
+}
+
+.planning-note-editor {
+  flex: 1;
+}
+
+.skip-status-panel {
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: #f8fafc;
+}
+
+.skip-status-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skip-status-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--app-text-soft);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .data-exchange-card {
   display: flex;
   flex-direction: column;
@@ -1728,8 +1785,8 @@ h1.h3 {
 
 .gantt-chart-months {
   display: grid;
-  grid-template-columns: repeat(var(--month-count), minmax(4.8rem, 1fr));
-  min-width: calc(var(--month-count) * 4.8rem);
+  grid-template-columns: repeat(var(--month-count), minmax(6.2rem, 1fr));
+  min-width: calc(var(--month-count) * 6.2rem);
   border-bottom: 1px solid var(--app-border);
   background: #f8fafc;
 }
@@ -1744,12 +1801,12 @@ h1.h3 {
 }
 
 .gantt-chart-body {
-  min-width: calc(var(--month-count, 6) * 4.8rem);
+  min-width: calc(var(--month-count, 6) * 6.2rem);
 }
 
 .gantt-chart-row {
   display: grid;
-  grid-template-columns: 12rem minmax(calc(var(--month-count, 6) * 4.8rem), 1fr) 4.5rem;
+  grid-template-columns: 14rem minmax(calc(var(--month-count, 6) * 6.2rem), 1fr) 5rem;
   min-height: 2.4rem;
   border-bottom: 1px solid #edf2f7;
 }
@@ -1829,6 +1886,152 @@ h1.h3 {
 .gantt-edit-table th:nth-child(6),
 .gantt-edit-table td:nth-child(6) {
   min-width: 14rem;
+}
+
+.gantt-print-report {
+  color: #111827;
+  font-family: "Microsoft YaHei", Arial, sans-serif;
+}
+
+.gantt-print-title {
+  margin-bottom: 0.55rem;
+  font-size: 1.45rem;
+  font-weight: 850;
+}
+
+.gantt-print-info {
+  display: grid;
+  grid-template-columns: 8rem minmax(18rem, 1fr) minmax(24rem, 0.9fr);
+  border: 1px solid #1f2937;
+}
+
+.gantt-print-logo,
+.gantt-print-project,
+.gantt-print-meta > div {
+  border-right: 1px solid #1f2937;
+  border-bottom: 1px solid #1f2937;
+}
+
+.gantt-print-logo,
+.gantt-print-project {
+  display: grid;
+  place-items: center;
+  min-height: 4.8rem;
+  padding: 0.55rem;
+  background: #dbeafe;
+  font-weight: 850;
+  text-align: center;
+}
+
+.gantt-print-project {
+  font-size: 1.05rem;
+}
+
+.gantt-print-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gantt-print-meta > div {
+  min-height: 2.4rem;
+  padding: 0.35rem 0.5rem;
+  background: #eff6ff;
+}
+
+.gantt-print-meta span {
+  display: block;
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.gantt-print-meta strong {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.86rem;
+}
+
+.gantt-print-range {
+  padding: 0.45rem 0.65rem;
+  border-right: 1px solid #1f2937;
+  border-bottom: 1px solid #1f2937;
+  border-left: 1px solid #1f2937;
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.gantt-print-scroll {
+  overflow-x: auto;
+}
+
+.gantt-print-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.gantt-print-table th,
+.gantt-print-table td {
+  min-width: 4.8rem;
+  height: 2rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid #1f2937;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.gantt-print-table th {
+  background: #f8fafc;
+  font-weight: 850;
+}
+
+.gantt-print-table .gantt-print-index {
+  min-width: 3.5rem;
+}
+
+.gantt-print-table .gantt-print-name,
+.gantt-print-table .gantt-print-task {
+  position: sticky;
+  left: 0;
+  min-width: 14rem;
+  max-width: 18rem;
+  background: #fff;
+  text-align: left;
+  white-space: normal;
+}
+
+.gantt-print-plan {
+  background: #bbf7d0;
+}
+
+.gantt-print-done {
+  background: #22c55e;
+}
+
+.gantt-print-note {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 5rem;
+  padding: 0.65rem;
+  border: 1px solid #1f2937;
+  border-top: 0;
+  white-space: pre-wrap;
+}
+
+@media print {
+  .gantt-print-scroll {
+    overflow: visible;
+  }
+
+  .gantt-print-table {
+    width: 100%;
+  }
+
+  .gantt-print-table th,
+  .gantt-print-table td {
+    min-width: 3.6rem;
+    font-size: 0.72rem;
+  }
 }
 
 .status-badge {
@@ -3274,4 +3477,58 @@ body {
     backdrop-filter: none;
     box-shadow: none;
   }
+}
+
+/* Unified calm hover: cards float lightly without mouse-follow tilt. */
+.hover-card,
+.tilt-card {
+  transform: translateY(0) !important;
+  transform-style: flat !important;
+  will-change: auto !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.35s ease !important;
+}
+
+.hover-card:hover,
+.metric-card:hover,
+.metric-card.is-visible:hover,
+.chart-card:hover,
+.chart-card.is-visible:hover,
+.module-card:hover,
+.entrance-panel:hover,
+.project-visual-card:hover,
+.project-visual-card.is-visible:hover,
+.detail-kpi:hover,
+.summary-item:hover,
+.audit-timeline-card:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+}
+
+.tilt-card:hover,
+.tilt-card.is-visible:hover,
+.metric-card.tilt-card:hover,
+.chart-card.tilt-card:hover,
+.module-card.tilt-card:hover,
+.project-visual-card.tilt-card:hover {
+  transform: translateY(-1px) !important;
+}
+
+.tilt-card .tilt-glare {
+  display: none !important;
+}
+
+.tilt-card .metric-label,
+.tilt-card .metric-value,
+.tilt-card .metric-hint,
+.tilt-card .chart-title,
+.tilt-card .chart-subtitle,
+.tilt-card .module-title,
+.tilt-card .module-subtitle,
+.tilt-card .entrance-title,
+.tilt-card .entrance-subtitle,
+.tilt-card .module-actions,
+.tilt-card .donut-wrap,
+.tilt-card::before {
+  transform: none !important;
 }

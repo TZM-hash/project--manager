@@ -57,12 +57,58 @@
     </section>
 </div>
 
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+    <div class="filter-quick-row">
+        <div class="filter-quick-main">
+            <input class="form-control" asp-for="CustomerName" placeholder="搜索客户名称" />
+            <input class="form-control" asp-for="Year" placeholder="年度" />
+        </div>
+        <div class="filter-quick-actions">
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
+            <button class="btn btn-primary" type="submit">查询</button>
+        </div>
+    </div>
+    <div class="filter-drawer" data-filter-drawer-panel>
+        <div class="filter-drawer-header">
+            <div>
+                <div class="filter-drawer-title">高级筛选</div>
+                <div class="filter-drawer-subtitle">按保养方式、执行人和移交百分比筛选订单</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-3">
+                <select class="form-select" asp-for="Method" asp-items="Model.MethodOptions">
+                    <option value="">保养方式</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" asp-for="ExecutorUserId" asp-items="Model.ExecutorOptions">
+                    <option value="">保养执行人</option>
+                </select>
+            </div>
+            <div class="col-md-3"><input class="form-control" asp-for="MinHandoverPercent" placeholder="最小移交 %" /></div>
+            <div class="col-md-3"><input class="form-control" asp-for="MaxHandoverPercent" placeholder="最大移交 %" /></div>
+        </div>
+    </div>
+    <input type="hidden" asp-for="PageSize" />
+    <input type="hidden" name="PageNumber" value="1" />
+</form>
+
+<partial name="_FilterSummary" model="Model.FilterSummary" />
+
 <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定删除选中的保养订单吗？">
     <div class="bulk-toolbar-copy">
         <span class="bulk-toolbar-count" data-selected-count>0</span>
         <span>个订单已选择</span>
     </div>
     <div class="bulk-toolbar-actions">
+        <input type="hidden" asp-for="Year" />
+        <input type="hidden" asp-for="CustomerName" />
+        <input type="hidden" asp-for="Method" />
+        <input type="hidden" asp-for="ExecutorUserId" />
+        <input type="hidden" asp-for="MinHandoverPercent" />
+        <input type="hidden" asp-for="MaxHandoverPercent" />
         <input type="hidden" asp-for="PageNumber" />
         <input type="hidden" asp-for="PageSize" />
         <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
@@ -103,7 +149,7 @@
                 <td>@(order.UpdatedByUser?.DisplayName ?? order.UpdatedByUser?.UserName ?? order.UpdatedByUserId)</td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@order.Id">编辑</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该订单吗？');">
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-Year="@Model.Year" asp-route-CustomerName="@Model.CustomerName" asp-route-Method="@Model.Method" asp-route-ExecutorUserId="@Model.ExecutorUserId" asp-route-MinHandoverPercent="@Model.MinHandoverPercent" asp-route-MaxHandoverPercent="@Model.MaxHandoverPercent" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该订单吗？');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
                     </form>
                 </td>

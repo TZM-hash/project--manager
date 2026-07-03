@@ -62,5 +62,7 @@ public sealed class Project
     /// <summary>该项目下的请购记录。</summary>
     public ICollection<PurchaseRequest> PurchaseRequests { get; } = new List<PurchaseRequest>();
 
+    public ICollection<ProjectSkippedStatus> SkippedStatuses { get; } = new List<ProjectSkippedStatus>();
+
     public ProjectGanttPlan? GanttPlan { get; set; }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
@@ -20,6 +21,18 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = PageSizeOptions.DefaultPageSize;
 
+    [BindProperty(SupportsGet = true)]
+    public string? Keyword { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool? IsActive { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool? IsWeakManaged { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? RoleName { get; set; }
+
     public IList<UserListItem> Users { get; private set; } = [];
 
     /// <summary>当前登录用户是否为 admin 账号（唯一可管理密码的账号）。</summary>
@@ -35,25 +48,31 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
 
     public IReadOnlyList<ChartSlice> RoleSlices { get; private set; } = [];
 
+    public List<SelectListItem> RoleOptions { get; private set; } = [];
+
     public PaginationViewModel Pagination => new(
         PageNumber,
         PageSize,
         TotalCount,
         TotalPages,
         "./Index",
-        new Dictionary<string, string?>());
+        BuildRouteValues());
+
+    public FilterSummaryViewModel FilterSummary => new(
+        "./Index",
+        BuildFilterSummaryItems(),
+        new Dictionary<string, string?> { [nameof(PageSize)] = PageSize.ToString() });
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        await LoadRoleOptionsAsync(cancellationToken);
         var currentUserId = userManager.GetUserId(User);
         var currentUser = await userManager.FindByIdAsync(currentUserId ?? string.Empty);
         CanManagePassword = string.Equals(currentUser?.UserName, "admin", StringComparison.OrdinalIgnoreCase);
 
-        var query = userManager.Users
-            .AsNoTracking()
-            .OrderBy(x => x.UserName);
+        var query = await ApplyFilterAsync(userManager.Users.AsNoTracking(), cancellationToken);
         var page = await PagedResult<ApplicationUser>.CreateAsync(
-            query,
+            query.OrderBy(x => x.UserName),
             PageNumber,
             PageSize,
             cancellationToken);
@@ -78,11 +97,65 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
         await LoadInsightsAsync(cancellationToken);
     }
 
+    private async Task<IQueryable<ApplicationUser>> ApplyFilterAsync(
+        IQueryable<ApplicationUser> query,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(Keyword))
+        {
+            query = query.Where(x =>
+                (x.UserName != null && x.UserName.Contains(Keyword)) ||
+                x.DisplayName.Contains(Keyword) ||
+                (x.Email != null && x.Email.Contains(Keyword)));
+        }
+
+        if (IsActive is not null)
+        {
+            query = query.Where(x => x.IsActive == IsActive);
+        }
+
+        if (IsWeakManaged is not null)
+        {
+            query = query.Where(x => x.IsWeakManaged == IsWeakManaged);
+        }
+
+        if (!string.IsNullOrWhiteSpace(RoleName))
+        {
+            var roleId = await db.Roles
+                .Where(x => x.Name == RoleName)
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(roleId))
+            {
+                query = query.Where(_ => false);
+            }
+            else
+            {
+                var userIds = db.UserRoles
+                    .Where(x => x.RoleId == roleId)
+                    .Select(x => x.UserId);
+                query = query.Where(x => userIds.Contains(x.Id));
+            }
+        }
+
+        return query;
+    }
+
+    private async Task LoadRoleOptionsAsync(CancellationToken cancellationToken)
+    {
+        RoleOptions = await db.Roles
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem(RoleNames.GetDisplayName(x.Name ?? x.Id), x.Name ?? x.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     private async Task LoadInsightsAsync(CancellationToken cancellationToken)
     {
-        var activeCount = await userManager.Users.CountAsync(x => x.IsActive, cancellationToken);
-        var inactiveCount = await userManager.Users.CountAsync(x => !x.IsActive, cancellationToken);
-        var weakManagedCount = await userManager.Users.CountAsync(x => x.IsWeakManaged, cancellationToken);
+        var filteredUsers = await ApplyFilterAsync(userManager.Users.AsNoTracking(), cancellationToken);
+        var activeCount = await filteredUsers.CountAsync(x => x.IsActive, cancellationToken);
+        var inactiveCount = await filteredUsers.CountAsync(x => !x.IsActive, cancellationToken);
+        var weakManagedCount = await filteredUsers.CountAsync(x => x.IsWeakManaged, cancellationToken);
 
         Metrics =
         [
@@ -110,6 +183,43 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
             .ToListAsync(cancellationToken);
         RoleSlices = ChartPalette.BuildSlices(
             roleRows.Select(x => (RoleNames.GetDisplayName(x.Label), (decimal)x.Value)));
+    }
+
+    private Dictionary<string, string?> BuildRouteValues()
+    {
+        return new Dictionary<string, string?>
+        {
+            [nameof(Keyword)] = Keyword,
+            [nameof(IsActive)] = IsActive?.ToString(),
+            [nameof(IsWeakManaged)] = IsWeakManaged?.ToString(),
+            [nameof(RoleName)] = RoleName
+        };
+    }
+
+    private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
+    {
+        var items = new List<FilterSummaryItem>();
+        if (!string.IsNullOrWhiteSpace(Keyword))
+        {
+            items.Add(new FilterSummaryItem("关键字", Keyword));
+        }
+
+        if (IsActive is not null)
+        {
+            items.Add(new FilterSummaryItem("启用", IsActive.Value ? "是" : "否"));
+        }
+
+        if (IsWeakManaged is not null)
+        {
+            items.Add(new FilterSummaryItem("弱管理", IsWeakManaged.Value ? "是" : "否"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(RoleName))
+        {
+            items.Add(new FilterSummaryItem("角色", RoleNames.GetDisplayName(RoleName)));
+        }
+
+        return items;
     }
 
     public sealed record UserListItem(

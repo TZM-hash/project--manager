@@ -33,6 +33,23 @@ public sealed class WorkbenchProjectService(
         int pageSize,
         CancellationToken cancellationToken)
     {
+        return await GetProjectsForUserPageAsync(
+            userId,
+            canViewAll,
+            new ProjectFilter(null, null, null, null, null, null, false),
+            pageNumber,
+            pageSize,
+            cancellationToken);
+    }
+
+    public async Task<PagedResult<Project>> GetProjectsForUserPageAsync(
+        string userId,
+        bool canViewAll,
+        ProjectFilter filter,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
         var query = BaseProjectQuery();
 
         if (!canViewAll)
@@ -40,6 +57,7 @@ public sealed class WorkbenchProjectService(
             query = query.Where(x => x.Assignments.Any(a => a.UserId == userId));
         }
 
+        query = ApplyFilters(query, filter);
         var orderedQuery = query
             .OrderByDescending(x => x.Year)
             .ThenBy(x => x.ProjectNumber);
@@ -138,6 +156,47 @@ public sealed class WorkbenchProjectService(
             .ThenInclude(x => x.SubCaseContact)
             .Include(x => x.UpdatedByUser)
             .Where(x => !x.IsDeleted);
+    }
+
+    private static IQueryable<Project> ApplyFilters(IQueryable<Project> query, ProjectFilter filter)
+    {
+        if (filter.Year is not null)
+        {
+            query = query.Where(x => x.Year == filter.Year);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.ParentCaseNumber))
+        {
+            query = query.Where(x => x.ParentCaseNumber != null &&
+                                     x.ParentCaseNumber.Contains(filter.ParentCaseNumber));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.ProjectNumber))
+        {
+            query = query.Where(x => x.ProjectNumber.Contains(filter.ProjectNumber));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.ProjectName))
+        {
+            query = query.Where(x => x.Name.Contains(filter.ProjectName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.PersonnelUserId))
+        {
+            query = query.Where(x => x.Assignments.Any(a => a.UserId == filter.PersonnelUserId));
+        }
+
+        if (filter.StatusId is not null)
+        {
+            query = query.Where(x => x.StatusId == filter.StatusId);
+        }
+
+        if (filter.OpenOnly)
+        {
+            query = query.Where(x => x.Status != null && !x.Status.IsClosed);
+        }
+
+        return query;
     }
 }
 

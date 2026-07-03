@@ -1,0 +1,163 @@
+@page "{id:int}"
+@using ProjectManager.Web.Models
+@model ProjectManager.Web.Pages.Workbench.Projects.EditModel
+@{
+    ViewData["Title"] = "编辑专案";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">编辑专案</h1>
+        <div class="page-subtitle">基础信息只读，状态、进度、财务与请购记录可维护</div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Input.Id">返回详情</a>
+    </div>
+</div>
+
+<form method="post" class="mt-3">
+    <input asp-for="Input.Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <section class="form-section">
+        <h2 class="form-section-title">基础信息</h2>
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">年</label>
+                <input class="form-control" asp-for="Input.Year" readonly />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">母档案号</label>
+                <input class="form-control" asp-for="Input.ParentCaseNumber" readonly />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">项目工号</label>
+                <input class="form-control" asp-for="Input.ProjectNumber" readonly />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">项目名称</label>
+                <input class="form-control" asp-for="Input.Name" readonly />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">专案人员</label>
+                <input asp-for="Input.AssignedUserId" type="hidden" />
+                <select class="form-select" asp-for="Input.AssignedUserId" asp-items="Model.UserOptions" disabled>
+                    <option value="">请选择</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section-title">状态、进度与财务</h2>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">状态</label>
+                <select class="form-select" asp-for="Input.StatusId" asp-items="Model.StatusOptions"></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">结案日期</label>
+                <input class="form-control" asp-for="Input.ClosedYearMonth" type="month" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">专案进度 %</label>
+                <input class="form-control" asp-for="Input.ProgressPercent" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">专案金额</label>
+                <input class="form-control" asp-for="Input.ProjectAmount" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">收款比例 %</label>
+                <input class="form-control" asp-for="Input.CollectionPercent" />
+            </div>
+        </div>
+        @if (Model.SkippableStatusOptions.Count > 0)
+        {
+            <div class="skip-status-panel">
+                <div class="form-label">跳过流程节点</div>
+                <div class="skip-status-options">
+                    @foreach (var status in Model.SkippableStatusOptions)
+                    {
+                        var value = int.Parse(status.Value);
+                        <label class="skip-status-option">
+                            <input class="form-check-input" type="checkbox" name="SkippedStatusIds" value="@status.Value" checked="@Model.SkippedStatusIds.Contains(value)" />
+                            <span>@status.Text</span>
+                        </label>
+                    }
+                </div>
+                <div class="form-text">适用于项目无需某些流程节点的情况，详情页进度节点图会自动跳过。</div>
+            </div>
+        }
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section-title">进度说明</h2>
+        <div class="rich-text-field" data-rich-text>
+            <div class="rich-text-toolbar" aria-label="进度说明颜色">
+                @foreach (var color in RichTextSanitizer.ColorOptions)
+                {
+                    <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
+                }
+                <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+            </div>
+            <textarea asp-for="Input.ProgressDescription" hidden data-rich-text-source></textarea>
+            <div class="rich-text-editor" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.ProgressDescription))</div>
+        </div>
+        <span class="text-danger" asp-validation-for="Input.ProgressDescription"></span>
+    </section>
+
+    <section class="form-section">
+        <h2 class="form-section-title">请购记录</h2>
+        <div class="data-table-wrap">
+            <table class="table table-sm align-middle data-table">
+                <thead>
+                    <tr>
+                        <th>请购号</th>
+                        <th>类型</th>
+                        <th>请购人员</th>
+                        <th>金额</th>
+                        <th>子案对接人员</th>
+                        <th>付款比例</th>
+                        <th>实际已付款</th>
+                        <th>备注</th>
+                        <th>删除</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @for (var i = 0; i < Model.Input.Purchases.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            <input asp-for="Input.Purchases[i].Id" type="hidden" />
+                            <input class="form-control form-control-sm" asp-for="Input.Purchases[i].RequestNumber" />
+                        </td>
+                        <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseType" asp-items="Model.PurchaseTypeOptions"></select></td>
+                        <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseStaffUserId" asp-items="Model.UserOptions"><option value="">-</option></select></td>
+                        <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].PurchaseAmount" /></td>
+                        <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].SubCaseContactUserId" asp-items="Model.SubCaseContactOptions"><option value="">-</option></select></td>
+                        <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].PaymentPercent" /></td>
+                        <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].ActualPaidAmount" /></td>
+                        <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].Notes" /></td>
+                        <td>
+                            @if (Model.Input.Purchases[i].Id > 0)
+                            {
+                                <input class="form-check-input" asp-for="Input.Purchases[i].IsDeleted" />
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Input.Id">返回</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -58,6 +58,50 @@
     </section>
 </div>
 
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+    <div class="filter-quick-row">
+        <div class="filter-quick-main">
+            <input class="form-control" asp-for="Keyword" placeholder="搜索用户名、姓名、邮箱" />
+            <select class="form-select" asp-for="IsActive">
+                <option value="">启用状态</option>
+                <option value="true">启用</option>
+                <option value="false">停用</option>
+            </select>
+        </div>
+        <div class="filter-quick-actions">
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
+            <button class="btn btn-primary" type="submit">查询</button>
+        </div>
+    </div>
+    <div class="filter-drawer" data-filter-drawer-panel>
+        <div class="filter-drawer-header">
+            <div>
+                <div class="filter-drawer-title">高级筛选</div>
+                <div class="filter-drawer-subtitle">按角色和弱管理标记缩小用户范围</div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <select class="form-select" asp-for="RoleName" asp-items="Model.RoleOptions">
+                    <option value="">角色</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" asp-for="IsWeakManaged">
+                    <option value="">弱管理账号</option>
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" asp-for="PageSize" />
+    <input type="hidden" name="PageNumber" value="1" />
+</form>
+
+<partial name="_FilterSummary" model="Model.FilterSummary" />
+
 <div class="data-list-card">
     <div class="data-table-wrap">
         <table class="table table-sm table-striped align-middle data-table has-sticky-actions">

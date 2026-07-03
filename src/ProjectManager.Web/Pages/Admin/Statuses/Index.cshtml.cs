@@ -20,6 +20,15 @@ public sealed class IndexModel(
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = PageSizeOptions.DefaultPageSize;
 
+    [BindProperty(SupportsGet = true)]
+    public string? Keyword { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool? IsActive { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool? IsClosed { get; set; }
+
     public IReadOnlyList<StatusListItem> Statuses { get; private set; } = [];
 
     public int TotalCount { get; private set; }
@@ -38,7 +47,12 @@ public sealed class IndexModel(
         TotalCount,
         TotalPages,
         "./Index",
-        new Dictionary<string, string?>());
+        BuildRouteValues());
+
+    public FilterSummaryViewModel FilterSummary => new(
+        "./Index",
+        BuildFilterSummaryItems(),
+        new Dictionary<string, string?> { [nameof(PageSize)] = PageSize.ToString() });
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
@@ -59,7 +73,7 @@ public sealed class IndexModel(
             return Page();
         }
 
-        return RedirectToPage("./Index", new { PageNumber, PageSize });
+        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
@@ -82,14 +96,14 @@ public sealed class IndexModel(
             return Page();
         }
 
-        return RedirectToPage("./Index", new { PageNumber, PageSize });
+        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     private async Task LoadStatusesAsync(CancellationToken cancellationToken)
     {
-        var query = db.ProjectStatuses
+        var query = ApplyFilter(db.ProjectStatuses
             .AsNoTracking()
-            .Include(x => x.Style)
+            .Include(x => x.Style))
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
             .Select(x => new StatusListItem(
@@ -118,7 +132,7 @@ public sealed class IndexModel(
 
     private async Task LoadInsightsAsync(CancellationToken cancellationToken)
     {
-        var query = db.ProjectStatuses.AsNoTracking();
+        var query = ApplyFilter(db.ProjectStatuses.AsNoTracking());
         var activeCount = await query.CountAsync(x => x.IsActive, cancellationToken);
         var inactiveCount = await query.CountAsync(x => !x.IsActive, cancellationToken);
         var closedCount = await query.CountAsync(x => x.IsClosed, cancellationToken);
@@ -144,6 +158,66 @@ public sealed class IndexModel(
             ("未结案类", (decimal)openCount),
             ("结案类", (decimal)closedCount)
         ]);
+    }
+
+    private IQueryable<ProjectManager.Web.Models.ProjectStatus> ApplyFilter(
+        IQueryable<ProjectManager.Web.Models.ProjectStatus> query)
+    {
+        if (!string.IsNullOrWhiteSpace(Keyword))
+        {
+            query = query.Where(x => x.Code.Contains(Keyword) || x.Name.Contains(Keyword));
+        }
+
+        if (IsActive is not null)
+        {
+            query = query.Where(x => x.IsActive == IsActive);
+        }
+
+        if (IsClosed is not null)
+        {
+            query = query.Where(x => x.IsClosed == IsClosed);
+        }
+
+        return query;
+    }
+
+    private Dictionary<string, string?> BuildRouteValues()
+    {
+        return new Dictionary<string, string?>
+        {
+            [nameof(Keyword)] = Keyword,
+            [nameof(IsActive)] = IsActive?.ToString(),
+            [nameof(IsClosed)] = IsClosed?.ToString()
+        };
+    }
+
+    private Dictionary<string, string?> BuildRouteValuesWithPaging()
+    {
+        var values = BuildRouteValues();
+        values[nameof(PageNumber)] = PageNumber.ToString();
+        values[nameof(PageSize)] = PageSize.ToString();
+        return values;
+    }
+
+    private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
+    {
+        var items = new List<FilterSummaryItem>();
+        if (!string.IsNullOrWhiteSpace(Keyword))
+        {
+            items.Add(new FilterSummaryItem("关键字", Keyword));
+        }
+
+        if (IsActive is not null)
+        {
+            items.Add(new FilterSummaryItem("启用", IsActive.Value ? "是" : "否"));
+        }
+
+        if (IsClosed is not null)
+        {
+            items.Add(new FilterSummaryItem("结案属性", IsClosed.Value ? "结案类" : "未结案类"));
+        }
+
+        return items;
     }
 
     public sealed record StatusListItem(

@@ -15,7 +15,7 @@
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
         @if (Model.CanEditProgress)
         {
-            <a class="btn btn-primary" asp-page="./EditProgress" asp-route-id="@Model.Project.Id">更新进度</a>
+            <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Project.Id">编辑专案</a>
         }
     </div>
 </div>
@@ -30,7 +30,7 @@
     </div>
 
     <div class="detail-tab-panel is-active" data-detail-tab-panel="overview">
-        <partial name="_StatusTimeline" model="new StatusTimelineModel(Model.ActiveStatuses, Model.Project.StatusId)" />
+        <partial name="_StatusTimeline" model="new StatusTimelineModel(Model.ActiveStatuses, Model.Project.StatusId, Model.Project.SkippedStatuses.Select(x => x.StatusId).ToHashSet())" />
         <partial name="_ProjectDetailVisual" model="Model.Project" />
 
         <div class="summary-strip">

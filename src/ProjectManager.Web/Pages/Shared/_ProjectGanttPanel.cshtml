@@ -23,6 +23,7 @@
             <div class="chart-subtitle">蓝色区域自动读取项目资料；计划日期、细分工作和进度由用户维护。当前时间单位：@scaleText。</div>
         </div>
         <div class="page-actions">
+            <a class="btn btn-outline-secondary" asp-page="/Workbench/Projects/GanttPrint" asp-route-id="@Model.Project.Id">报表列印</a>
             <a class="btn btn-outline-secondary" asp-page-handler="ExportGantt" asp-route-id="@Model.Project.Id">导出 Excel</a>
         </div>
     </div>

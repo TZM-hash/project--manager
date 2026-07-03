@@ -2,6 +2,7 @@
 @{
     var statuses = Model.Statuses
         .Where(x => x.IsActive)
+        .Where(x => Model.SkippedStatusIds?.Contains(x.Id) != true || x.Id == Model.CurrentStatusId)
         .OrderBy(x => x.SortOrder)
         .ThenBy(x => x.Name)
         .ToList();

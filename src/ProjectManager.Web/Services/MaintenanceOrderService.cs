@@ -19,7 +19,20 @@ public sealed class MaintenanceOrderService(ApplicationDbContext db)
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var orderedQuery = BaseQuery()
+        return await GetOrdersPageAsync(
+            new MaintenanceOrderFilter(null, null, null, null, null, null),
+            pageNumber,
+            pageSize,
+            cancellationToken);
+    }
+
+    public async Task<PagedResult<MaintenanceOrder>> GetOrdersPageAsync(
+        MaintenanceOrderFilter filter,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var orderedQuery = ApplyFilter(BaseQuery(), filter)
             .OrderByDescending(x => x.Year)
             .ThenBy(x => x.CustomerName);
 
@@ -132,4 +145,49 @@ public sealed class MaintenanceOrderService(ApplicationDbContext db)
             .Include(x => x.UpdatedByUser)
             .Where(x => !x.IsDeleted);
     }
+
+    private static IQueryable<MaintenanceOrder> ApplyFilter(
+        IQueryable<MaintenanceOrder> query,
+        MaintenanceOrderFilter filter)
+    {
+        if (filter.Year is not null)
+        {
+            query = query.Where(x => x.Year == filter.Year);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.CustomerName))
+        {
+            query = query.Where(x => x.CustomerName.Contains(filter.CustomerName));
+        }
+
+        if (filter.Method is not null)
+        {
+            query = query.Where(x => x.MaintenanceMethod == filter.Method);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.ExecutorUserId))
+        {
+            query = query.Where(x => x.ExecutorUserId == filter.ExecutorUserId);
+        }
+
+        if (filter.MinHandoverPercent is not null)
+        {
+            query = query.Where(x => x.HandoverPercent >= filter.MinHandoverPercent);
+        }
+
+        if (filter.MaxHandoverPercent is not null)
+        {
+            query = query.Where(x => x.HandoverPercent <= filter.MaxHandoverPercent);
+        }
+
+        return query;
+    }
 }
+
+public sealed record MaintenanceOrderFilter(
+    int? Year,
+    string? CustomerName,
+    MaintenanceMethod? Method,
+    string? ExecutorUserId,
+    decimal? MinHandoverPercent,
+    decimal? MaxHandoverPercent);

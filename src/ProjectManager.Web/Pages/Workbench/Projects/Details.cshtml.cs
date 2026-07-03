@@ -64,6 +64,15 @@ public sealed class DetailsModel(
         }
 
         Project = project;
+        var skippedStatuses = await db.ProjectSkippedStatuses
+            .AsNoTracking()
+            .Where(x => x.ProjectId == id)
+            .ToListAsync(cancellationToken);
+        foreach (var skippedStatus in skippedStatuses)
+        {
+            Project.SkippedStatuses.Add(skippedStatus);
+        }
+
         CanEditProgress = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
         GanttInput = await ganttService.BuildInputAsync(id, cancellationToken);
         ActiveStatuses = await db.ProjectStatuses

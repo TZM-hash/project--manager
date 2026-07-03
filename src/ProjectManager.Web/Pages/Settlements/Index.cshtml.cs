@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
@@ -20,6 +21,15 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
     public int? Month { get; set; }
 
     [BindProperty(SupportsGet = true)]
+    public int? BatchNumber { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? CreatedByUserId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? Notes { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
@@ -37,6 +47,8 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public IReadOnlyList<ChartSlice> MonthSlices { get; private set; } = [];
 
+    public List<SelectListItem> CreatedByOptions { get; private set; } = [];
+
     public FilterSummaryViewModel FilterSummary => new(
         "./Index",
         BuildFilterSummaryItems(),
@@ -52,6 +64,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        await LoadOptionsAsync(cancellationToken);
         var query = ApplyFilter(db.MonthlySettlementBatches
             .AsNoTracking()
             .Include(x => x.CreatedByUser)
@@ -94,7 +107,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         db.MonthlySettlementBatches.Remove(batch);
         await db.SaveChangesAsync(cancellationToken);
 
-        return RedirectToPage("./Index", new { Year, Month, PageNumber, PageSize });
+        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
@@ -117,7 +130,19 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        return RedirectToPage("./Index", new { Year, Month, PageNumber, PageSize });
+        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
+    }
+
+    private async Task LoadOptionsAsync(CancellationToken cancellationToken)
+    {
+        CreatedByOptions = await db.Users
+            .AsNoTracking()
+            .OrderBy(x => x.DisplayName)
+            .ThenBy(x => x.UserName)
+            .Select(x => new SelectListItem(
+                string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
+                x.Id))
+            .ToListAsync(cancellationToken);
     }
 
     private IQueryable<MonthlySettlementBatch> ApplyFilter(IQueryable<MonthlySettlementBatch> query)
@@ -130,6 +155,21 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         if (Month is not null)
         {
             query = query.Where(x => x.Month == Month);
+        }
+
+        if (BatchNumber is not null)
+        {
+            query = query.Where(x => x.BatchNumber == BatchNumber);
+        }
+
+        if (!string.IsNullOrWhiteSpace(CreatedByUserId))
+        {
+            query = query.Where(x => x.CreatedByUserId == CreatedByUserId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(Notes))
+        {
+            query = query.Where(x => x.Notes != null && x.Notes.Contains(Notes));
         }
 
         return query;
@@ -171,8 +211,19 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         return new Dictionary<string, string?>
         {
             [nameof(Year)] = Year?.ToString(),
-            [nameof(Month)] = Month?.ToString()
+            [nameof(Month)] = Month?.ToString(),
+            [nameof(BatchNumber)] = BatchNumber?.ToString(),
+            [nameof(CreatedByUserId)] = CreatedByUserId,
+            [nameof(Notes)] = Notes
         };
+    }
+
+    private Dictionary<string, string?> BuildRouteValuesWithPaging()
+    {
+        var values = BuildRouteValues();
+        values[nameof(PageNumber)] = PageNumber.ToString();
+        values[nameof(PageSize)] = PageSize.ToString();
+        return values;
     }
 
     private IReadOnlyList<FilterSummaryItem> BuildFilterSummaryItems()
@@ -187,6 +238,22 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         if (Month is not null)
         {
             items.Add(new FilterSummaryItem("月", Month.Value.ToString()));
+        }
+
+        if (BatchNumber is not null)
+        {
+            items.Add(new FilterSummaryItem("批次", BatchNumber.Value.ToString()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(CreatedByUserId))
+        {
+            var userText = CreatedByOptions.FirstOrDefault(x => x.Value == CreatedByUserId)?.Text ?? CreatedByUserId;
+            items.Add(new FilterSummaryItem("创建人", userText));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Notes))
+        {
+            items.Add(new FilterSummaryItem("备注", Notes));
         }
 
         return items;

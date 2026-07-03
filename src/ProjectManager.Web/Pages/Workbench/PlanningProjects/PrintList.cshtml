@@ -31,7 +31,7 @@
                     <td>@project.Name</td>
                     <td>@Model.GetLeaderDisplayNames(project.LeaderUserId)</td>
                     <td>@(project.Vendor ?? "-")</td>
-                    <td>@(project.LatestDescription ?? "-")</td>
+                    <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(project.LatestDescription) ?? "-")</td>
                     <td>@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 </tr>
                 idx++;

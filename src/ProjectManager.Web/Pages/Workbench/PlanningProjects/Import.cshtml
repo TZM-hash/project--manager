@@ -20,9 +20,9 @@
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="mb-3">
             <label asp-for="UploadFile" class="form-label">选择 Excel 文件</label>
-            <input asp-for="UploadFile" class="form-control" type="file" accept=".xlsx,.xls" />
+            <input asp-for="UploadFile" class="form-control" type="file" accept=".xlsx" />
             <span asp-validation-for="UploadFile" class="text-danger"></span>
-            <div class="form-text">支持 .xlsx / .xls 格式。请先下载模板，按模板格式填写后上传。</div>
+            <div class="form-text">支持 .xlsx 格式。请先下载模板，按模板格式填写后上传。</div>
         </div>
         @if (Model.ImportedCount > 0)
         {
