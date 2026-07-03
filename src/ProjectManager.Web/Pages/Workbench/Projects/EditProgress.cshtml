@@ -24,7 +24,18 @@
         </div>
         <div class="col-md-12">
             <label class="form-label">进度说明</label>
-            <textarea class="form-control" asp-for="Input.ProgressDescription" rows="5"></textarea>
+            <div class="rich-text-field" data-rich-text>
+                <div class="rich-text-toolbar" aria-label="进度说明颜色">
+                    @foreach (var color in RichTextSanitizer.ColorOptions)
+                    {
+                        <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
+                    }
+                    <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+                </div>
+                <textarea asp-for="Input.ProgressDescription" hidden data-rich-text-source></textarea>
+                <div class="rich-text-editor" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.ProgressDescription))</div>
+            </div>
+            <span class="text-danger" asp-validation-for="Input.ProgressDescription"></span>
         </div>
     </div>
     <div class="mt-4">

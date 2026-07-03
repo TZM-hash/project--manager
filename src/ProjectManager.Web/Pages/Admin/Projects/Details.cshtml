@@ -21,6 +21,7 @@
         <button type="button" class="detail-tab is-active" data-detail-tab-target="overview">概览</button>
         <button type="button" class="detail-tab" data-detail-tab-target="profile">项目资料</button>
         <button type="button" class="detail-tab" data-detail-tab-target="purchases">请购记录</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="gantt">甘特图</button>
         <button type="button" class="detail-tab" data-detail-tab-target="audit">操作记录</button>
     </div>
 
@@ -52,7 +53,7 @@
 
         <section class="detail-panel">
             <h2 class="detail-panel-title">进度说明</h2>
-            <div class="detail-value">@Model.Project.ProgressDescription</div>
+            <div class="detail-value rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Project.ProgressDescription))</div>
         </section>
     </div>
 
@@ -110,6 +111,10 @@
             </table>
         </div>
     </section>
+
+    <div class="detail-tab-panel" data-detail-tab-panel="gantt">
+        <partial name="_ProjectGanttPanel" model="new ProjectManager.Web.Pages.Shared.ProjectGanttPanelModel(Model.Project, Model.GanttInput, true, Model.GanttMessage, Model.GanttErrors)" />
+    </div>
 
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="audit">
         <h2 class="detail-panel-title">操作记录</h2>

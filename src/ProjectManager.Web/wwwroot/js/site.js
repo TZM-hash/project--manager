@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initBulkSelection();
   initFilterDrawers();
   initDetailTabs();
+  initRichTextEditors();
+  initGanttEditors();
   initRevealAnimations();
 });
 
@@ -201,11 +203,138 @@ function initDetailTabs() {
     });
 
     const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("Tab");
     const shouldOpenAudit = ["AuditKeyword", "AuditAction", "AuditFrom", "AuditTo"].some((key) => params.has(key));
-    const initial = shouldOpenAudit
-      ? tabs.find((tab) => tab.getAttribute("data-detail-tab-target") === "audit") ?? tabs[0]
-      : tabs.find((tab) => tab.classList.contains("is-active")) ?? tabs[0];
+    const shouldOpenGantt = tabParam === "gantt" || Boolean(shell.querySelector('[data-detail-tab-panel="gantt"] .alert'));
+    const initial = shouldOpenGantt
+      ? tabs.find((tab) => tab.getAttribute("data-detail-tab-target") === "gantt") ?? tabs[0]
+      : shouldOpenAudit
+        ? tabs.find((tab) => tab.getAttribute("data-detail-tab-target") === "audit") ?? tabs[0]
+        : tabs.find((tab) => tab.classList.contains("is-active")) ?? tabs[0];
     activate(initial.getAttribute("data-detail-tab-target"));
+  });
+}
+
+function initRichTextEditors() {
+  document.querySelectorAll("[data-rich-text]").forEach((field) => {
+    const source = field.querySelector("[data-rich-text-source]");
+    const editor = field.querySelector("[data-rich-text-editor]");
+    const form = field.closest("form");
+
+    if (!source || !editor) {
+      return;
+    }
+
+    const syncSource = () => {
+      source.value = editor.innerHTML.trim();
+    };
+
+    const focusEditor = () => {
+      editor.focus({ preventScroll: true });
+    };
+
+    field.querySelectorAll("[data-rich-text-color]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const color = button.getAttribute("data-rich-text-color");
+        if (!color) {
+          return;
+        }
+
+        focusEditor();
+        document.execCommand("styleWithCSS", false, true);
+        document.execCommand("foreColor", false, color);
+        syncSource();
+      });
+    });
+
+    const clear = field.querySelector("[data-rich-text-clear]");
+    if (clear) {
+      clear.addEventListener("click", () => {
+        focusEditor();
+        document.execCommand("removeFormat", false);
+        syncSource();
+      });
+    }
+
+    editor.addEventListener("input", syncSource);
+    editor.addEventListener("blur", syncSource);
+    editor.addEventListener("paste", () => {
+      window.setTimeout(syncSource, 0);
+    });
+
+    if (form) {
+      form.addEventListener("submit", syncSource);
+    }
+
+    syncSource();
+  });
+}
+
+function initGanttEditors() {
+  document.querySelectorAll("[data-gantt-editor]").forEach((editor) => {
+    const rows = editor.querySelector("[data-gantt-rows]");
+    const addButton = editor.querySelector("[data-gantt-add-row]");
+    if (!rows || !addButton) {
+      return;
+    }
+
+    const updateRows = () => {
+      Array.from(rows.querySelectorAll("[data-gantt-row]")).forEach((row, index) => {
+        const number = index + 1;
+        const indexLabel = row.querySelector("[data-gantt-index]");
+        const sort = row.querySelector("[data-gantt-sort]");
+
+        if (indexLabel) {
+          indexLabel.textContent = number.toString();
+        }
+
+        if (sort) {
+          sort.value = number.toString();
+        }
+
+        row.querySelectorAll("input").forEach((input) => {
+          input.name = input.name.replace(/GanttInput\.Tasks\[\d+\]/, `GanttInput.Tasks[${index}]`);
+        });
+      });
+    };
+
+    const bindRemove = (row) => {
+      const remove = row.querySelector("[data-gantt-remove-row]");
+      if (!remove) {
+        return;
+      }
+
+      remove.addEventListener("click", () => {
+        row.remove();
+        updateRows();
+      });
+    };
+
+    rows.querySelectorAll("[data-gantt-row]").forEach(bindRemove);
+
+    addButton.addEventListener("click", () => {
+      const template = rows.querySelector("[data-gantt-row]");
+      if (!template) {
+        return;
+      }
+
+      const row = template.cloneNode(true);
+      row.querySelectorAll("input").forEach((input) => {
+        input.value = "";
+        if (input.type === "hidden") {
+          input.value = "0";
+        }
+      });
+      rows.appendChild(row);
+      bindRemove(row);
+      updateRows();
+      const firstInput = row.querySelector("input:not([type='hidden'])");
+      if (firstInput) {
+        firstInput.focus();
+      }
+    });
+
+    updateRows();
   });
 }
 

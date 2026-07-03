@@ -6,17 +6,26 @@ using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
+using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
 [Authorize(Roles = RoleNames.Administrator)]
-public sealed class DetailsModel(ApplicationDbContext db) : PageModel
+public sealed class DetailsModel(ApplicationDbContext db, ProjectGanttService ganttService) : PageModel
 {
     public Project Project { get; private set; } = new();
 
     public IReadOnlyList<AuditLogDisplayModel> AuditLogs { get; private set; } = [];
 
     public AuditTrailViewModel AuditTrail { get; private set; } = new([], [], null, null, null, null);
+
+    [BindProperty]
+    public ProjectGanttInputModel GanttInput { get; set; } = new();
+
+    [TempData]
+    public string? GanttMessage { get; set; }
+
+    public IReadOnlyList<string> GanttErrors { get; private set; } = [];
 
     [BindProperty(SupportsGet = true)]
     public string? AuditKeyword { get; set; }
@@ -51,6 +60,7 @@ public sealed class DetailsModel(ApplicationDbContext db) : PageModel
         }
 
         Project = project;
+        GanttInput = await ganttService.BuildInputAsync(id, cancellationToken);
         var auditLogs = await db.AuditLogs
             .AsNoTracking()
             .Include(x => x.User)
@@ -69,6 +79,32 @@ public sealed class DetailsModel(ApplicationDbContext db) : PageModel
             AuditTo);
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostSaveGanttAsync(int id, CancellationToken cancellationToken)
+    {
+        GanttErrors = await ganttService.SaveAsync(
+            id,
+            GanttInput,
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            cancellationToken);
+
+        if (GanttErrors.Count == 0)
+        {
+            GanttMessage = "甘特图已保存。";
+            return RedirectToPage("./Details", new { id, Tab = "gantt" });
+        }
+
+        var postedInput = GanttInput;
+        var result = await OnGetAsync(id, cancellationToken);
+        GanttInput = postedInput;
+        return result;
+    }
+
+    public async Task<IActionResult> OnGetExportGanttAsync(int id, CancellationToken cancellationToken)
+    {
+        var file = await ganttService.ExportAsync(id, cancellationToken);
+        return File(file.Contents, file.ContentType, file.FileName);
     }
 
     private IReadOnlyList<AuditLogDisplayModel> ApplyAuditFilters(IReadOnlyList<AuditLogDisplayModel> logs)

@@ -15,7 +15,8 @@ namespace ProjectManager.Web.Pages.Workbench.Projects;
 public sealed class DetailsModel(
     WorkbenchProjectService workbenchProjectService,
     ApplicationDbContext db,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserManager<ApplicationUser> userManager,
+    ProjectGanttService ganttService) : PageModel
 {
     public Project Project { get; private set; } = new();
 
@@ -26,6 +27,14 @@ public sealed class DetailsModel(
     public AuditTrailViewModel AuditTrail { get; private set; } = new([], [], null, null, null, null);
 
     public bool CanEditProgress { get; private set; }
+
+    [BindProperty]
+    public ProjectGanttInputModel GanttInput { get; set; } = new();
+
+    [TempData]
+    public string? GanttMessage { get; set; }
+
+    public IReadOnlyList<string> GanttErrors { get; private set; } = [];
 
     [BindProperty(SupportsGet = true)]
     public string? AuditKeyword { get; set; }
@@ -56,6 +65,7 @@ public sealed class DetailsModel(
 
         Project = project;
         CanEditProgress = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
+        GanttInput = await ganttService.BuildInputAsync(id, cancellationToken);
         ActiveStatuses = await db.ProjectStatuses
             .AsNoTracking()
             .Include(x => x.Style)
@@ -81,6 +91,59 @@ public sealed class DetailsModel(
             AuditTo);
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostSaveGanttAsync(int id, CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? string.Empty;
+        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var project = await workbenchProjectService.GetProjectForUserAsync(
+            id,
+            userId,
+            canViewAll,
+            cancellationToken);
+
+        if (project is null)
+        {
+            return NotFound();
+        }
+
+        var canEdit = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
+        if (!canEdit)
+        {
+            return Forbid();
+        }
+
+        GanttErrors = await ganttService.SaveAsync(id, GanttInput, userId, cancellationToken);
+        if (GanttErrors.Count == 0)
+        {
+            GanttMessage = "甘特图已保存。";
+            return RedirectToPage("./Details", new { id, Tab = "gantt" });
+        }
+
+        var postedInput = GanttInput;
+        var result = await OnGetAsync(id, cancellationToken);
+        GanttInput = postedInput;
+        return result;
+    }
+
+    public async Task<IActionResult> OnGetExportGanttAsync(int id, CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? string.Empty;
+        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var project = await workbenchProjectService.GetProjectForUserAsync(
+            id,
+            userId,
+            canViewAll,
+            cancellationToken);
+
+        if (project is null)
+        {
+            return NotFound();
+        }
+
+        var file = await ganttService.ExportAsync(id, cancellationToken);
+        return File(file.Contents, file.ContentType, file.FileName);
     }
 
     private IReadOnlyList<AuditLogDisplayModel> ApplyAuditFilters(IReadOnlyList<AuditLogDisplayModel> logs)

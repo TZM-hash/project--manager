@@ -111,7 +111,7 @@ public abstract class ProjectFormPageModel(
             ProgressPercent = Input.ProgressPercent,
             ProjectAmount = Input.ProjectAmount,
             CollectionPercent = Input.CollectionPercent,
-            ProgressDescription = TrimToNull(Input.ProgressDescription)
+            ProgressDescription = RichTextSanitizer.Normalize(Input.ProgressDescription)
         };
 
         var purchaseRequests = Input.Purchases

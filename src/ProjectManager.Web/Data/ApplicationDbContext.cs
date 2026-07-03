@@ -30,6 +30,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<MaintenanceOrder> MaintenanceOrders => Set<MaintenanceOrder>();
 
+    public DbSet<ProjectGanttPlan> ProjectGanttPlans => Set<ProjectGanttPlan>();
+
+    public DbSet<ProjectGanttTask> ProjectGanttTasks => Set<ProjectGanttTask>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -208,6 +212,33 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(x => x.UpdatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ProjectGanttPlan>(entity =>
+        {
+            entity.HasIndex(x => x.ProjectId).IsUnique();
+            entity.Property(x => x.ProgressNote).HasMaxLength(2000);
+
+            entity.HasOne(x => x.Project)
+                .WithOne(x => x.GanttPlan)
+                .HasForeignKey<ProjectGanttPlan>(x => x.ProjectId);
+
+            entity.HasOne(x => x.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ProjectGanttTask>(entity =>
+        {
+            entity.HasIndex(x => new { x.ProjectGanttPlanId, x.SortOrder });
+            entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.ProgressPercent).HasPrecision(5, 2);
+            entity.Property(x => x.ProgressDescription).HasMaxLength(1000);
+
+            entity.HasOne(x => x.ProjectGanttPlan)
+                .WithMany(x => x.Tasks)
+                .HasForeignKey(x => x.ProjectGanttPlanId);
         });
     }
 }
