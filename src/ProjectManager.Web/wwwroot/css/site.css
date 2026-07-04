@@ -3532,3 +3532,308 @@ body {
 .tilt-card::before {
   transform: none !important;
 }
+
+/* =====================================================================
+   Admin controlled UI effects levels
+   ===================================================================== */
+
+.ui-effects-level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.ui-effects-level-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  min-height: 8.5rem;
+  padding: 0.85rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.ui-effects-level-card:hover,
+.ui-effects-level-card:focus-within {
+  border-color: rgba(37, 99, 235, 0.32);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.09);
+  transform: translateY(-1px);
+}
+
+.ui-effects-level-card .form-check-input {
+  margin-top: 0.15rem;
+}
+
+.ui-effects-level-copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.ui-effects-level-copy strong {
+  color: var(--app-text);
+  font-size: 0.98rem;
+}
+
+.ui-effects-level-copy span {
+  color: var(--app-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.ui-effects-level-card input:checked + .ui-effects-level-copy strong {
+  color: var(--app-primary);
+}
+
+.ui-effects-level-card input:checked + .ui-effects-level-copy span {
+  color: var(--app-text-soft);
+}
+
+body.ui-effects-low .app-bg-fx .app-bg-orb-3,
+body.ui-effects-medium .app-bg-fx .app-bg-orb-3 {
+  display: none;
+}
+
+body.ui-effects-low .app-bg-fx::before,
+body.ui-effects-medium .app-bg-fx::before {
+  animation-duration: 90s;
+}
+
+body.ui-effects-low .app-bg-fx .app-bg-orb,
+body.ui-effects-medium .app-bg-fx .app-bg-orb {
+  opacity: 0.34;
+}
+
+body.ui-effects-low .status-step.is-current .status-step-dot,
+body.ui-effects-low .percent-progress.is-complete .percent-progress-track span,
+body.ui-effects-medium .status-step.is-current .status-step-dot,
+body.ui-effects-medium .percent-progress.is-complete .percent-progress-track span {
+  animation-duration: 3.2s;
+}
+
+body.ui-effects-medium .app-bg-fx .app-bg-orb,
+body.ui-effects-high .app-bg-fx .app-bg-orb {
+  opacity: 0.58;
+}
+
+body.ui-effects-medium .app-bg-fx::before,
+body.ui-effects-high .app-bg-fx::before {
+  background-size: 38px 38px;
+  animation-duration: 42s;
+}
+
+body.ui-effects-medium .hover-card,
+body.ui-effects-medium .tilt-card,
+body.ui-effects-high .hover-card,
+body.ui-effects-high .tilt-card {
+  transform-style: preserve-3d !important;
+  will-change: transform !important;
+}
+
+body.ui-effects-medium .tilt-card,
+body.ui-effects-medium .tilt-card.is-visible,
+body.ui-effects-medium .tilt-card.is-visible:hover,
+body.ui-effects-medium .metric-card.tilt-card:hover,
+body.ui-effects-medium .chart-card.tilt-card:hover,
+body.ui-effects-medium .module-card.tilt-card:hover,
+body.ui-effects-medium .project-visual-card.tilt-card:hover,
+body.ui-effects-high .tilt-card,
+body.ui-effects-high .tilt-card.is-visible,
+body.ui-effects-high .tilt-card.is-visible:hover,
+body.ui-effects-high .metric-card.tilt-card:hover,
+body.ui-effects-high .chart-card.tilt-card:hover,
+body.ui-effects-high .module-card.tilt-card:hover,
+body.ui-effects-high .project-visual-card.tilt-card:hover {
+  transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) translateY(var(--tilt-lift, 0px)) scale(var(--tilt-scale, 1)) !important;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease !important;
+}
+
+body.ui-effects-medium .tilt-card .tilt-glare,
+body.ui-effects-high .tilt-card .tilt-glare {
+  display: block !important;
+}
+
+body.ui-effects-medium .tilt-card .metric-label,
+body.ui-effects-medium .tilt-card .metric-hint,
+body.ui-effects-medium .tilt-card .chart-title,
+body.ui-effects-medium .tilt-card .chart-subtitle,
+body.ui-effects-medium .tilt-card .module-title,
+body.ui-effects-medium .tilt-card .module-subtitle,
+body.ui-effects-medium .tilt-card .entrance-title,
+body.ui-effects-medium .tilt-card .entrance-subtitle,
+body.ui-effects-medium .tilt-card .module-actions,
+body.ui-effects-medium .tilt-card .donut-wrap,
+body.ui-effects-high .tilt-card .metric-label,
+body.ui-effects-high .tilt-card .metric-hint,
+body.ui-effects-high .tilt-card .chart-title,
+body.ui-effects-high .tilt-card .chart-subtitle,
+body.ui-effects-high .tilt-card .module-title,
+body.ui-effects-high .tilt-card .module-subtitle,
+body.ui-effects-high .tilt-card .entrance-title,
+body.ui-effects-high .tilt-card .entrance-subtitle,
+body.ui-effects-high .tilt-card .module-actions,
+body.ui-effects-high .tilt-card .donut-wrap {
+  transform: translateZ(28px) !important;
+}
+
+body.ui-effects-medium .tilt-card .metric-value,
+body.ui-effects-high .tilt-card .metric-value {
+  transform: translateZ(46px) !important;
+}
+
+body.ui-effects-medium .tilt-card::before,
+body.ui-effects-high .tilt-card::before {
+  transform: translateZ(6px) !important;
+}
+
+body.ui-effects-high .app-header {
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.1);
+}
+
+body.ui-effects-high .app-main {
+  animation: app-page-content-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+body.ui-effects-high .page-header,
+body.ui-effects-high .dashboard-header {
+  position: relative;
+  padding: 0.7rem 0.82rem;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: var(--app-radius-md);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(234, 241, 255, 0.62));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 28px rgba(37, 99, 235, 0.1);
+}
+
+body.ui-effects-high .page-header::after,
+body.ui-effects-high .dashboard-header::after {
+  position: absolute;
+  right: 0.8rem;
+  bottom: -1px;
+  left: 0.8rem;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.45), rgba(20, 184, 166, 0.38), transparent);
+}
+
+body.ui-effects-high .filter-panel,
+body.ui-effects-high .data-list-card,
+body.ui-effects-high .data-table-wrap,
+body.ui-effects-high .detail-panel,
+body.ui-effects-high .form-section {
+  border-color: rgba(191, 219, 254, 0.8);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+body.ui-effects-high .data-table tbody tr {
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+body.ui-effects-high .data-table tbody tr:hover {
+  transform: translateX(2px);
+}
+
+body.ui-effects-high .ui-effects-settings {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(234, 241, 255, 0.78)),
+    radial-gradient(28rem 16rem at 100% 0%, rgba(20, 184, 166, 0.12), transparent 60%);
+}
+
+body.ui-effects-high .ui-effects-level-card {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body.ui-effects-high .ui-effects-level-card::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  content: "";
+  background: var(--app-tech-gradient);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+body.ui-effects-high .ui-effects-level-card:has(input:checked)::after,
+body.ui-effects-high .ui-effects-level-card:hover::after {
+  opacity: 1;
+}
+
+body.ui-effects-high .page-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(37, 99, 235, 0.12), rgba(20, 184, 166, 0.12)),
+    rgba(248, 250, 252, 0.78);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.ui-effects-high.page-transition-ready .page-transition-overlay {
+  opacity: 0;
+  transform: translateY(-0.65rem);
+}
+
+body.ui-effects-high.page-transition-leaving .page-transition-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ui-ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+
+.ui-click-ripple {
+  position: absolute;
+  z-index: 4;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.62) 0%, rgba(37, 99, 235, 0.26) 42%, transparent 72%);
+  transform: scale(0);
+  animation: app-click-ripple 0.58s ease-out;
+  mix-blend-mode: screen;
+}
+
+@keyframes app-page-content-in {
+  from { opacity: 0; transform: translateY(0.55rem) scale(0.996); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes app-click-ripple {
+  from { opacity: 0.78; transform: scale(0); }
+  to { opacity: 0; transform: scale(2.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.ui-effects-medium .tilt-card,
+  body.ui-effects-medium .tilt-card:hover,
+  body.ui-effects-high .tilt-card,
+  body.ui-effects-high .tilt-card:hover {
+    transform: none !important;
+    will-change: auto !important;
+  }
+
+  body.ui-effects-medium .tilt-card .tilt-glare,
+  body.ui-effects-high .tilt-card .tilt-glare {
+    display: none !important;
+  }
+
+  body.ui-effects-high .app-main,
+  body.ui-effects-high .ui-click-ripple {
+    animation: none !important;
+  }
+
+  body.ui-effects-high .page-transition-overlay {
+    display: none !important;
+  }
+}

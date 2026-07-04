@@ -19,7 +19,21 @@ document.addEventListener("DOMContentLoaded", () => {
   initRevealAnimations();
   initCountUp();
   initCardHoverEffects();
+  initUiPageTransitions();
+  initClickRipples();
 });
+
+function getUiEffectsLevel() {
+  if (document.body.classList.contains("ui-effects-low")) {
+    return "low";
+  }
+
+  if (document.body.classList.contains("ui-effects-high")) {
+    return "high";
+  }
+
+  return "medium";
+}
 
 function initPasswordToggles() {
   document.querySelectorAll("[data-password-toggle]").forEach((button) => {
@@ -487,12 +501,143 @@ function initCardHoverEffects() {
     ".account-panel"
   ].join(",");
 
+  const level = getUiEffectsLevel();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const canHover = window.matchMedia("(hover: hover)").matches;
+
   document.querySelectorAll(hoverSelector).forEach((card) => {
+    if ((level === "medium" || level === "high") && !reduceMotion && canHover) {
+      card.classList.remove("hover-card");
+      card.classList.add("tilt-card");
+      if (!card.querySelector(":scope > .tilt-glare")) {
+        const glare = document.createElement("span");
+        glare.className = "tilt-glare";
+        glare.setAttribute("aria-hidden", "true");
+        card.appendChild(glare);
+      }
+
+      let frame = 0;
+      let pointerEvent = null;
+      const updateTilt = () => {
+        if (!pointerEvent) {
+          frame = 0;
+          return;
+        }
+
+        const rect = card.getBoundingClientRect();
+        const x = (pointerEvent.clientX - rect.left) / rect.width;
+        const y = (pointerEvent.clientY - rect.top) / rect.height;
+        card.style.setProperty("--tilt-x", `${(0.5 - y) * 7}deg`);
+        card.style.setProperty("--tilt-y", `${(x - 0.5) * 8}deg`);
+        card.style.setProperty("--tilt-lift", "-4px");
+        card.style.setProperty("--tilt-scale", "1.012");
+        card.style.setProperty("--glare-x", `${x * 100}%`);
+        card.style.setProperty("--glare-y", `${y * 100}%`);
+        card.classList.add("is-tilting");
+        frame = 0;
+      };
+
+      card.addEventListener("pointermove", (event) => {
+        pointerEvent = event;
+        if (frame === 0) {
+          frame = window.requestAnimationFrame(updateTilt);
+        }
+      });
+
+      card.addEventListener("pointerleave", () => {
+        pointerEvent = null;
+        if (frame !== 0) {
+          window.cancelAnimationFrame(frame);
+          frame = 0;
+        }
+        card.classList.remove("is-tilting");
+        card.style.removeProperty("--tilt-x");
+        card.style.removeProperty("--tilt-y");
+        card.style.removeProperty("--tilt-lift");
+        card.style.removeProperty("--tilt-scale");
+        card.style.removeProperty("--glare-x");
+        card.style.removeProperty("--glare-y");
+      });
+
+      return;
+    }
+
     card.classList.add("hover-card");
     card.classList.remove("tilt-card", "is-tilting");
     card.style.removeProperty("--tilt-x");
     card.style.removeProperty("--tilt-y");
     card.style.removeProperty("--tilt-lift");
     card.style.removeProperty("--tilt-scale");
+    card.style.removeProperty("--glare-x");
+    card.style.removeProperty("--glare-y");
+  });
+}
+
+function initUiPageTransitions() {
+  const level = getUiEffectsLevel();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (level !== "high" || reduceMotion) {
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "page-transition-overlay";
+  overlay.setAttribute("data-ui-page-transition", "true");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.appendChild(overlay);
+  window.requestAnimationFrame(() => document.body.classList.add("page-transition-ready"));
+
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest?.("a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    const href = link.getAttribute("href");
+    const target = link.getAttribute("target");
+    if (!href || target === "_blank" || href.startsWith("#") || href.startsWith("javascript:")) {
+      return;
+    }
+
+    const destination = new URL(href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.href === window.location.href) {
+      return;
+    }
+
+    event.preventDefault();
+    document.body.classList.add("page-transition-leaving");
+    window.setTimeout(() => {
+      window.location.href = destination.href;
+    }, 170);
+  });
+}
+
+function initClickRipples() {
+  const level = getUiEffectsLevel();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (level !== "high" || reduceMotion) {
+    return;
+  }
+
+  const selector = ".btn, .nav-link, .page-link, .ui-effects-level-card, .module-card a";
+  document.addEventListener("pointerdown", (event) => {
+    const target = event.target.closest?.(selector);
+    if (!target || target.disabled) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const ripple = document.createElement("span");
+    ripple.className = "ui-click-ripple";
+    ripple.style.width = `${size}px`;
+    ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+    ripple.setAttribute("aria-hidden", "true");
+
+    target.classList.add("ui-ripple-host");
+    target.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
   });
 }

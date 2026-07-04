@@ -1,0 +1,57 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Settings.IndexModel
+@{
+    ViewData["Title"] = "系统设置";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">系统设置</h1>
+        <div class="page-subtitle">配置全站视觉特效等级，让不同设备和使用场景都保持舒服的交互节奏。</div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<form method="post" class="form-section ui-effects-settings">
+    <div class="form-section-header">
+        <div>
+            <div class="form-section-title">UI 特效运行等级</div>
+            <div class="form-section-subtitle">保存后会立即影响所有页面的背景、卡片、图表和按钮动效。</div>
+        </div>
+    </div>
+
+    <div class="ui-effects-level-grid" role="radiogroup" aria-label="UI 特效运行等级">
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="Low" />
+            <span class="ui-effects-level-copy">
+                <strong>轻度</strong>
+                <span>保留基础 hover、focus 和展开反馈，关闭持续背景、数字滚动和发光动效。</span>
+            </span>
+        </label>
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="Medium" />
+            <span class="ui-effects-level-copy">
+                <strong>中度</strong>
+                <span>推荐默认值。启用柔和入场、数字滚动、图表展开和轻微按钮质感。</span>
+            </span>
+        </label>
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="High" />
+            <span class="ui-effects-level-copy">
+                <strong>高度</strong>
+                <span>展示感更强，启用背景流动、状态脉冲、进度发光和更完整的图表节奏。</span>
+            </span>
+        </label>
+    </div>
+
+    <span asp-validation-for="UiEffectsLevel" class="text-danger"></span>
+
+    <div class="page-actions mt-3">
+        <button class="btn btn-primary" type="submit">保存设置</button>
+        <a class="btn btn-outline-secondary" asp-page="/Index">返回首页</a>
+    </div>
+</form>

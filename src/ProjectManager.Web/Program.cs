@@ -45,6 +45,7 @@ builder.Services.AddScoped<PlanningProjectService>();
 builder.Services.AddScoped<MaintenanceOrderService>();
 builder.Services.AddScoped<ProjectGanttService>();
 builder.Services.AddScoped<UserLookupService>();
+builder.Services.AddScoped<SystemSettingsService>();
 
 var app = builder.Build();
 
