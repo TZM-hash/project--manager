@@ -56,7 +56,7 @@
                 </span>
             </span>
             <span class="theme-option-copy">
-                <span class="theme-option-heading"><strong>清透毛玻璃</strong><em>iOS 靈感</em></span>
+                <span class="theme-option-heading"><strong>清透毛玻璃</strong></span>
                 <span>使用半透明材質、背景模糊、柔和高光與更圓潤的空間層次。</span>
             </span>
         </label>
@@ -64,10 +64,48 @@
 
     <span asp-validation-for="VisualTheme" class="text-danger"></span>
 
-    <div class="form-section-header">
+    <div class="form-section-header mt-4">
+        <div>
+            <div class="form-section-title">動效風格</div>
+            <div class="form-section-subtitle">選擇全站的互動語言；下方輕度、中度、高度會控制所選動效風格的運行強度。</div>
+        </div>
+    </div>
+
+    <div class="motion-style-grid" role="radiogroup" aria-label="動效風格">
+        <label class="motion-style-card" data-motion-option="motion-default">
+            <input class="form-check-input" type="radio" asp-for="MotionStyle" value="Default" />
+            <span class="motion-style-preview motion-style-preview-default" aria-hidden="true">
+                <span class="motion-preview-track"><i></i></span>
+                <span class="motion-preview-card motion-preview-card-a"></span>
+                <span class="motion-preview-card motion-preview-card-b"></span>
+            </span>
+            <span class="motion-style-copy">
+                <strong>預設動效</strong>
+                <span>沿用目前的科技商務特效，包括流光、3D 傾斜、漣漪與線性頁面切換。</span>
+            </span>
+        </label>
+
+        <label class="motion-style-card" data-motion-option="motion-apple">
+            <input class="form-check-input" type="radio" asp-for="MotionStyle" value="Apple" />
+            <span class="motion-style-preview motion-style-preview-apple" aria-hidden="true">
+                <span class="motion-preview-glow"></span>
+                <span class="motion-preview-card motion-preview-card-a"></span>
+                <span class="motion-preview-card motion-preview-card-b"></span>
+                <span class="motion-preview-card motion-preview-card-c"></span>
+            </span>
+            <span class="motion-style-copy">
+                <strong>Apple 動效</strong>
+                <span>使用 iOS 與 macOS 式彈性緩動、按壓縮放、柔焦入場和分層浮起效果。</span>
+            </span>
+        </label>
+    </div>
+
+    <span asp-validation-for="MotionStyle" class="text-danger"></span>
+
+    <div class="form-section-header mt-4">
         <div>
             <div class="form-section-title">UI 特效运行等級</div>
-            <div class="form-section-subtitle">儲存后会立即影响所有頁面的背景、卡片、圖表和按钮动效。</div>
+            <div class="form-section-subtitle">同步控制所選動效風格在所有頁面的背景、卡片、圖表、按鈕和頁面切換強度。</div>
         </div>
     </div>
 
@@ -76,21 +114,21 @@
             <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="Low" />
             <span class="ui-effects-level-copy">
                 <strong>轻度</strong>
-                <span>保留基础 hover、focus 和展開反馈，关闭持续背景、数字滚动和发光动效。</span>
+                <span>保留基礎 hover、focus 和按壓反馈，關閉持續背景、頁面轉場和重型發光動效。</span>
             </span>
         </label>
         <label class="ui-effects-level-card">
             <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="Medium" />
             <span class="ui-effects-level-copy">
                 <strong>中度</strong>
-                <span>推荐默认值。啟用柔和入场、数字滚动、圖表展開和轻微按钮质感。</span>
+                <span>推薦預設值。啟用柔和入場、卡片浮起、數字滾動、圖表展開和彈層動效。</span>
             </span>
         </label>
         <label class="ui-effects-level-card">
             <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="High" />
             <span class="ui-effects-level-copy">
                 <strong>高度</strong>
-                <span>展示感更强，啟用背景流动、狀態脉冲、進度发光和更完整的圖表节奏。</span>
+                <span>展示感更強，啟用完整頁面轉場、背景呼吸、狀態脈衝、景深與強化彈性反馈。</span>
             </span>
         </label>
     </div>
@@ -116,12 +154,47 @@
             <input class="form-check-input" type="radio" asp-for="DisplayLanguage" value="SimplifiedChinese" />
             <span class="ui-effects-level-copy">
                 <strong>簡體中文</strong>
-                <span>切換為簡體中文顯示。（需配合前端轉換機制使用）</span>
+                <span>儲存後將全站介面標題、選單、按鈕、提示和說明轉換為簡體中文。</span>
             </span>
         </label>
     </div>
 
     <span asp-validation-for="DisplayLanguage" class="text-danger"></span>
+
+    <div class="form-section-header mt-4">
+        <div>
+            <div class="form-section-title">全局字體</div>
+            <div class="form-section-subtitle">選擇全站介面字體。每個選項都包含 Windows、macOS 與 Linux 中文回退字體，不需要額外安裝，也不會因缺少單一字體而顯示亂碼。</div>
+        </div>
+    </div>
+
+    <div class="font-select-panel" data-global-font-picker>
+        <div class="font-select-control-wrap">
+            <span class="font-select-mark" aria-hidden="true">Aa</span>
+            <div class="font-select-field">
+                <label class="form-label" asp-for="GlobalFont">介面字體</label>
+                <select class="form-select font-select-control" asp-for="GlobalFont" data-global-font-select>
+                    <option value="SystemDefault" data-font-class="font-system-default" data-preview-class="font-preview-system" data-font-name="系統預設" data-font-description="跟隨目前電腦的系統介面字體，兼容性最佳。">系統預設</option>
+                    <option value="MicrosoftYaHei" data-font-class="font-microsoft-yahei" data-preview-class="font-preview-yahei" data-font-name="微軟雅黑" data-font-description="清晰現代，適合簡體中文和日常商務介面。">微軟雅黑</option>
+                    <option value="MicrosoftJhengHei" data-font-class="font-microsoft-jhenghei" data-preview-class="font-preview-jhenghei" data-font-name="微軟正黑體" data-font-description="筆畫穩定，適合繁體中文和密集資料頁面。">微軟正黑體</option>
+                    <option value="ChineseSerif" data-font-class="font-chinese-serif" data-preview-class="font-preview-serif" data-font-name="宋體／明體" data-font-description="傳統印刷感，適合偏正式的文字與報表閱讀。">宋體／明體</option>
+                    <option value="ChineseKai" data-font-class="font-chinese-kai" data-preview-class="font-preview-kai" data-font-name="楷體" data-font-description="筆畫自然端正，適合標題、說明文字和較具人文感的介面。">楷體</option>
+                </select>
+            </div>
+            <span class="font-select-chevron" aria-hidden="true"></span>
+        </div>
+
+        <div class="font-live-preview font-preview-system" data-global-font-preview>
+            <div class="font-live-preview-head">
+                <span>即時預覽</span>
+                <strong data-global-font-name>系統預設</strong>
+            </div>
+            <p>專案管理系統 · 字體預覽 ABC 123</p>
+            <small data-global-font-description>跟隨目前電腦的系統介面字體，兼容性最佳。</small>
+        </div>
+    </div>
+
+    <span asp-validation-for="GlobalFont" class="text-danger"></span>
 
     <div class="form-section-header mt-4">
         <div>

@@ -25,7 +25,7 @@
     <div class="gantt-panel-head">
         <div>
             <h2 class="detail-panel-title">甘特图</h2>
-            <div class="chart-subtitle">黑框為預估工期、綠色為實際完成；檔案日期進度線向左紅折代表滯後、向右藍折代表超前。当前時間單位：@scaleText。</div>
+            <div class="chart-subtitle">黑框為完整計劃工期，狀態實色為已完成部分、同色淡色為未完成部分；檔案日期折線保留進度超前與滯後判讀。当前時間單位：@scaleText。</div>
         </div>
         <div class="page-actions">
             <a class="btn btn-outline-secondary" asp-page="/Workbench/Projects/GanttPrint" asp-route-id="@Model.Project.Id">預覽 / 列印</a>
@@ -75,7 +75,24 @@
             </div>
         </div>
 
-        <div class="gantt-chart-wrap" aria-label="專案甘特图時間轴" style="--month-count:@months.Count;--task-count:@taskRows.Count">
+        <div class="gantt-visual-legend" aria-label="甘特圖顯示圖例">
+            <div class="gantt-progress-legend">
+                <span><i class="gantt-legend-bar"><b></b></i>實色：已完成</span>
+                <span><i class="gantt-legend-bar gantt-legend-bar-pale"><b></b></i>淡色：未完成</span>
+                <span><i class="gantt-legend-redline"></i>檔案日期</span>
+            </div>
+            <div class="gantt-status-legend">
+                <span class="gantt-task-state-completed"><i></i>已完成</span>
+                <span class="gantt-task-state-in-progress"><i></i>進行中</span>
+                <span class="gantt-task-state-ahead"><i></i>進度超前</span>
+                <span class="gantt-task-state-at-risk"><i></i>有風險</span>
+                <span class="gantt-task-state-waiting"><i></i>等待中</span>
+                <span class="gantt-task-state-blocked"><i></i>阻塞</span>
+                <span class="gantt-task-state-not-started"><i></i>未開始</span>
+            </div>
+        </div>
+
+        <div class="gantt-chart-wrap" aria-label="專案甘特图時間轴：黑框顯示計劃工期，實色顯示完成進度，淡色顯示剩餘進度" style="--month-count:@months.Count;--task-count:@taskRows.Count">
             <div class="gantt-chart-header">
                 <span class="gantt-chart-header-label">工作項目</span>
                 <div class="gantt-chart-months">
@@ -103,13 +120,22 @@
                     var currentStateClass = point.State == GanttProgressState.Ahead ? "is-ahead" : point.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
                     var nextState = progressIndex == progressPoints.Count - 1 ? GanttProgressState.OnSchedule : progressPoints[progressIndex + 1].State;
                     var nextStateClass = nextState == GanttProgressState.Ahead ? "is-ahead" : nextState == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
+                    var visualState = ProjectGanttService.GetTaskVisualState(row.Task, archiveDemand.Date, point.State);
+                    var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
+                    var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
+                    var progressText = $"{bar.ProgressPercent:0.##}%";
                     <div class="gantt-chart-row">
-                        <div class="gantt-chart-label">@row.Task.Name</div>
+                        <div class="gantt-chart-label">
+                            <span class="gantt-task-name">@row.Task.Name</span>
+                            <span class="gantt-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
+                        </div>
                         <div class="gantt-chart-track">
+                            <span class="gantt-chart-redline" style="left:@archiveLinePosition.ToString("0.###")%" aria-hidden="true"></span>
                             @if (bar.WidthPercent > 0)
                             {
-                                <span class="gantt-bar" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;">
+                                <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@row.Task.Name：@visualStateLabel，完成 @progressText">
                                     <i style="width:@bar.ProgressPercent.ToString("0.##")%"></i>
+                                    <span class="gantt-bar-progress-label">@progressText</span>
                                 </span>
                             }
                             <svg class="gantt-progress-line-row" viewBox="0 0 100 1" preserveAspectRatio="none" aria-label="@(point.State == GanttProgressState.Ahead ? "進度超前" : point.State == GanttProgressState.Behind ? "進度滯後" : "進度符合")">
@@ -117,7 +143,7 @@
                                 <line class="@nextStateClass" x1="@point.PositionPercent.ToString("0.###")" y1="0.5" x2="@bottomX.ToString("0.###")" y2="1" vector-effect="non-scaling-stroke" />
                             </svg>
                         </div>
-                        <div class="gantt-chart-percent">@row.Task.ProgressPercent.ToString("0.##")%</div>
+                        <div class="gantt-chart-percent @visualStateClass"><strong>@progressText</strong></div>
                     </div>
                 }
             </div>

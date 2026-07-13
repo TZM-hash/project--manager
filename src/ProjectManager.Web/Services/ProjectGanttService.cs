@@ -12,6 +12,12 @@ public sealed class ProjectGanttService(
     private const string ExcelContentType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
+    private static readonly string[] BlockedKeywords =
+        ["阻塞", "卡住", "缺少", "無法", "无法", "blocked"];
+
+    private static readonly string[] WaitingKeywords =
+        ["等待", "待確認", "待确认", "待回覆", "待回复", "pending"];
+
     public async Task<ProjectGanttInputModel> BuildInputAsync(
         int projectId,
         CancellationToken cancellationToken)
@@ -335,6 +341,79 @@ public sealed class ProjectGanttService(
         var finish = GetTimelinePositionPercent(finishDate.AddDays(1), months);
         var width = Math.Max(0.35m, finish - left);
         return new GanttBar(left, width, ClampPercent(task.ProgressPercent));
+    }
+
+    public static GanttTaskVisualState GetTaskVisualState(
+        ProjectGanttTaskInputModel task,
+        DateOnly archiveDate,
+        GanttProgressState progressState)
+    {
+        var progress = ClampPercent(task.ProgressPercent);
+        if (progress >= 100m)
+        {
+            return GanttTaskVisualState.Completed;
+        }
+
+        var description = task.ProgressDescription ?? string.Empty;
+        if (ContainsAny(description, BlockedKeywords))
+        {
+            return GanttTaskVisualState.Blocked;
+        }
+
+        if (ContainsAny(description, WaitingKeywords))
+        {
+            return GanttTaskVisualState.Waiting;
+        }
+
+        if (progress <= 0m
+            && task.PlannedStartDate is { } plannedStart
+            && plannedStart > archiveDate)
+        {
+            return GanttTaskVisualState.NotStarted;
+        }
+
+        if (task.PlannedFinishDate is { } plannedFinish
+            && plannedFinish < archiveDate)
+        {
+            return GanttTaskVisualState.AtRisk;
+        }
+
+        return progressState switch
+        {
+            GanttProgressState.Ahead => GanttTaskVisualState.Ahead,
+            GanttProgressState.Behind => GanttTaskVisualState.AtRisk,
+            _ => progress <= 0m
+                ? GanttTaskVisualState.NotStarted
+                : GanttTaskVisualState.InProgress
+        };
+    }
+
+    public static string GetTaskVisualStateLabel(GanttTaskVisualState state)
+    {
+        return state switch
+        {
+            GanttTaskVisualState.Completed => "已完成",
+            GanttTaskVisualState.Ahead => "進度超前",
+            GanttTaskVisualState.AtRisk => "有風險",
+            GanttTaskVisualState.Waiting => "等待中",
+            GanttTaskVisualState.Blocked => "阻塞",
+            GanttTaskVisualState.NotStarted => "未開始",
+            _ => "進行中"
+        };
+    }
+
+    public static string GetTaskVisualStateCssClass(GanttTaskVisualState state)
+    {
+        return state switch
+        {
+            GanttTaskVisualState.Completed => "gantt-task-state-completed",
+            GanttTaskVisualState.Ahead => "gantt-task-state-ahead",
+            GanttTaskVisualState.AtRisk => "gantt-task-state-at-risk",
+            GanttTaskVisualState.Waiting => "gantt-task-state-waiting",
+            GanttTaskVisualState.Blocked => "gantt-task-state-blocked",
+            GanttTaskVisualState.NotStarted => "gantt-task-state-not-started",
+            _ => "gantt-task-state-in-progress"
+        };
     }
 
     public static IReadOnlyList<GanttProgressPoint> BuildProgressLinePoints(
@@ -899,6 +978,11 @@ public sealed class ProjectGanttService(
                !string.IsNullOrWhiteSpace(task.ProgressDescription);
     }
 
+    private static bool ContainsAny(string value, IEnumerable<string> terms)
+    {
+        return terms.Any(term => value.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
+
     private static decimal ClampPercent(decimal value)
     {
         return Math.Min(100, Math.Max(0, value));
@@ -1061,6 +1145,17 @@ public enum GanttProgressState
     OnSchedule,
     Behind,
     Ahead
+}
+
+public enum GanttTaskVisualState
+{
+    NotStarted,
+    InProgress,
+    Ahead,
+    AtRisk,
+    Waiting,
+    Blocked,
+    Completed
 }
 
 public sealed record GanttMonth(

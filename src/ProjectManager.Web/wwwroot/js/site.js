@@ -11,6 +11,9 @@ window.toggleNavGroup = function (el) {
 
 document.addEventListener("DOMContentLoaded", () => {
   initThemePreview();
+  initMotionStylePreview();
+  initGlobalFontPreview();
+  initApplePressFeedback();
   initPasswordToggles();
   initBulkSelection();
   initFilterDrawers();
@@ -47,6 +50,102 @@ function initThemePreview() {
       document.body.classList.add(option.dataset.themeOption || "theme-default");
     });
   });
+}
+
+function initMotionStylePreview() {
+  const options = document.querySelectorAll("[data-motion-option]");
+  if (options.length === 0) {
+    return;
+  }
+
+  options.forEach((option) => {
+    const input = option.querySelector('input[type="radio"]');
+    if (!input) {
+      return;
+    }
+
+    input.addEventListener("change", () => {
+      if (!input.checked) {
+        return;
+      }
+
+      document.body.classList.remove("motion-default", "motion-apple");
+      document.body.classList.add(option.dataset.motionOption || "motion-default");
+    });
+  });
+}
+
+function initGlobalFontPreview() {
+  const picker = document.querySelector("[data-global-font-picker]");
+  const select = picker?.querySelector("[data-global-font-select]");
+  const preview = picker?.querySelector("[data-global-font-preview]");
+  if (!picker || !select || !preview) {
+    return;
+  }
+
+  const fontClasses = [
+    "font-system-default",
+    "font-microsoft-yahei",
+    "font-microsoft-jhenghei",
+    "font-chinese-serif",
+    "font-chinese-kai"
+  ];
+  const previewClasses = [
+    "font-preview-system",
+    "font-preview-yahei",
+    "font-preview-jhenghei",
+    "font-preview-serif",
+    "font-preview-kai"
+  ];
+
+  const applyPreview = () => {
+    const option = select.options[select.selectedIndex];
+    if (!option) {
+      return;
+    }
+
+    document.body.classList.remove(...fontClasses);
+    document.body.classList.add(option.dataset.fontClass || "font-system-default");
+    select.classList.remove(...previewClasses);
+    preview.classList.remove(...previewClasses);
+    const previewClass = option.dataset.previewClass || "font-preview-system";
+    select.classList.add(previewClass);
+    preview.classList.add(previewClass);
+
+    const name = preview.querySelector("[data-global-font-name]");
+    const description = preview.querySelector("[data-global-font-description]");
+    if (name) {
+      name.textContent = option.dataset.fontName || option.textContent;
+    }
+    if (description) {
+      description.textContent = option.dataset.fontDescription || "";
+    }
+  };
+
+  select.addEventListener("change", applyPreview);
+  applyPreview();
+}
+
+function initApplePressFeedback() {
+  const selector = ".btn, .nav-link, .page-link, .detail-tab, .theme-option-card, .motion-style-card, .ui-effects-level-card, .module-card a";
+  const release = (target) => target?.classList.remove("is-apple-pressed");
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!document.body.classList.contains("motion-apple")) {
+      return;
+    }
+
+    const target = event.target.closest?.(selector);
+    if (!target || target.disabled) {
+      return;
+    }
+
+    target.classList.add("is-apple-pressed");
+  });
+
+  document.addEventListener("pointerup", (event) => release(event.target.closest?.(selector)));
+  document.addEventListener("pointercancel", (event) => release(event.target.closest?.(selector)));
+  document.addEventListener("pointerout", (event) => release(event.target.closest?.(selector)));
 }
 
 function getUiEffectsLevel() {
@@ -557,11 +656,12 @@ function initCardHoverEffects() {
   ].join(",");
 
   const level = getUiEffectsLevel();
+  const appleMotion = document.body.classList.contains("motion-apple");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canHover = window.matchMedia("(hover: hover)").matches;
 
   document.querySelectorAll(hoverSelector).forEach((card) => {
-    if ((level === "medium" || level === "high") && !reduceMotion && canHover) {
+    if ((level === "medium" || level === "high") && !appleMotion && !reduceMotion && canHover) {
       card.classList.remove("hover-card");
       card.classList.add("tilt-card");
       if (!card.querySelector(":scope > .tilt-glare")) {
@@ -641,6 +741,10 @@ function initUiPageTransitions() {
   overlay.setAttribute("aria-hidden", "true");
   document.body.appendChild(overlay);
   window.requestAnimationFrame(() => document.body.classList.add("page-transition-ready"));
+  window.addEventListener("pageshow", () => {
+    document.body.classList.remove("page-transition-leaving");
+    document.body.removeAttribute("aria-busy");
+  });
 
   document.addEventListener("click", (event) => {
     const link = event.target.closest?.("a[href]");
@@ -650,7 +754,12 @@ function initUiPageTransitions() {
 
     const href = link.getAttribute("href");
     const target = link.getAttribute("target");
-    if (!href || target === "_blank" || href.startsWith("#") || href.startsWith("javascript:")) {
+    if (!href
+        || (target && target !== "_self")
+        || link.hasAttribute("download")
+        || link.hasAttribute("data-no-transition")
+        || href.startsWith("#")
+        || href.startsWith("javascript:")) {
       return;
     }
 
@@ -659,18 +768,27 @@ function initUiPageTransitions() {
       return;
     }
 
+    if (document.body.classList.contains("page-transition-leaving")) {
+      event.preventDefault();
+      return;
+    }
+
+    const appleMotion = document.body.classList.contains("motion-apple");
+    const navigationDelay = appleMotion ? 45 : 30;
     event.preventDefault();
+    document.body.setAttribute("aria-busy", "true");
     document.body.classList.add("page-transition-leaving");
     window.setTimeout(() => {
-      window.location.href = destination.href;
-    }, 170);
+      window.location.assign(destination.href);
+    }, navigationDelay);
   });
 }
 
 function initClickRipples() {
   const level = getUiEffectsLevel();
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (level !== "high" || reduceMotion) {
+  const appleMotion = document.body.classList.contains("motion-apple");
+  if (level !== "high" || reduceMotion || appleMotion) {
     return;
   }
 

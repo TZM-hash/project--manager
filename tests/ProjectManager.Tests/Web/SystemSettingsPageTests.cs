@@ -36,10 +36,18 @@ public sealed class SystemSettingsPageTests
         html.Should().Contain("name=\"VisualTheme\"");
         html.Should().Contain("value=\"Default\"");
         html.Should().Contain("value=\"ClearGlass\"");
+        html.Should().Contain("name=\"MotionStyle\"");
+        html.Should().Contain("value=\"Apple\"");
         html.Should().Contain("name=\"UiEffectsLevel\"");
         html.Should().Contain("value=\"Low\"");
         html.Should().Contain("value=\"Medium\"");
         html.Should().Contain("value=\"High\"");
+        html.Should().Contain("name=\"GlobalFont\"");
+        html.Should().Contain("value=\"SystemDefault\"");
+        html.Should().Contain("value=\"MicrosoftYaHei\"");
+        html.Should().Contain("value=\"MicrosoftJhengHei\"");
+        html.Should().Contain("value=\"ChineseSerif\"");
+        html.Should().Contain("value=\"ChineseKai\"");
         html.Should().Contain("name=\"ArchiveDate\"");
     }
 
@@ -54,7 +62,7 @@ public sealed class SystemSettingsPageTests
         var html = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("<body class=\"app-shell theme-default ui-effects-high\">");
+        html.Should().Contain("<body class=\"app-shell theme-default motion-default ui-effects-high lang-traditional font-system-default\">");
     }
 
     [Fact]
@@ -68,7 +76,53 @@ public sealed class SystemSettingsPageTests
         var html = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("<body class=\"app-shell theme-clear-glass ui-effects-medium\">");
+        html.Should().Contain("<body class=\"app-shell theme-clear-glass motion-default ui-effects-medium lang-traditional font-system-default\">");
+    }
+
+    [Fact]
+    public async Task Home_page_applies_saved_apple_motion_style_class()
+    {
+        await using var factory = new ProjectManagerWebFactory();
+        await factory.SetMotionStyleAsync(SystemSettingsService.MotionStyle.Apple);
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/");
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("<body class=\"app-shell theme-default motion-apple ui-effects-medium lang-traditional font-system-default\">");
+    }
+
+    [Fact]
+    public async Task Home_page_applies_saved_global_font_class()
+    {
+        await using var factory = new ProjectManagerWebFactory();
+        await factory.SetGlobalFontAsync(SystemSettingsService.GlobalFont.MicrosoftYaHei);
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/");
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("font-microsoft-yahei");
+    }
+
+    [Fact]
+    public async Task Saved_simplified_language_converts_the_full_interface()
+    {
+        await using var factory = new ProjectManagerWebFactory();
+        await factory.SetDisplayLanguageAsync(SystemSettingsService.DisplayLanguage.SimplifiedChinese);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.Administrator);
+
+        var response = await client.GetAsync("/Admin/Settings");
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("<html lang=\"zh-CN\">");
+        html.Should().Contain("lang-simplified");
+        html.Should().Contain("系统设置");
+        html.Should().NotContain("系統設定");
     }
 
     private sealed class ProjectManagerWebFactory : WebApplicationFactory<Program>
@@ -87,6 +141,27 @@ public sealed class SystemSettingsPageTests
             using var scope = Services.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<SystemSettingsService>();
             await service.SetVisualThemeAsync(theme, CancellationToken.None);
+        }
+
+        public async Task SetMotionStyleAsync(SystemSettingsService.MotionStyle style)
+        {
+            using var scope = Services.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<SystemSettingsService>();
+            await service.SetMotionStyleAsync(style, CancellationToken.None);
+        }
+
+        public async Task SetDisplayLanguageAsync(SystemSettingsService.DisplayLanguage language)
+        {
+            using var scope = Services.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<SystemSettingsService>();
+            await service.SetDisplayLanguageAsync(language, CancellationToken.None);
+        }
+
+        public async Task SetGlobalFontAsync(SystemSettingsService.GlobalFont font)
+        {
+            using var scope = Services.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<SystemSettingsService>();
+            await service.SetGlobalFontAsync(font, CancellationToken.None);
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)

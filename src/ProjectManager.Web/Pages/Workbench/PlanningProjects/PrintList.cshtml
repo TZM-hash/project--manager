@@ -51,7 +51,7 @@
     <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.min.js"></script>
     <script>
         window.onload = function() {
-            if (typeof OpenCC !== 'undefined') {
+            if (document.body.classList.contains('lang-traditional') && typeof OpenCC !== 'undefined') {
                 var converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
                 var content = document.getElementById('printContent');
                 converter.convertElement(content);

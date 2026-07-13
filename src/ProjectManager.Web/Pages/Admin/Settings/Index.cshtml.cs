@@ -14,10 +14,16 @@ public sealed class IndexModel(SystemSettingsService systemSettingsService) : Pa
     public SystemSettingsService.VisualTheme VisualTheme { get; set; } = SystemSettingsService.VisualTheme.Default;
 
     [BindProperty]
+    public SystemSettingsService.MotionStyle MotionStyle { get; set; } = SystemSettingsService.MotionStyle.Default;
+
+    [BindProperty]
     public UiEffectsLevel UiEffectsLevel { get; set; } = UiEffectsLevel.Medium;
 
     [BindProperty]
     public SystemSettingsService.DisplayLanguage DisplayLanguage { get; set; } = SystemSettingsService.DisplayLanguage.TraditionalChinese;
+
+    [BindProperty]
+    public SystemSettingsService.GlobalFont GlobalFont { get; set; } = SystemSettingsService.GlobalFont.SystemDefault;
 
     [BindProperty]
     public DateOnly ArchiveDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
@@ -28,8 +34,10 @@ public sealed class IndexModel(SystemSettingsService systemSettingsService) : Pa
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         VisualTheme = await systemSettingsService.GetVisualThemeAsync(cancellationToken);
+        MotionStyle = await systemSettingsService.GetMotionStyleAsync(cancellationToken);
         UiEffectsLevel = await systemSettingsService.GetUiEffectsLevelAsync(cancellationToken);
         DisplayLanguage = await systemSettingsService.GetDisplayLanguageAsync(cancellationToken);
+        GlobalFont = await systemSettingsService.GetGlobalFontAsync(cancellationToken);
         ArchiveDate = await systemSettingsService.GetArchiveDateAsync(cancellationToken);
     }
 
@@ -40,6 +48,13 @@ public sealed class IndexModel(SystemSettingsService systemSettingsService) : Pa
             ModelState.AddModelError(
                 nameof(VisualTheme),
                 "請選擇有效的顯示主題。");
+        }
+
+        if (!Enum.IsDefined(MotionStyle))
+        {
+            ModelState.AddModelError(
+                nameof(MotionStyle),
+                "請選擇有效的動效風格。");
         }
 
         if (!Enum.IsDefined(UiEffectsLevel))
@@ -56,14 +71,23 @@ public sealed class IndexModel(SystemSettingsService systemSettingsService) : Pa
                 "請選擇有效的顯示語言。");
         }
 
+        if (!Enum.IsDefined(GlobalFont))
+        {
+            ModelState.AddModelError(
+                nameof(GlobalFont),
+                "請選擇有效的全局字體。");
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
         }
 
         await systemSettingsService.SetVisualThemeAsync(VisualTheme, cancellationToken);
+        await systemSettingsService.SetMotionStyleAsync(MotionStyle, cancellationToken);
         await systemSettingsService.SetUiEffectsLevelAsync(UiEffectsLevel, cancellationToken);
         await systemSettingsService.SetDisplayLanguageAsync(DisplayLanguage, cancellationToken);
+        await systemSettingsService.SetGlobalFontAsync(GlobalFont, cancellationToken);
         await systemSettingsService.SetArchiveDateAsync(ArchiveDate, cancellationToken);
         StatusMessage = "設定已儲存。";
         return RedirectToPage();

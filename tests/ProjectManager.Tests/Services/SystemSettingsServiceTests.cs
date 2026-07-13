@@ -8,6 +8,35 @@ namespace ProjectManager.Tests.Services;
 public sealed class SystemSettingsServiceTests
 {
     [Fact]
+    public async Task GetMotionStyleAsync_returns_default_when_setting_is_missing()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var service = new SystemSettingsService(db);
+
+        var style = await service.GetMotionStyleAsync(CancellationToken.None);
+
+        style.Should().Be(SystemSettingsService.MotionStyle.Default);
+        SystemSettingsService.ToMotionCssClass(style).Should().Be("motion-default");
+    }
+
+    [Fact]
+    public async Task SetMotionStyleAsync_persists_apple_motion_style()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var service = new SystemSettingsService(db);
+
+        await service.SetMotionStyleAsync(SystemSettingsService.MotionStyle.Apple, CancellationToken.None);
+
+        (await service.GetMotionStyleAsync(CancellationToken.None))
+            .Should().Be(SystemSettingsService.MotionStyle.Apple);
+        db.SystemSettings.Should().ContainSingle(x => x.Key == SystemSettingsService.MotionStyleKey);
+    }
+
+    [Fact]
     public async Task GetVisualThemeAsync_returns_default_when_setting_is_missing()
     {
         var (db, connection) = await TestDbFactory.CreateAsync();
@@ -63,6 +92,39 @@ public sealed class SystemSettingsServiceTests
         var level = await service.GetUiEffectsLevelAsync(CancellationToken.None);
         level.Should().Be(UiEffectsLevel.Low);
         db.SystemSettings.Should().ContainSingle(x => x.Key == SystemSettingsService.UiEffectsLevelKey);
+    }
+
+    [Fact]
+    public async Task GetGlobalFontAsync_returns_system_default_when_setting_is_missing()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var service = new SystemSettingsService(db);
+
+        var font = await service.GetGlobalFontAsync(CancellationToken.None);
+
+        font.Should().Be(SystemSettingsService.GlobalFont.SystemDefault);
+        SystemSettingsService.ToFontCssClass(font).Should().Be("font-system-default");
+    }
+
+    [Fact]
+    public async Task SetGlobalFontAsync_persists_selected_font()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var service = new SystemSettingsService(db);
+
+        await service.SetGlobalFontAsync(
+            SystemSettingsService.GlobalFont.MicrosoftYaHei,
+            CancellationToken.None);
+
+        (await service.GetGlobalFontAsync(CancellationToken.None))
+            .Should().Be(SystemSettingsService.GlobalFont.MicrosoftYaHei);
+        db.SystemSettings.Should().ContainSingle(x => x.Key == SystemSettingsService.GlobalFontKey);
+        SystemSettingsService.ToFontCssClass(SystemSettingsService.GlobalFont.ChineseKai)
+            .Should().Be("font-chinese-kai");
     }
 
     [Fact]

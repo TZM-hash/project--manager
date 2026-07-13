@@ -48,6 +48,7 @@ builder.Services.AddScoped<UserLookupService>();
 builder.Services.AddScoped<SystemSettingsService>();
 builder.Services.AddScoped<ProjectArchiveService>();
 builder.Services.AddSingleton<OpenCcConverterService>();
+builder.Services.AddSingleton<HtmlLanguageConverter>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 var app = builder.Build();
@@ -63,6 +64,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<DisplayLanguageMiddleware>();
 
 app.UseRouting();
 

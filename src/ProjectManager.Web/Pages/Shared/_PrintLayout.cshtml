@@ -1,5 +1,13 @@
+@inject ProjectManager.Web.Services.SystemSettingsService SystemSettingsService
+@{
+    var displayLanguage = await SystemSettingsService.GetDisplayLanguageAsync(Context.RequestAborted);
+    var languageClass = ProjectManager.Web.Services.SystemSettingsService.ToLanguageClass(displayLanguage);
+    var htmlLanguage = displayLanguage == ProjectManager.Web.Services.SystemSettingsService.DisplayLanguage.SimplifiedChinese
+        ? "zh-CN"
+        : "zh-TW";
+}
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="@htmlLanguage">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -70,7 +78,7 @@
         }
     </style>
 </head>
-<body>
+<body class="@languageClass">
     <div class="no-print print-back-btn">
         <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">返回</a>
     </div>

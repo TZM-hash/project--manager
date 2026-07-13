@@ -125,4 +125,87 @@ public sealed class ProjectGanttServiceTests
 
         result.Should().Be(60m);
     }
+
+    [Theory]
+    [InlineData(100, GanttProgressState.Behind, GanttTaskVisualState.Completed)]
+    [InlineData(45, GanttProgressState.Ahead, GanttTaskVisualState.Ahead)]
+    [InlineData(45, GanttProgressState.Behind, GanttTaskVisualState.AtRisk)]
+    public void GetTaskVisualState_UsesProgressAndScheduleState(
+        decimal progress,
+        GanttProgressState progressState,
+        GanttTaskVisualState expected)
+    {
+        var task = new ProjectGanttTaskInputModel
+        {
+            PlannedStartDate = new DateOnly(2026, 7, 1),
+            PlannedFinishDate = new DateOnly(2026, 7, 31),
+            ProgressPercent = progress
+        };
+
+        var result = ProjectGanttService.GetTaskVisualState(
+            task,
+            new DateOnly(2026, 7, 14),
+            progressState);
+
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void GetTaskVisualState_MarksFutureZeroProgressTaskAsNotStarted()
+    {
+        var task = new ProjectGanttTaskInputModel
+        {
+            PlannedStartDate = new DateOnly(2026, 8, 1),
+            PlannedFinishDate = new DateOnly(2026, 8, 15),
+            ProgressPercent = 0m
+        };
+
+        var result = ProjectGanttService.GetTaskVisualState(
+            task,
+            new DateOnly(2026, 7, 14),
+            GanttProgressState.OnSchedule);
+
+        result.Should().Be(GanttTaskVisualState.NotStarted);
+    }
+
+    [Theory]
+    [InlineData("目前被外部审批阻塞", GanttTaskVisualState.Blocked)]
+    [InlineData("等待客户确认设计稿", GanttTaskVisualState.Waiting)]
+    public void GetTaskVisualState_UsesProgressDescriptionSignals(
+        string description,
+        GanttTaskVisualState expected)
+    {
+        var task = new ProjectGanttTaskInputModel
+        {
+            PlannedStartDate = new DateOnly(2026, 7, 1),
+            PlannedFinishDate = new DateOnly(2026, 7, 31),
+            ProgressPercent = 40m,
+            ProgressDescription = description
+        };
+
+        var result = ProjectGanttService.GetTaskVisualState(
+            task,
+            new DateOnly(2026, 7, 14),
+            GanttProgressState.OnSchedule);
+
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void GetTaskVisualState_MarksOverdueIncompleteTaskAsAtRisk()
+    {
+        var task = new ProjectGanttTaskInputModel
+        {
+            PlannedStartDate = new DateOnly(2026, 6, 1),
+            PlannedFinishDate = new DateOnly(2026, 6, 30),
+            ProgressPercent = 80m
+        };
+
+        var result = ProjectGanttService.GetTaskVisualState(
+            task,
+            new DateOnly(2026, 7, 14),
+            GanttProgressState.OnSchedule);
+
+        result.Should().Be(GanttTaskVisualState.AtRisk);
+    }
 }

@@ -4,24 +4,30 @@
 @{
     var visualTheme = await SystemSettingsService.GetVisualThemeAsync(Context.RequestAborted);
     var themeClass = ProjectManager.Web.Services.SystemSettingsService.ToThemeCssClass(visualTheme);
+    var motionStyle = await SystemSettingsService.GetMotionStyleAsync(Context.RequestAborted);
+    var motionStyleClass = ProjectManager.Web.Services.SystemSettingsService.ToMotionCssClass(motionStyle);
     var uiEffectsLevel = await SystemSettingsService.GetUiEffectsLevelAsync(Context.RequestAborted);
     var uiEffectsClass = ProjectManager.Web.Services.SystemSettingsService.ToCssClass(uiEffectsLevel);
+    var displayLanguage = await SystemSettingsService.GetDisplayLanguageAsync(Context.RequestAborted);
+    var languageClass = ProjectManager.Web.Services.SystemSettingsService.ToLanguageClass(displayLanguage);
+    var globalFont = await SystemSettingsService.GetGlobalFontAsync(Context.RequestAborted);
+    var fontClass = ProjectManager.Web.Services.SystemSettingsService.ToFontCssClass(globalFont);
+    var htmlLanguage = displayLanguage == ProjectManager.Web.Services.SystemSettingsService.DisplayLanguage.SimplifiedChinese
+        ? "zh-CN"
+        : "zh-TW";
 }
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="@htmlLanguage">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - 台塑电子專案管理系统</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ProjectManager.Web.styles.css" asp-append-version="true" />
 </head>
-<body class="app-shell @themeClass @uiEffectsClass">
+<body class="app-shell @themeClass @motionStyleClass @uiEffectsClass @languageClass @fontClass">
     <div class="app-bg-fx" aria-hidden="true">
         <span class="app-bg-orb app-bg-orb-1"></span>
         <span class="app-bg-orb app-bg-orb-2"></span>
