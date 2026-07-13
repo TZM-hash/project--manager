@@ -1,47 +1,47 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Admin.Statuses.IndexModel
 @{
-    ViewData["Title"] = "状态设置";
+    ViewData["Title"] = "狀態設定";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">状态设置</h1>
-        <div class="page-subtitle">配置项目状态顺序、启用规则和前台显示样式</div>
+        <h1 class="page-title">狀態設定</h1>
+        <div class="page-subtitle">設定專案狀態顺序、啟用規則和前台顯示样式</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Edit">新增状态</a>
+        <a class="btn btn-primary" asp-page="./Edit">新增狀態</a>
     </div>
 </div>
 
 <form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
-            <input class="form-control" asp-for="Keyword" placeholder="搜索代码或状态名称" />
+            <input class="form-control" asp-for="Keyword" placeholder="搜尋代码或狀態名稱" />
             <select class="form-select" asp-for="IsActive">
-                <option value="">启用状态</option>
-                <option value="true">启用</option>
+                <option value="">啟用狀態</option>
+                <option value="true">啟用</option>
                 <option value="false">停用</option>
             </select>
         </div>
         <div class="filter-quick-actions">
-            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
-            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
+            <button class="btn btn-primary" type="submit">查詢</button>
         </div>
     </div>
     <div class="filter-drawer" data-filter-drawer-panel>
         <div class="filter-drawer-header">
             <div>
-                <div class="filter-drawer-title">高级筛选</div>
-                <div class="filter-drawer-subtitle">按状态属性筛选配置项</div>
+                <div class="filter-drawer-title">進階篩選</div>
+                <div class="filter-drawer-subtitle">按狀態屬性篩選設定项</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
         <div class="row g-2">
             <div class="col-md-3">
                 <select class="form-select" asp-for="IsClosed">
-                    <option value="">结案属性</option>
-                    <option value="false">未结案类</option>
+                    <option value="">结案屬性</option>
+                    <option value="false">未結案类</option>
                     <option value="true">结案类</option>
                 </select>
             </div>
@@ -68,8 +68,8 @@
 
 <div class="insight-grid">
     <section class="chart-card">
-        <div class="chart-title">启用状态</div>
-        <div class="chart-subtitle">状态是否可用于项目</div>
+        <div class="chart-title">啟用狀態</div>
+        <div class="chart-subtitle">狀態是否可用于專案</div>
         <div class="bar-list">
             @foreach (var slice in Model.ActiveSlices)
             {
@@ -82,8 +82,8 @@
         </div>
     </section>
     <section class="chart-card">
-        <div class="chart-title">结案属性</div>
-        <div class="chart-subtitle">区分未结案与结案类状态</div>
+        <div class="chart-title">结案屬性</div>
+        <div class="chart-subtitle">区分未結案与结案类狀態</div>
         <div class="bar-list">
             @foreach (var slice in Model.ClosedSlices)
             {
@@ -97,10 +97,10 @@
     </section>
 </div>
 
-<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定删除选中的状态吗？">
+<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定刪除選中的狀態吗？">
     <div class="bulk-toolbar-copy">
         <span class="bulk-toolbar-count" data-selected-count>0</span>
-        <span>个状态已选择</span>
+        <span>个狀態已選擇</span>
     </div>
     <div class="bulk-toolbar-actions">
         <input type="hidden" asp-for="Keyword" />
@@ -108,7 +108,7 @@
         <input type="hidden" asp-for="IsClosed" />
         <input type="hidden" asp-for="PageNumber" />
         <input type="hidden" asp-for="PageSize" />
-        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
+        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
     </div>
 </form>
 
@@ -120,11 +120,11 @@
                 <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
                 <th>排序</th>
                 <th>代码</th>
-                <th>状态名称</th>
+                <th>狀態名稱</th>
                 <th>样式</th>
                 <th>结案</th>
-                <th>启用</th>
-                <th class="numeric">使用项目数</th>
+                <th>啟用</th>
+                <th class="numeric">使用專案数</th>
                 <th class="text-end">操作</th>
             </tr>
         </thead>
@@ -149,9 +149,9 @@
                 <td>@(status.IsActive ? "是" : "否")</td>
                 <td class="numeric">@status.ProjectCount</td>
                 <td class="text-end text-nowrap">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@status.Id">编辑</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" asp-route-Keyword="@Model.Keyword" asp-route-IsActive="@Model.IsActive" asp-route-IsClosed="@Model.IsClosed" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除这个状态吗？');">
-                        <button class="btn btn-sm btn-outline-danger" type="submit" disabled="@(!canDelete)">删除</button>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@status.Id">編輯</a>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" asp-route-Keyword="@Model.Keyword" asp-route-IsActive="@Model.IsActive" asp-route-IsClosed="@Model.IsClosed" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定刪除这个狀態吗？');">
+                        <button class="btn btn-sm btn-outline-danger" type="submit" disabled="@(!canDelete)">刪除</button>
                     </form>
                 </td>
             </tr>
@@ -160,7 +160,7 @@
         {
             <tr>
                 <td colspan="9">
-                    <div class="empty-state">暂无状态配置</div>
+                    <div class="empty-state">暂无狀態設定</div>
                 </td>
             </tr>
         }

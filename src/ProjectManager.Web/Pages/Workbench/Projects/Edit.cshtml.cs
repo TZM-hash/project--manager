@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -85,7 +85,7 @@ public sealed class EditModel(
         var afterSkipped = await FormatSkippedStatusesAsync(savedSkippedStatusIds, cancellationToken);
         if (!string.Equals(beforeSkipped, afterSkipped, StringComparison.Ordinal))
         {
-            changes.Add(new AuditChangeDetail("Field", "跳过流程节点", beforeSkipped, afterSkipped, "项目资料"));
+            changes.Add(new AuditChangeDetail("Field", "跳过流程节点", beforeSkipped, afterSkipped, "專案資料"));
         }
         if (changes.Count > 0)
         {
@@ -94,7 +94,7 @@ public sealed class EditModel(
                 "Update",
                 project.Id,
                 project.ProjectNumber,
-                $"工作台编辑项目 {project.ProjectNumber}",
+                $"工作台編輯專案 {project.ProjectNumber}",
                 changes,
                 cancellationToken);
         }

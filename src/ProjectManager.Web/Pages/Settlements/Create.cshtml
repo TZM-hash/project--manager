@@ -1,13 +1,13 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Settlements.CreateModel
 @{
-    ViewData["Title"] = "新增月结";
+    ViewData["Title"] = "新增月結";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">新增月结</h1>
-        <div class="page-subtitle">生成指定年月的项目快照批次</div>
+        <h1 class="page-title">新增月結</h1>
+        <div class="page-subtitle">生成指定年月的專案快照批次</div>
     </div>
 </div>
 
@@ -22,28 +22,28 @@
         <input class="form-control" asp-for="Input.Month" />
     </div>
     <div class="col-md-6">
-        <label class="form-label">备注</label>
+        <label class="form-label">備註</label>
         <input class="form-control" asp-for="Input.Notes" />
     </div>
     <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-primary w-100" type="submit">生成月结</button>
+        <button class="btn btn-primary w-100" type="submit">生成月結</button>
     </div>
 </form>
 
 <section class="detail-panel">
-    <h2 class="detail-panel-title">当前项目预览</h2>
+    <h2 class="detail-panel-title">当前專案預覽</h2>
     <div class="data-table-wrap">
         <table class="table table-sm table-striped align-middle data-table">
             <thead>
                 <tr>
                     <th>年</th>
-                    <th>母案案号</th>
-                    <th>项目工号</th>
-                    <th>项目名称</th>
-                    <th>专案人员</th>
-                    <th class="numeric">进度</th>
-                    <th class="numeric">金额</th>
-                    <th>状态</th>
+                    <th>母案案號</th>
+                    <th>專案工號</th>
+                    <th>專案名稱</th>
+                    <th>專案人員</th>
+                    <th class="numeric">進度</th>
+                    <th class="numeric">金額</th>
+                    <th>狀態</th>
                 </tr>
             </thead>
             <tbody>

@@ -1,32 +1,32 @@
-@page "{id:int}"
+﻿@page "{id:int}"
 @model ProjectManager.Web.Pages.Settlements.DetailsModel
 @{
-    ViewData["Title"] = "月结详情";
+    ViewData["Title"] = "月結明細";
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-title">@Model.Batch.Year 年 @Model.Batch.Month 月 第 @Model.Batch.BatchNumber 批</h1>
-        <div class="page-subtitle">月结快照明细、打印和 Excel 导出</div>
+        <div class="page-subtitle">月結快照明細、列印和 Excel 匯出</div>
     </div>
     <div class="page-actions">
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
-        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-id="@Model.Batch.Id">打印</a>
-        <a class="btn btn-primary" asp-page-handler="Export" asp-route-id="@Model.Batch.Id">导出 Excel</a>
+        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-id="@Model.Batch.Id">列印</a>
+        <a class="btn btn-primary" asp-page-handler="Export" asp-route-id="@Model.Batch.Id">匯出 Excel</a>
     </div>
 </div>
 
 <div class="summary-strip">
     <div class="summary-item">
-        <div class="summary-label">创建人</div>
+        <div class="summary-label">建立人</div>
         <div class="summary-value">@(Model.Batch.CreatedByUser?.DisplayName ?? Model.Batch.CreatedByUser?.UserName)</div>
     </div>
     <div class="summary-item">
-        <div class="summary-label">创建时间</div>
+        <div class="summary-label">建立時間</div>
         <div class="summary-value">@Model.Batch.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
     </div>
     <div class="summary-item">
-        <div class="summary-label">备注</div>
+        <div class="summary-label">備註</div>
         <div class="summary-value">@Model.Batch.Notes</div>
     </div>
 </div>

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -187,9 +187,9 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
         Metrics =
         [
-            new MetricInsight("月结批次", TotalCount.ToString("N0"), "当前筛选结果"),
-            new MetricInsight("项目快照", itemCount.ToString("N0"), "已归档明细"),
-            new MetricInsight("最新年月", latest is null ? "-" : $"{latest.Year}-{latest.Month:00}", "最近生成批次", "info")
+            new MetricInsight("月結批次", TotalCount.ToString("N0"), "当前篩選結果"),
+            new MetricInsight("專案快照", itemCount.ToString("N0"), "已歸檔明細"),
+            new MetricInsight("最新年月", latest is null ? "-" : $"{latest.Year}-{latest.Month:00}", "最近產生批次", "info")
         ];
 
         var rows = await query
@@ -248,12 +248,12 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
         if (!string.IsNullOrWhiteSpace(CreatedByUserId))
         {
             var userText = CreatedByOptions.FirstOrDefault(x => x.Value == CreatedByUserId)?.Text ?? CreatedByUserId;
-            items.Add(new FilterSummaryItem("创建人", userText));
+            items.Add(new FilterSummaryItem("建立人", userText));
         }
 
         if (!string.IsNullOrWhiteSpace(Notes))
         {
-            items.Add(new FilterSummaryItem("备注", Notes));
+            items.Add(new FilterSummaryItem("備註", Notes));
         }
 
         return items;

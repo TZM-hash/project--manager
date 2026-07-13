@@ -1,0 +1,81 @@
+﻿@page
+@model ProjectManager.Web.Pages.Admin.Vendors.IndexModel
+@{
+    ViewData["Title"] = "廠商管理";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">廠商管理</h1>
+        <div class="page-subtitle">維護廠商公司和對接人員資訊</div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" asp-page="./Create">新增廠商</a>
+    </div>
+</div>
+
+<form method="get" class="filter-panel">
+    <div class="filter-quick-row">
+        <div class="filter-quick-main">
+            <input class="form-control" asp-for="Keyword" placeholder="搜尋公司名稱、聯絡人" />
+        </div>
+        <div class="filter-quick-actions">
+            <button class="btn btn-primary" type="submit">查詢</button>
+        </div>
+    </div>
+    <input type="hidden" asp-for="PageSize" />
+    <input type="hidden" name="PageNumber" value="1" />
+</form>
+
+<partial name="_FilterSummary" model="Model.FilterSummary" />
+
+<div class="data-list-card">
+    <div class="data-table-wrap">
+        <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
+            <thead>
+                <tr>
+                    <th>公司名稱</th>
+                    <th>備註</th>
+                    <th>聯絡人</th>
+                    <th class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vendor in Model.Vendors)
+                {
+                    <tr>
+                        <td>@vendor.CompanyName</td>
+                        <td>@vendor.Notes</td>
+                        <td>
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var contact in vendor.Contacts)
+                                {
+                                    <li>@contact.Name @(contact.Phone != null ? $"({contact.Phone})" : "")</li>
+                                }
+                                @if (!vendor.Contacts.Any())
+                                {
+                                    <li class="text-muted">暂无聯絡人</li>
+                                }
+                            </ul>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@vendor.Id">編輯</a>
+                            <form method="post" asp-page="./Index" asp-handler="Delete" asp-route-id="@vendor.Id" class="d-inline">
+                                <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('确定刪除该廠商吗？')">刪除</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Vendors.Any())
+                {
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">暫無廠商資料</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pagination" model="Model.Pagination" />
+</div>

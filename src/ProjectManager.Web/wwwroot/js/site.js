@@ -10,6 +10,7 @@ window.toggleNavGroup = function (el) {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  initThemePreview();
   initPasswordToggles();
   initBulkSelection();
   initFilterDrawers();
@@ -19,7 +20,46 @@ document.addEventListener("DOMContentLoaded", () => {
   initRevealAnimations();
   initCountUp();
   initCardHoverEffects();
+  initUiPageTransitions();
+  initClickRipples();
+  initColumnManagers();
+  initRowSpacing();
 });
+
+function initThemePreview() {
+  const options = document.querySelectorAll("[data-theme-option]");
+  if (options.length === 0) {
+    return;
+  }
+
+  options.forEach((option) => {
+    const input = option.querySelector('input[type="radio"]');
+    if (!input) {
+      return;
+    }
+
+    input.addEventListener("change", () => {
+      if (!input.checked) {
+        return;
+      }
+
+      document.body.classList.remove("theme-default", "theme-clear-glass");
+      document.body.classList.add(option.dataset.themeOption || "theme-default");
+    });
+  });
+}
+
+function getUiEffectsLevel() {
+  if (document.body.classList.contains("ui-effects-low")) {
+    return "low";
+  }
+
+  if (document.body.classList.contains("ui-effects-high")) {
+    return "high";
+  }
+
+  return "medium";
+}
 
 function initPasswordToggles() {
   document.querySelectorAll("[data-password-toggle]").forEach((button) => {
@@ -222,6 +262,9 @@ function initRichTextEditors() {
     const source = field.querySelector("[data-rich-text-source]");
     const editor = field.querySelector("[data-rich-text-editor]");
     const form = field.closest("form");
+    const counter = field.querySelector("#progress-description-counter");
+    const countSpan = field.querySelector("#progress-description-count");
+    const maxLength = 1000;
 
     if (!source || !editor) {
       return;
@@ -229,6 +272,23 @@ function initRichTextEditors() {
 
     const syncSource = () => {
       source.value = editor.innerHTML.trim();
+      updateCounter();
+    };
+
+    const updateCounter = () => {
+      if (!countSpan || !counter) {
+        return;
+      }
+      const text = source.value || "";
+      const length = text.length;
+      countSpan.textContent = length.toString();
+      if (length > maxLength) {
+        counter.classList.remove("text-muted");
+        counter.classList.add("text-danger", "font-weight-bold");
+      } else {
+        counter.classList.remove("text-danger", "font-weight-bold");
+        counter.classList.add("text-muted");
+      }
     };
 
     const focusEditor = () => {
@@ -265,7 +325,16 @@ function initRichTextEditors() {
     });
 
     if (form) {
-      form.addEventListener("submit", syncSource);
+      form.addEventListener("submit", (event) => {
+        const text = source.value || "";
+        if (text.length > maxLength) {
+          event.preventDefault();
+          window.alert(`狀態說明字數(${text.length})已超過最大限制(${maxLength}個字符)，請刪除部分內容後再儲存。`);
+          editor.focus();
+          return;
+        }
+        syncSource();
+      });
     }
 
     syncSource();
@@ -487,12 +556,329 @@ function initCardHoverEffects() {
     ".account-panel"
   ].join(",");
 
+  const level = getUiEffectsLevel();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const canHover = window.matchMedia("(hover: hover)").matches;
+
   document.querySelectorAll(hoverSelector).forEach((card) => {
+    if ((level === "medium" || level === "high") && !reduceMotion && canHover) {
+      card.classList.remove("hover-card");
+      card.classList.add("tilt-card");
+      if (!card.querySelector(":scope > .tilt-glare")) {
+        const glare = document.createElement("span");
+        glare.className = "tilt-glare";
+        glare.setAttribute("aria-hidden", "true");
+        card.appendChild(glare);
+      }
+
+      let frame = 0;
+      let pointerEvent = null;
+      const updateTilt = () => {
+        if (!pointerEvent) {
+          frame = 0;
+          return;
+        }
+
+        const rect = card.getBoundingClientRect();
+        const x = (pointerEvent.clientX - rect.left) / rect.width;
+        const y = (pointerEvent.clientY - rect.top) / rect.height;
+        card.style.setProperty("--tilt-x", `${(0.5 - y) * 7}deg`);
+        card.style.setProperty("--tilt-y", `${(x - 0.5) * 8}deg`);
+        card.style.setProperty("--tilt-lift", "-4px");
+        card.style.setProperty("--tilt-scale", "1.012");
+        card.style.setProperty("--glare-x", `${x * 100}%`);
+        card.style.setProperty("--glare-y", `${y * 100}%`);
+        card.classList.add("is-tilting");
+        frame = 0;
+      };
+
+      card.addEventListener("pointermove", (event) => {
+        pointerEvent = event;
+        if (frame === 0) {
+          frame = window.requestAnimationFrame(updateTilt);
+        }
+      });
+
+      card.addEventListener("pointerleave", () => {
+        pointerEvent = null;
+        if (frame !== 0) {
+          window.cancelAnimationFrame(frame);
+          frame = 0;
+        }
+        card.classList.remove("is-tilting");
+        card.style.removeProperty("--tilt-x");
+        card.style.removeProperty("--tilt-y");
+        card.style.removeProperty("--tilt-lift");
+        card.style.removeProperty("--tilt-scale");
+        card.style.removeProperty("--glare-x");
+        card.style.removeProperty("--glare-y");
+      });
+
+      return;
+    }
+
     card.classList.add("hover-card");
     card.classList.remove("tilt-card", "is-tilting");
     card.style.removeProperty("--tilt-x");
     card.style.removeProperty("--tilt-y");
     card.style.removeProperty("--tilt-lift");
     card.style.removeProperty("--tilt-scale");
+    card.style.removeProperty("--glare-x");
+    card.style.removeProperty("--glare-y");
+  });
+}
+
+function initUiPageTransitions() {
+  const level = getUiEffectsLevel();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (level !== "high" || reduceMotion) {
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "page-transition-overlay";
+  overlay.setAttribute("data-ui-page-transition", "true");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.appendChild(overlay);
+  window.requestAnimationFrame(() => document.body.classList.add("page-transition-ready"));
+
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest?.("a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    const href = link.getAttribute("href");
+    const target = link.getAttribute("target");
+    if (!href || target === "_blank" || href.startsWith("#") || href.startsWith("javascript:")) {
+      return;
+    }
+
+    const destination = new URL(href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.href === window.location.href) {
+      return;
+    }
+
+    event.preventDefault();
+    document.body.classList.add("page-transition-leaving");
+    window.setTimeout(() => {
+      window.location.href = destination.href;
+    }, 170);
+  });
+}
+
+function initClickRipples() {
+  const level = getUiEffectsLevel();
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (level !== "high" || reduceMotion) {
+    return;
+  }
+
+  const selector = ".btn, .nav-link, .page-link, .ui-effects-level-card, .module-card a";
+  document.addEventListener("pointerdown", (event) => {
+    const target = event.target.closest?.(selector);
+    if (!target || target.disabled) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const ripple = document.createElement("span");
+    ripple.className = "ui-click-ripple";
+    ripple.style.width = `${size}px`;
+    ripple.style.height = `${size}px`;
+    ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+    ripple.setAttribute("aria-hidden", "true");
+
+    target.classList.add("ui-ripple-host");
+    target.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+  });
+}
+
+function initColumnManagers() {
+  document.querySelectorAll("[data-column-manager]").forEach((manager) => {
+    const table = manager.nextElementSibling?.querySelector("[data-column-manager-table]") ??
+                  manager.parentElement?.nextElementSibling?.querySelector("[data-column-manager-table]") ??
+                  document.querySelector("[data-column-manager-table]");
+    if (!table) {
+      return;
+    }
+
+    const toggle = manager.querySelector("[data-column-manager-toggle]");
+    const list = manager.querySelector("[data-column-manager-list]");
+    const allBtn = manager.querySelector("[data-column-manager-all]");
+    const noneBtn = manager.querySelector("[data-column-manager-none]");
+    const storageKey = `column-manager-${table.id || manager.parentElement?.closest(".data-list-card")?.getAttribute("data-tab") || "default"}`;
+
+    let saved = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey) || "{}") || {};
+    } catch (e) {
+      saved = {};
+    }
+
+    const headers = Array.from(table.querySelectorAll("thead th[data-column]"));
+    const columns = headers.map((th) => {
+      const key = th.getAttribute("data-column");
+      const label = th.textContent.trim() || key;
+      return { key, label, th };
+    });
+
+    if (list) {
+      list.innerHTML = "";
+      columns.forEach((col) => {
+        const isVisible = saved[col.key] !== false;
+        const item = document.createElement("div");
+        item.className = "form-check";
+        item.innerHTML = `
+          <input class="form-check-input" type="checkbox" data-column-key="${col.key}" id="col-${col.key}" ${isVisible ? "checked" : ""}>
+          <label class="form-check-label" for="col-${col.key}">${col.label}</label>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    const applyColumns = () => {
+      const newState = {};
+      columns.forEach((col) => {
+        const checkbox = list.querySelector(`[data-column-key="${col.key}"]`);
+        const visible = checkbox ? checkbox.checked : true;
+        newState[col.key] = visible;
+        const display = visible ? "" : "none";
+        col.th.style.display = display;
+        table.querySelectorAll(`tbody td[data-column="${col.key}"]`).forEach((td) => {
+          td.style.display = display;
+        });
+        table.querySelectorAll(`tfoot td[data-column="${col.key}"]`).forEach((td) => {
+          td.style.display = display;
+        });
+      });
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newState));
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    if (list) {
+      list.addEventListener("change", (event) => {
+        const target = event.target;
+        if (target.matches("[data-column-key]")) {
+          applyColumns();
+        }
+      });
+    }
+
+    if (allBtn) {
+      allBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        list.querySelectorAll("[data-column-key]").forEach((cb) => {
+          cb.checked = true;
+        });
+        applyColumns();
+      });
+    }
+
+    if (noneBtn) {
+      noneBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        list.querySelectorAll("[data-column-key]").forEach((cb) => {
+          cb.checked = false;
+        });
+        applyColumns();
+      });
+    }
+
+    if (toggle) {
+      toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const menu = manager.querySelector(".dropdown-menu");
+        if (menu) {
+          menu.classList.toggle("show");
+        }
+      });
+    }
+
+    applyColumns();
+  });
+
+  document.addEventListener("click", (event) => {
+    document.querySelectorAll("[data-column-manager] .dropdown-menu.show").forEach((menu) => {
+      if (!menu.parentElement.contains(event.target)) {
+        menu.classList.remove("show");
+      }
+    });
+  });
+}
+
+function initRowSpacing() {
+  document.querySelectorAll("[data-row-spacing]").forEach((manager) => {
+    const table = document.querySelector("[data-column-manager-table]");
+    if (!table) {
+      return;
+    }
+
+    const toggle = manager.querySelector("[data-row-spacing-toggle]");
+    const storageKey = `row-spacing-${table.id || "default"}`;
+
+    const spacingStyles = {
+      compact: { padding: "0.125rem 0.375rem", fontSize: "0.7rem", lineHeight: "1.1" },
+      normal: { padding: "0.5rem 0.5rem", fontSize: "0.875rem", lineHeight: "1.5" },
+      spacious: { padding: "0.75rem 0.5rem", fontSize: "0.9rem", lineHeight: "1.6" }
+    };
+
+    let saved = localStorage.getItem(storageKey) || "normal";
+
+    const applySpacing = (mode) => {
+      const styles = spacingStyles[mode] || spacingStyles.normal;
+      table.style.setProperty("--row-padding", styles.padding);
+      table.style.setProperty("--row-font-size", styles.fontSize);
+      table.style.setProperty("--row-line-height", styles.lineHeight);
+      table.classList.remove("row-spacing-compact", "row-spacing-spacious");
+      if (mode !== "normal") {
+        table.classList.add(`row-spacing-${mode}`);
+      }
+      localStorage.setItem(storageKey, mode);
+    };
+
+    applySpacing(saved);
+
+    manager.querySelectorAll("[data-row-spacing-option]").forEach((option) => {
+      option.addEventListener("click", (event) => {
+        event.preventDefault();
+        const mode = option.getAttribute("data-row-spacing-option");
+        if (mode) {
+          applySpacing(mode);
+        }
+        const menu = manager.querySelector(".dropdown-menu");
+        if (menu) {
+          menu.classList.remove("show");
+        }
+      });
+    });
+
+    if (toggle) {
+      toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const menu = manager.querySelector(".dropdown-menu");
+        if (menu) {
+          menu.classList.toggle("show");
+        }
+      });
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    document.querySelectorAll("[data-row-spacing] .dropdown-menu.show").forEach((menu) => {
+      if (!menu.parentElement.contains(event.target)) {
+        menu.classList.remove("show");
+      }
+    });
   });
 }

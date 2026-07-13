@@ -1,17 +1,21 @@
 @page "{id:int}"
 @model ProjectManager.Web.Pages.Admin.Projects.EditModel
 @{
-    ViewData["Title"] = "编辑项目";
+    ViewData["Title"] = "編輯專案";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">编辑项目</h1>
-        <div class="page-subtitle">更新项目主档、状态、进度和请购资料</div>
+        <h1 class="page-title">編輯專案</h1>
+        <div class="page-subtitle">更新專案主档、狀態、進度和请购資料</div>
     </div>
-    <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Input.Id" onsubmit="return confirm('确定删除这个项目吗？');">
-        <button type="submit" class="btn btn-outline-danger">删除项目</button>
-    </form>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回總覽</a>
+        <a class="btn btn-outline-secondary" asp-page="./Index" asp-route-ActiveTab="engineering">返回實施中</a>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Input.Id" onsubmit="return confirm('确定刪除这个專案吗？');">
+            <button type="submit" class="btn btn-outline-danger">刪除專案</button>
+        </form>
+    </div>
 </div>
 
 <partial name="_ProjectForm" model="Model" />

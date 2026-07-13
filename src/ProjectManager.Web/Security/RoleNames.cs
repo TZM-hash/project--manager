@@ -1,4 +1,4 @@
-namespace ProjectManager.Web.Security;
+﻿namespace ProjectManager.Web.Security;
 
 public static class RoleNames
 {
@@ -21,11 +21,11 @@ public static class RoleNames
     {
         return roleName switch
         {
-            Administrator => "系统管理员",
-            ProjectStaff => "项目人员",
-            Leader => "领导",
-            Viewer => "查询人员",
-            SubCaseContact => "子案对接人",
+            Administrator => "系統管理員",
+            ProjectStaff => "專案人員",
+            Leader => "主管",
+            Viewer => "查詢人员",
+            SubCaseContact => "子案對接人",
             _ => roleName
         };
     }

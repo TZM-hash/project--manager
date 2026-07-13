@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 
@@ -115,7 +115,7 @@ public sealed class WorkbenchProjectService(
             return new UpdateProgressResult(false, errors);
         }
 
-        // 工作台只能改进度相关字段，因此审计明细也只保留进度和进度说明。
+        // 工作台只能改進度相关欄位，因此審計明細也只保留進度和進度說明。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.ProgressPercent = request.ProgressPercent;
         project.ProgressDescription = RichTextSanitizer.Normalize(request.ProgressDescription);
@@ -123,7 +123,7 @@ public sealed class WorkbenchProjectService(
         project.UpdatedAt = DateTimeOffset.UtcNow;
         var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
         var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after)
-            .Where(x => x.Label is "项目进度" or "进度说明")
+            .Where(x => x.Label is "專案進度" or "進度說明")
             .ToList();
 
         await db.SaveChangesAsync(cancellationToken);
@@ -134,7 +134,7 @@ public sealed class WorkbenchProjectService(
                 "ProgressUpdate",
                 project.Id,
                 project.ProjectNumber,
-                $"更新进度 {project.ProjectNumber}",
+                $"更新進度 {project.ProjectNumber}",
                 changes,
                 cancellationToken);
         }
@@ -189,6 +189,11 @@ public sealed class WorkbenchProjectService(
         if (filter.StatusId is not null)
         {
             query = query.Where(x => x.StatusId == filter.StatusId);
+        }
+
+        if (filter.ProjectType is not null)
+        {
+            query = query.Where(x => x.ProjectType == filter.ProjectType);
         }
 
         if (filter.OpenOnly)

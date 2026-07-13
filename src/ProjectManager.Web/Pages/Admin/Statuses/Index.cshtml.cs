@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -143,19 +143,19 @@ public sealed class IndexModel(
 
         Metrics =
         [
-            new MetricInsight("状态总数", TotalCount.ToString("N0"), "状态配置项"),
-            new MetricInsight("启用状态", activeCount.ToString("N0"), "前台可用"),
-            new MetricInsight("未使用", unusedCount.ToString("N0"), "可删除状态", "info")
+            new MetricInsight("狀態總數", TotalCount.ToString("N0"), "狀態設定项"),
+            new MetricInsight("啟用狀態", activeCount.ToString("N0"), "前台可用"),
+            new MetricInsight("未使用", unusedCount.ToString("N0"), "可刪除狀態", "info")
         ];
 
         ActiveSlices = ChartPalette.BuildSlices(
         [
-            ("启用", (decimal)activeCount),
+            ("啟用", (decimal)activeCount),
             ("停用", (decimal)inactiveCount)
         ]);
         ClosedSlices = ChartPalette.BuildSlices(
         [
-            ("未结案类", (decimal)openCount),
+            ("未結案类", (decimal)openCount),
             ("结案类", (decimal)closedCount)
         ]);
     }
@@ -204,17 +204,17 @@ public sealed class IndexModel(
         var items = new List<FilterSummaryItem>();
         if (!string.IsNullOrWhiteSpace(Keyword))
         {
-            items.Add(new FilterSummaryItem("关键字", Keyword));
+            items.Add(new FilterSummaryItem("關鍵字", Keyword));
         }
 
         if (IsActive is not null)
         {
-            items.Add(new FilterSummaryItem("启用", IsActive.Value ? "是" : "否"));
+            items.Add(new FilterSummaryItem("啟用", IsActive.Value ? "是" : "否"));
         }
 
         if (IsClosed is not null)
         {
-            items.Add(new FilterSummaryItem("结案属性", IsClosed.Value ? "结案类" : "未结案类"));
+            items.Add(new FilterSummaryItem("结案屬性", IsClosed.Value ? "结案类" : "未結案类"));
         }
 
         return items;

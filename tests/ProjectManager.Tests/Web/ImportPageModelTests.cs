@@ -48,22 +48,27 @@ public sealed class ImportPageModelTests
 
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("ProjectsImport");
-        sheet.Cell(1, 1).Value = "Project Number";
-        sheet.Cell(1, 2).Value = "Project Name";
-        sheet.Cell(1, 3).Value = "Project Staff";
-        sheet.Cell(1, 4).Value = "Amount";
-        sheet.Cell(1, 5).Value = "Progress Note";
-        sheet.Cell(2, 1).Value = "P-2031-001";
-        sheet.Cell(2, 2).Value = "Imported Project";
-        sheet.Cell(2, 3).Value = "alice,bob";
-        sheet.Cell(2, 4).Value = 1200;
-        sheet.Cell(2, 5).Value = "Imported";
+        sheet.Cell(1, 1).Value = "項次";
+        sheet.Cell(1, 2).Value = "工程編號";
+        sheet.Cell(1, 3).Value = "工程名稱";
+        sheet.Cell(1, 4).Value = "經辦";
+        sheet.Cell(1, 5).Value = "專案類型";
+        sheet.Cell(1, 6).Value = "進度說明";
+        sheet.Cell(1, 7).Value = "受訂金額（含稅）";
+        sheet.Cell(2, 1).Value = 1;
+        sheet.Cell(2, 2).Value = "P-2031-001";
+        sheet.Cell(2, 3).Value = "Imported Project";
+        sheet.Cell(2, 4).Value = "alice,bob";
+        sheet.Cell(2, 5).Value = "工程";
+        sheet.Cell(2, 6).Value = "Imported";
+        sheet.Cell(2, 7).Value = 1200;
 
         var model = new AdminProjectImportModel(
             db,
             services.Provider.GetRequiredService<UserManager<ApplicationUser>>(),
             services.Provider.GetRequiredService<UserLookupService>(),
-            services.Provider.GetRequiredService<AuditLogService>())
+            services.Provider.GetRequiredService<AuditLogService>(),
+            services.Provider.GetRequiredService<OpenCcConverterService>())
         {
             ImportYear = 2031,
             UploadFile = CreateWorkbookFile(workbook, "projects.xlsx")
@@ -144,6 +149,7 @@ public sealed class ImportPageModelTests
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddScoped<UserLookupService>();
             services.AddScoped<AuditLogService>();
+            services.AddSingleton<OpenCcConverterService>();
 
             var provider = services.BuildServiceProvider();
             var db = provider.GetRequiredService<ApplicationDbContext>();

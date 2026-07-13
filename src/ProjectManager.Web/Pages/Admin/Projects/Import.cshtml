@@ -1,17 +1,17 @@
 @page
 @model ProjectManager.Web.Pages.Admin.Projects.ImportModel
 @{
-    ViewData["Title"] = "项目批量导入";
+    ViewData["Title"] = "專案批量匯入";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">项目批量导入</h1>
-        <div class="page-subtitle">通过 Excel 快速新增或更新同年度项目基础导入字段</div>
+        <h1 class="page-title">專案批量匯入</h1>
+        <div class="page-subtitle">通過 Excel 快速新增或更新同年度專案基础匯入欄位</div>
     </div>
     <div class="page-actions">
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
-        <a class="btn btn-outline-secondary" asp-page-handler="Template" asp-route-ImportYear="@Model.ImportYear">下载模板</a>
+        <a class="btn btn-outline-secondary" asp-page-handler="Template" asp-route-ImportYear="@Model.ImportYear">下載模板</a>
     </div>
 </div>
 
@@ -19,17 +19,17 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row g-3 align-items-end">
         <div class="col-md-2">
-            <label class="form-label" asp-for="ImportYear">导入年度</label>
+            <label class="form-label" asp-for="ImportYear">匯入年度</label>
             <input class="form-control" asp-for="ImportYear" />
             <span class="text-danger" asp-validation-for="ImportYear"></span>
         </div>
         <div class="col-md-6">
-            <label class="form-label" asp-for="UploadFile">Excel 文件</label>
+            <label class="form-label" asp-for="UploadFile">Excel 檔案</label>
             <input class="form-control" asp-for="UploadFile" type="file" accept=".xlsx" />
             <span class="text-danger" asp-validation-for="UploadFile"></span>
         </div>
         <div class="col-md-4">
-            <button class="btn btn-primary" type="submit">开始导入</button>
+            <button class="btn btn-primary" type="submit">開始匯入</button>
         </div>
     </div>
 </form>
@@ -37,7 +37,7 @@
 @if (Model.CreatedCount > 0 || Model.UpdatedCount > 0)
 {
     <div class="alert alert-success">
-        导入完成：新增 @Model.CreatedCount 条，更新 @Model.UpdatedCount 条。
+        匯入完成：新增 @Model.CreatedCount 筆，更新 @Model.UpdatedCount 筆。
     </div>
 }
 
@@ -55,21 +55,23 @@
 }
 
 <section class="detail-panel">
-    <h2 class="detail-panel-title">模板字段</h2>
+    <h2 class="detail-panel-title">模板欄位</h2>
     <div class="data-table-wrap">
         <table class="table table-sm data-table">
             <thead>
                 <tr>
-                    <th>字段</th>
-                    <th>说明</th>
+                    <th>欄位</th>
+                    <th>說明</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td>工号</td><td>同一导入年度内用于判断新增或更新。</td></tr>
-                <tr><td>工程名称</td><td>必填。</td></tr>
-                <tr><td>项目人员</td><td>支持账号、中文姓名、邮箱或系统 ID，简繁体常见姓名可识别。</td></tr>
-                <tr><td>金额</td><td>导入为项目金额。</td></tr>
-                <tr><td>进度说明</td><td>支持保留允许范围内的字体颜色标记。</td></tr>
+                <tr><td>項次</td><td>序號，匯入時忽略。</td></tr>
+                <tr><td>工程編號</td><td>同一匯入年度內用於判斷新增或更新。</td></tr>
+                <tr><td>工程名稱</td><td>必填。</td></tr>
+                <tr><td>經辦</td><td>專案人員，支援帳號、中文姓名、信箱或系統 ID，簡繁體常見姓名可識別。</td></tr>
+                <tr><td>專案類型</td><td>工程 / 保養，預設為工程。</td></tr>
+                <tr><td>狀態說明</td><td>對應專案狀態名稱，需與系统狀態設定一致；未填寫或未匹配時使用預設狀態。</td></tr>
+                <tr><td>受訂金額（含稅）</td><td>匯入為專案金額。</td></tr>
             </tbody>
         </table>
     </div>

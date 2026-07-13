@@ -12,11 +12,14 @@ namespace ProjectManager.Web.Pages.Workbench.Projects;
 public sealed class GanttPrintModel(
     WorkbenchProjectService workbenchProjectService,
     UserManager<ApplicationUser> userManager,
-    ProjectGanttService ganttService) : PageModel
+    ProjectGanttService ganttService,
+    SystemSettingsService systemSettingsService) : PageModel
 {
     public Project Project { get; private set; } = new();
 
     public ProjectGanttInputModel GanttInput { get; private set; } = new();
+
+    public DateOnly ArchiveDate { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
@@ -36,6 +39,7 @@ public sealed class GanttPrintModel(
         }
 
         Project = project;
+        ArchiveDate = await systemSettingsService.GetArchiveDateAsync(cancellationToken);
         GanttInput = await ganttService.BuildInputAsync(id, cancellationToken);
         return Page();
     }

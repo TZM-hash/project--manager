@@ -1,25 +1,25 @@
-namespace ProjectManager.Web.Models;
+﻿namespace ProjectManager.Web.Models;
 
 /// <summary>
-/// 项目人员分配关系，控制普通专案人员能看到和更新哪些项目。
+/// 專案人員分配关系，控制普通專案人員能看到和更新哪些專案。
 /// </summary>
 public sealed class ProjectAssignment
 {
-    /// <summary>数据库主键。</summary>
+    /// <summary>資料库主键。</summary>
     public int Id { get; set; }
 
-    /// <summary>项目 ID。</summary>
+    /// <summary>專案 ID。</summary>
     public int ProjectId { get; set; }
 
-    /// <summary>项目导航属性。</summary>
+    /// <summary>專案導航屬性。</summary>
     public Project? Project { get; set; }
 
-    /// <summary>人员用户 ID。</summary>
+    /// <summary>人员使用者 ID。</summary>
     public string UserId { get; set; } = string.Empty;
 
-    /// <summary>人员导航属性。</summary>
+    /// <summary>人员導航屬性。</summary>
     public ApplicationUser? User { get; set; }
 
-    /// <summary>项目内角色文本。</summary>
+    /// <summary>專案内角色文本。</summary>
     public string RoleInProject { get; set; } = string.Empty;
 }

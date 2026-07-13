@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -38,7 +38,7 @@ public sealed class CreateModel(
         var userId = userManager.GetUserId(User);
         if (string.IsNullOrWhiteSpace(userId))
         {
-            ModelState.AddModelError(string.Empty, "无法识别当前用户。");
+            ModelState.AddModelError(string.Empty, "无法识别当前使用者。");
             await LoadPreviewAsync(cancellationToken);
             return Page();
         }

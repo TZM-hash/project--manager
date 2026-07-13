@@ -9,10 +9,11 @@ using ProjectManager.Web.Models;
 using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
+using ProjectType = ProjectManager.Web.Models.ProjectType;
 
 namespace ProjectManager.Web.Pages.Workbench.Projects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
+[Authorize]
 public sealed class IndexModel(
     WorkbenchProjectService workbenchProjectService,
     UserManager<ApplicationUser> userManager,
@@ -43,6 +44,9 @@ public sealed class IndexModel(
     public int? StatusId { get; set; }
 
     [BindProperty(SupportsGet = true)]
+    public ProjectType? ProjectType { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public bool OpenOnly { get; set; }
 
     public IReadOnlyList<Project> Projects { get; private set; } = [];
@@ -55,9 +59,17 @@ public sealed class IndexModel(
 
     public int TotalPages { get; private set; } = 1;
 
+    public decimal TotalProjectAmount { get; private set; }
+
     public List<SelectListItem> StatusOptions { get; private set; } = [];
 
     public List<SelectListItem> UserOptions { get; private set; } = [];
+
+    public List<SelectListItem> ProjectTypeOptions { get; } =
+    [
+        new("保養", ((int)Models.ProjectType.Maintenance).ToString()),
+        new("工程", ((int)Models.ProjectType.Engineering).ToString())
+    ];
 
     public IReadOnlyList<MetricInsight> Metrics { get; private set; } = [];
 
@@ -82,15 +94,16 @@ public sealed class IndexModel(
     {
         await LoadOptionsAsync(cancellationToken);
         CurrentUserId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) ||
-                         User.IsInRole(RoleNames.Leader) ||
-                         User.IsInRole(RoleNames.Viewer) ||
-                         User.IsInRole(RoleNames.ProjectStaff);
         CanEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+
+        if (PersonnelUserId == null)
+        {
+            PersonnelUserId = CurrentUserId;
+        }
 
         var page = await workbenchProjectService.GetProjectsForUserPageAsync(
             CurrentUserId,
-            canViewAll,
+            false,
             CreateFilter(),
             PageNumber,
             PageSize,
@@ -100,7 +113,8 @@ public sealed class IndexModel(
         PageNumber = page.PageNumber;
         PageSize = page.PageSize;
         TotalPages = page.TotalPages;
-        await LoadInsightsAsync(CurrentUserId, canViewAll, cancellationToken);
+        TotalProjectAmount = Projects.Sum(x => x.ProjectAmount);
+        await LoadInsightsAsync(CurrentUserId, false, cancellationToken);
     }
 
     private ProjectFilter CreateFilter()
@@ -112,7 +126,9 @@ public sealed class IndexModel(
             ProjectName,
             PersonnelUserId,
             StatusId,
-            OpenOnly);
+            OpenOnly,
+            null,
+            ProjectType);
     }
 
     private async Task LoadOptionsAsync(CancellationToken cancellationToken)
@@ -133,6 +149,8 @@ public sealed class IndexModel(
                 string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
                 x.Id))
             .ToListAsync(cancellationToken);
+
+        UserOptions.Insert(0, new SelectListItem("全部", ""));
     }
 
     private async Task LoadInsightsAsync(
@@ -156,14 +174,14 @@ public sealed class IndexModel(
 
         Metrics =
         [
-            new MetricInsight("可见项目", TotalCount.ToString("N0"), "当前账号可查看"),
-            new MetricInsight("未结案", openCount.ToString("N0"), "仍在推进"),
-            new MetricInsight("项目金额", totalAmount.ToString("N2"), "可见范围汇总", "success"),
-            new MetricInsight("平均进度", $"{averageProgress:0.#}%", "可见范围均值", "info")
+            new MetricInsight("可見專案", TotalCount.ToString("N0"), "目前帳號可查看"),
+            new MetricInsight("未結案", openCount.ToString("N0"), "仍在推進"),
+            new MetricInsight("專案金額", totalAmount.ToString("N2"), "可见範圍彙總", "success"),
+            new MetricInsight("平均進度", $"{averageProgress:0.#}%", "可见範圍均值", "info")
         ];
 
         var statusRows = await query
-            .GroupBy(x => x.Status == null ? "未设置" : x.Status.Name)
+            .GroupBy(x => x.Status == null ? "未設定" : x.Status.Name)
             .Select(x => new { Label = x.Key, Value = x.Count() })
             .OrderByDescending(x => x.Value)
             .ToListAsync(cancellationToken);
@@ -213,6 +231,11 @@ public sealed class IndexModel(
             query = query.Where(x => x.StatusId == filter.StatusId);
         }
 
+        if (filter.ProjectType is not null)
+        {
+            query = query.Where(x => x.ProjectType == filter.ProjectType);
+        }
+
         if (filter.OpenOnly)
         {
             query = query.Where(x => x.Status != null && !x.Status.IsClosed);
@@ -231,6 +254,7 @@ public sealed class IndexModel(
             [nameof(ProjectName)] = ProjectName,
             [nameof(PersonnelUserId)] = PersonnelUserId,
             [nameof(StatusId)] = StatusId?.ToString(),
+            [nameof(ProjectType)] = ProjectType.HasValue ? ((int)ProjectType.Value).ToString() : null,
             [nameof(OpenOnly)] = OpenOnly.ToString()
         };
     }
@@ -245,34 +269,40 @@ public sealed class IndexModel(
 
         if (!string.IsNullOrWhiteSpace(ParentCaseNumber))
         {
-            items.Add(new FilterSummaryItem("母档案号", ParentCaseNumber));
+            items.Add(new FilterSummaryItem("母檔案號", ParentCaseNumber));
         }
 
         if (!string.IsNullOrWhiteSpace(ProjectNumber))
         {
-            items.Add(new FilterSummaryItem("项目工号", ProjectNumber));
+            items.Add(new FilterSummaryItem("專案工號", ProjectNumber));
         }
 
         if (!string.IsNullOrWhiteSpace(ProjectName))
         {
-            items.Add(new FilterSummaryItem("项目名称", ProjectName));
+            items.Add(new FilterSummaryItem("專案名稱", ProjectName));
         }
 
         if (!string.IsNullOrWhiteSpace(PersonnelUserId))
         {
             var userText = UserOptions.FirstOrDefault(x => x.Value == PersonnelUserId)?.Text ?? PersonnelUserId;
-            items.Add(new FilterSummaryItem("专案人员", userText));
+            items.Add(new FilterSummaryItem("專案人員", userText));
         }
 
         if (StatusId is not null)
         {
             var statusText = StatusOptions.FirstOrDefault(x => x.Value == StatusId.Value.ToString())?.Text ?? StatusId.Value.ToString();
-            items.Add(new FilterSummaryItem("状态", statusText));
+            items.Add(new FilterSummaryItem("狀態", statusText));
+        }
+
+        if (ProjectType is not null)
+        {
+            var projectTypeText = ProjectTypeOptions.FirstOrDefault(x => x.Value == ((int)ProjectType.Value).ToString())?.Text ?? ProjectType.Value.ToString();
+            items.Add(new FilterSummaryItem("專案類型", projectTypeText));
         }
 
         if (OpenOnly)
         {
-            items.Add(new FilterSummaryItem("范围", "未结案"));
+            items.Add(new FilterSummaryItem("範圍", "未結案"));
         }
 
         return items;

@@ -12,7 +12,7 @@ public sealed class SeedDataTests
         var closed = SeedData.InitialStatuses.Single(x => x.Code == "Closed");
         var style = SeedData.InitialStatusStyles.Single(x => x.StatusCode == "Closed");
 
-        closed.Name.Should().Be("已结案");
+        closed.Name.Should().Be("已結案");
         closed.IsClosed.Should().BeTrue();
         style.TextColor.Should().Be("#dc2626");
         style.IsBold.Should().BeTrue();

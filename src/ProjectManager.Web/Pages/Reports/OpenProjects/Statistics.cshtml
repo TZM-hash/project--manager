@@ -1,16 +1,16 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Reports.OpenProjects.StatisticsModel
 @{
-    ViewData["Title"] = "未结案统计";
+    ViewData["Title"] = "未結案統計";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">未结案统计</h1>
-        <div class="page-subtitle">按状态汇总项目数量、金额、请购和付款资料</div>
+        <h1 class="page-title">未結案統計</h1>
+        <div class="page-subtitle">按狀態彙總專案數量、金額、请购和付款資料</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page="./Index">返回报表</a>
+        <a class="btn btn-outline-secondary" asp-page="./Index">返回報表</a>
     </div>
 </div>
 
@@ -18,11 +18,11 @@
     <table class="table table-sm table-striped align-middle data-table">
         <thead>
             <tr>
-                <th>状态</th>
-                <th class="numeric">项目数</th>
-                <th class="numeric">项目金额合计</th>
-                <th class="numeric">请购金额合计</th>
-                <th class="numeric">实际已付款合计</th>
+                <th>狀態</th>
+                <th class="numeric">專案数</th>
+                <th class="numeric">專案金額合計</th>
+                <th class="numeric">请购金額合計</th>
+                <th class="numeric">實際已付款合計</th>
                 <th class="numeric">平均收款比例</th>
             </tr>
         </thead>

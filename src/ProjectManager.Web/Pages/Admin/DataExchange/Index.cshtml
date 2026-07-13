@@ -1,16 +1,16 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Admin.DataExchange.IndexModel
 @{
-    ViewData["Title"] = "数据导入导出";
+    ViewData["Title"] = "資料匯入匯出";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">数据导入导出</h1>
-        <div class="page-subtitle">管理员可通过 Excel 批量维护用户、状态、项目、请购、规划中专案和保养订单。</div>
+        <h1 class="page-title">資料匯入匯出</h1>
+        <div class="page-subtitle">管理員可通過 Excel 批量维护使用者、狀態、專案、请购、規劃中專案和保養訂單。</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Index" asp-page-handler="Export">导出当前数据</a>
+        <a class="btn btn-primary" asp-page="./Index" asp-page-handler="Export">匯出当前資料</a>
     </div>
 </div>
 
@@ -22,7 +22,7 @@
 @if (Model.ImportResult is not null)
 {
     <div class="alert alert-success">
-        <strong>导入完成：</strong>@Model.ImportResult.Summary
+        <strong>匯入完成：</strong>@Model.ImportResult.Summary
     </div>
 
     @if (Model.ImportResult.Errors.Count > 0)
@@ -41,8 +41,8 @@
 
 <div class="module-grid">
     <section class="module-card data-exchange-card">
-        <div class="module-title">导出 Excel</div>
-        <div class="module-subtitle">导出的工作簿包含多个工作表，可直接作为批量导入模板使用。</div>
+        <div class="module-title">匯出 Excel</div>
+        <div class="module-subtitle">匯出的工作簿包含多个工作表，可直接作为批量匯入模板使用。</div>
         <div class="data-exchange-sheet-list">
             <span>Users</span>
             <span>ProjectStatuses</span>
@@ -51,41 +51,41 @@
             <span>PlanningProjects</span>
             <span>MaintenanceOrders</span>
         </div>
-        <a class="btn btn-outline-secondary mt-3" asp-page="./Index" asp-page-handler="Export">下载 Excel</a>
+        <a class="btn btn-outline-secondary mt-3" asp-page="./Index" asp-page-handler="Export">下載 Excel</a>
     </section>
 
     <section class="module-card data-exchange-card">
-        <div class="module-title">导入 Excel</div>
-        <div class="module-subtitle">按工作表名称识别数据；已存在数据会更新，不存在的数据会新增。</div>
+        <div class="module-title">匯入 Excel</div>
+        <div class="module-subtitle">按工作表名稱识别資料；已存在資料会更新，不存在的資料会新增。</div>
         <form method="post" enctype="multipart/form-data" asp-page-handler="Import" class="data-exchange-form">
             <div class="mb-3">
-                <label class="form-label" asp-for="UploadFile">Excel 文件</label>
+                <label class="form-label" asp-for="UploadFile">Excel 檔案</label>
                 <input class="form-control" asp-for="UploadFile" type="file" accept=".xlsx" />
                 <span class="text-danger" asp-validation-for="UploadFile"></span>
             </div>
-            <button class="btn btn-primary" type="submit">开始导入</button>
+            <button class="btn btn-primary" type="submit">開始匯入</button>
         </form>
     </section>
 </div>
 
 <section class="detail-panel">
-    <h2 class="detail-panel-title">导入匹配规则</h2>
+    <h2 class="detail-panel-title">匯入匹配規則</h2>
     <div class="data-table-wrap">
         <table class="table table-sm data-table">
             <thead>
                 <tr>
                     <th>工作表</th>
-                    <th>更新匹配字段</th>
-                    <th>说明</th>
+                    <th>更新匹配欄位</th>
+                    <th>說明</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td>Users</td><td>UserName</td><td>新增用户默认密码取 InitialPassword；为空时使用 ChangeMe123!</td></tr>
-                <tr><td>ProjectStatuses</td><td>Code</td><td>项目状态编码保持唯一。</td></tr>
+                <tr><td>Users</td><td>UserName</td><td>新增使用者默认密碼取 InitialPassword；为空时使用 ChangeMe123!</td></tr>
+                <tr><td>ProjectStatuses</td><td>Code</td><td>專案狀態编码保持唯一。</td></tr>
                 <tr><td>Projects</td><td>Year + ProjectNumber</td><td>ProgressDescriptionHtml 可保留颜色标记。</td></tr>
-                <tr><td>PurchaseRequests</td><td>Year + ProjectNumber + RequestNumber</td><td>必须先存在对应项目。</td></tr>
-                <tr><td>PlanningProjects</td><td>Name</td><td>负责人可用用户名、显示名或邮箱匹配。</td></tr>
-                <tr><td>MaintenanceOrders</td><td>Year + CustomerName</td><td>执行人可用用户名、显示名或邮箱匹配。</td></tr>
+                <tr><td>PurchaseRequests</td><td>Year + ProjectNumber + RequestNumber</td><td>必须先存在对应專案。</td></tr>
+                <tr><td>PlanningProjects</td><td>Name</td><td>負責人可用使用者名稱、顯示名或信箱匹配。</td></tr>
+                <tr><td>MaintenanceOrders</td><td>Year + CustomerName</td><td>执行人可用使用者名稱、顯示名或信箱匹配。</td></tr>
             </tbody>
         </table>
     </div>

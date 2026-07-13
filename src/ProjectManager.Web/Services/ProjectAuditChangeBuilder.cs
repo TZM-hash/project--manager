@@ -6,7 +6,7 @@ namespace ProjectManager.Web.Services;
 public static class ProjectAuditChangeBuilder
 {
     /// <summary>
-    /// 把 EF 实体压缩成稳定快照，避免保存后跟踪实体变化导致“前后值”混淆。
+    /// 把 EF 實體壓縮成穩定快照，避免儲存後跟蹤實體變化導致「前後值」混淆。
     /// </summary>
     public static ProjectAuditSnapshot CreateSnapshot(Project project)
     {
@@ -36,17 +36,17 @@ public static class ProjectAuditChangeBuilder
         var changes = new List<AuditChangeDetail>();
 
         AddIfChanged(changes, "年度", before.Year.ToString(CultureInfo.InvariantCulture), after.Year.ToString(CultureInfo.InvariantCulture));
-        AddIfChanged(changes, "母案案号", before.ParentCaseNumber, after.ParentCaseNumber);
-        AddIfChanged(changes, "项目工号", before.ProjectNumber, after.ProjectNumber);
-        AddIfChanged(changes, "项目名称", before.Name, after.Name);
-        AddIfChanged(changes, "项目状态", before.StatusName, after.StatusName);
-        AddIfChanged(changes, "结案年月", before.ClosedYearMonth, after.ClosedYearMonth);
-        AddIfChanged(changes, "项目进度", FormatPercent(before.ProgressPercent), FormatPercent(after.ProgressPercent));
-        AddIfChanged(changes, "项目金额", FormatMoney(before.ProjectAmount), FormatMoney(after.ProjectAmount));
+        AddIfChanged(changes, "母案案號", before.ParentCaseNumber, after.ParentCaseNumber);
+        AddIfChanged(changes, "專案工號", before.ProjectNumber, after.ProjectNumber);
+        AddIfChanged(changes, "專案名稱", before.Name, after.Name);
+        AddIfChanged(changes, "專案狀態", before.StatusName, after.StatusName);
+        AddIfChanged(changes, "結案年月", before.ClosedYearMonth, after.ClosedYearMonth);
+        AddIfChanged(changes, "專案進度", FormatPercent(before.ProgressPercent), FormatPercent(after.ProgressPercent));
+        AddIfChanged(changes, "專案金額", FormatMoney(before.ProjectAmount), FormatMoney(after.ProjectAmount));
         AddIfChanged(changes, "收款比例", FormatPercent(before.CollectionPercent), FormatPercent(after.CollectionPercent));
-        AddIfChanged(changes, "进度说明", before.ProgressDescription, after.ProgressDescription);
+        AddIfChanged(changes, "進度說明", before.ProgressDescription, after.ProgressDescription);
 
-        // 采购明细通过数据库 ID 对齐，新增、删除、修改分别生成不同类型的审计明细。
+        // 採購明細透過資料庫 ID 對齊，新增、刪除、修改分別生成不同類型的審計明細。
         var beforePurchases = before.Purchases.ToDictionary(x => x.Id);
         var afterPurchases = after.Purchases.ToDictionary(x => x.Id);
 
@@ -54,7 +54,7 @@ public static class ProjectAuditChangeBuilder
         {
             changes.Add(new AuditChangeDetail(
                 "PurchaseAdded",
-                "新增请购",
+                "新增請購",
                 null,
                 FormatPurchaseSummary(purchase),
                 purchase.RequestNumber));
@@ -64,7 +64,7 @@ public static class ProjectAuditChangeBuilder
         {
             changes.Add(new AuditChangeDetail(
                 "PurchaseDeleted",
-                "删除请购",
+                "刪除請購",
                 FormatPurchaseSummary(purchase),
                 null,
                 purchase.RequestNumber));
@@ -73,14 +73,14 @@ public static class ProjectAuditChangeBuilder
         foreach (var afterPurchase in after.Purchases.Where(x => beforePurchases.ContainsKey(x.Id)))
         {
             var beforePurchase = beforePurchases[afterPurchase.Id];
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "请购号", beforePurchase.RequestNumber, afterPurchase.RequestNumber);
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "请购类型", beforePurchase.PurchaseTypeName, afterPurchase.PurchaseTypeName);
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "请购人员", beforePurchase.PurchaseStaff, afterPurchase.PurchaseStaff);
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "请购金额", FormatMoney(beforePurchase.PurchaseAmount), FormatMoney(afterPurchase.PurchaseAmount));
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "子案对接人员", beforePurchase.SubCaseContact, afterPurchase.SubCaseContact);
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "請購號", beforePurchase.RequestNumber, afterPurchase.RequestNumber);
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "請購類型", beforePurchase.PurchaseTypeName, afterPurchase.PurchaseTypeName);
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "請購人員", beforePurchase.PurchaseStaff, afterPurchase.PurchaseStaff);
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "請購金額", FormatMoney(beforePurchase.PurchaseAmount), FormatMoney(afterPurchase.PurchaseAmount));
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "子案對接人員", beforePurchase.SubCaseContact, afterPurchase.SubCaseContact);
             AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "付款比例", FormatPercent(beforePurchase.PaymentPercent), FormatPercent(afterPurchase.PaymentPercent));
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "实际已付款", FormatMoney(beforePurchase.ActualPaidAmount), FormatMoney(afterPurchase.ActualPaidAmount));
-            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "备注", beforePurchase.Notes, afterPurchase.Notes);
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "實際已付款", FormatMoney(beforePurchase.ActualPaidAmount), FormatMoney(afterPurchase.ActualPaidAmount));
+            AddPurchaseIfChanged(changes, beforePurchase.RequestNumber, "備註", beforePurchase.Notes, afterPurchase.Notes);
         }
 
         return changes;
@@ -90,22 +90,22 @@ public static class ProjectAuditChangeBuilder
     {
         var changes = new List<AuditChangeDetail>();
 
-        changes.Add(new AuditChangeDetail("Field", "年度", null, snapshot.Year.ToString(CultureInfo.InvariantCulture), "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "母案案号", null, snapshot.ParentCaseNumber, "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "项目工号", null, snapshot.ProjectNumber, "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "项目名称", null, snapshot.Name, "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "项目状态", null, snapshot.StatusName, "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "结案年月", null, snapshot.ClosedYearMonth, "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "项目进度", null, FormatPercent(snapshot.ProgressPercent), "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "项目金额", null, FormatMoney(snapshot.ProjectAmount), "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "收款比例", null, FormatPercent(snapshot.CollectionPercent), "项目资料"));
-        changes.Add(new AuditChangeDetail("Field", "进度说明", null, snapshot.ProgressDescription, "项目资料"));
+        changes.Add(new AuditChangeDetail("Field", "年度", null, snapshot.Year.ToString(CultureInfo.InvariantCulture), "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "母案案號", null, snapshot.ParentCaseNumber, "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "專案工號", null, snapshot.ProjectNumber, "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "專案名稱", null, snapshot.Name, "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "專案狀態", null, snapshot.StatusName, "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "結案年月", null, snapshot.ClosedYearMonth, "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "專案進度", null, FormatPercent(snapshot.ProgressPercent), "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "專案金額", null, FormatMoney(snapshot.ProjectAmount), "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "收款比例", null, FormatPercent(snapshot.CollectionPercent), "專案資料"));
+        changes.Add(new AuditChangeDetail("Field", "進度說明", null, snapshot.ProgressDescription, "專案資料"));
 
         foreach (var purchase in snapshot.Purchases)
         {
             changes.Add(new AuditChangeDetail(
                 "PurchaseAdded",
-                "新增请购",
+                "新增請購",
                 null,
                 FormatPurchaseSummary(purchase),
                 purchase.RequestNumber));
@@ -120,10 +120,10 @@ public static class ProjectAuditChangeBuilder
         [
             new AuditChangeDetail(
                 "ProjectDeleted",
-                "删除项目",
-                $"{snapshot.ProjectNumber}，{snapshot.Name}，项目金额 {FormatMoney(snapshot.ProjectAmount)}，项目进度 {FormatPercent(snapshot.ProgressPercent)}",
+                "刪除專案",
+                $"{snapshot.ProjectNumber}，{snapshot.Name}，專案金額 {FormatMoney(snapshot.ProjectAmount)}，專案進度 {FormatPercent(snapshot.ProgressPercent)}",
                 null,
-                "项目资料")
+                "專案資料")
         ];
     }
 
@@ -132,7 +132,7 @@ public static class ProjectAuditChangeBuilder
         return new PurchaseAuditSnapshot(
             request.Id,
             request.RequestNumber,
-            request.PurchaseType == PurchaseType.InternalPurchase ? "内购" : "外购",
+            request.PurchaseType == PurchaseType.InternalPurchase ? "內購" : "外購",
             DisplayUser(request.PurchaseStaffUserId, request.PurchaseStaff),
             request.PurchaseAmount,
             DisplayUser(request.SubCaseContactUserId, request.SubCaseContact),
@@ -147,13 +147,13 @@ public static class ProjectAuditChangeBuilder
         string? before,
         string? after)
     {
-        // 审计记录只保存实际变化的字段，避免详情页出现无意义的重复行。
+        // 審計記錄只儲存實際變化的欄位，避免明細頁出現無意義的重複行。
         if (string.Equals(before, after, StringComparison.Ordinal))
         {
             return;
         }
 
-        changes.Add(new AuditChangeDetail("Field", label, before, after, "项目资料"));
+        changes.Add(new AuditChangeDetail("Field", label, before, after, "專案資料"));
     }
 
     private static void AddPurchaseIfChanged(
@@ -173,7 +173,7 @@ public static class ProjectAuditChangeBuilder
 
     private static string FormatPurchaseSummary(PurchaseAuditSnapshot purchase)
     {
-        return $"{purchase.RequestNumber}，{purchase.PurchaseTypeName}，请购金额 {FormatMoney(purchase.PurchaseAmount)}，付款比例 {FormatPercent(purchase.PaymentPercent)}，实际已付款 {FormatMoney(purchase.ActualPaidAmount)}";
+        return $"{purchase.RequestNumber}，{purchase.PurchaseTypeName}，請購金額 {FormatMoney(purchase.PurchaseAmount)}，付款比例 {FormatPercent(purchase.PaymentPercent)}，實際已付款 {FormatMoney(purchase.ActualPaidAmount)}";
     }
 
     private static string FormatMoney(decimal value)

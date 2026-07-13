@@ -1,24 +1,24 @@
-@model ProjectManager.Web.Models.Project
+﻿@model ProjectManager.Web.Models.Project
 @{
     var progress = Math.Clamp(Model.ProgressPercent, 0, 100);
     var collection = Math.Clamp(Model.CollectionPercent, 0, 100);
     var isClosed = Model.Status?.IsClosed == true;
-    var statusName = Model.Status?.Name ?? "未设置状态";
+    var statusName = Model.Status?.Name ?? "未設定狀態";
     var level = "normal";
     var label = "推进中";
-    var note = $"{statusName} / 进度 {progress:0.##}%";
+    var note = $"{statusName} / 進度 {progress:0.##}%";
 
     if (isClosed || progress >= 100)
     {
         level = "complete";
         label = "已完成";
-        note = isClosed ? "状态已结案" : "进度已达 100%";
+        note = isClosed ? "狀態已结案" : "進度已达 100%";
     }
     else if (collection + 25 < progress)
     {
         level = "warning";
         label = "回款滞后";
-        note = $"进度 {progress:0.##}% / 收款 {collection:0.##}%";
+        note = $"進度 {progress:0.##}% / 收款 {collection:0.##}%";
     }
     else if (progress < 30)
     {

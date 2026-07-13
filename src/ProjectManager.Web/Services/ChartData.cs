@@ -1,4 +1,4 @@
-namespace ProjectManager.Web.Services;
+﻿namespace ProjectManager.Web.Services;
 
 public sealed record MetricInsight(
     string Label,
@@ -33,7 +33,7 @@ public static class ChartPalette
             return [];
         }
 
-        // 百分比在服务端算好，页面只负责用 CSS/SVG 展示，避免 Razor 里堆业务计算。
+        // 百分比在服務端算好，頁面只负责用 CSS/SVG 展示，避免 Razor 里堆业务計算。
         return rows
             .Select((x, index) => new ChartSlice(
                 x.Label,

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +15,7 @@ public sealed class IndexModel(
     UserManager<ApplicationUser> userManager) : PageModel
 {
     [BindProperty]
-    [Required(ErrorMessage = "请选择要导入的 Excel 文件。")]
+    [Required(ErrorMessage = "請選擇要匯入的 Excel 檔案。")]
     public IFormFile? UploadFile { get; set; }
 
     public DataImportResult? ImportResult { get; private set; }
@@ -37,14 +37,14 @@ public sealed class IndexModel(
     {
         if (UploadFile is null || UploadFile.Length == 0)
         {
-            ErrorMessage = "请选择有效的 Excel 文件。";
+            ErrorMessage = "請選擇有效的 Excel 檔案。";
             return Page();
         }
 
         var extension = Path.GetExtension(UploadFile.FileName);
         if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
         {
-            ErrorMessage = "当前仅支持 .xlsx 文件。";
+            ErrorMessage = "当前仅支持 .xlsx 檔案。";
             return Page();
         }
 
@@ -58,7 +58,7 @@ public sealed class IndexModel(
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"导入失败：{ex.Message}";
+            ErrorMessage = $"匯入失敗：{ex.Message}";
         }
 
         return Page();

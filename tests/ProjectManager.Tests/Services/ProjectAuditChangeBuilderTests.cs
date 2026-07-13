@@ -35,7 +35,7 @@ public sealed class ProjectAuditChangeBuilderTests
 
         changes.Should().Contain(change =>
             change.Category == "Field" &&
-            change.Label == "项目名称" &&
+            change.Label == "專案名稱" &&
             change.Before == null &&
             change.After == "Created Project");
         changes.Should().Contain(change =>
@@ -60,7 +60,7 @@ public sealed class ProjectAuditChangeBuilderTests
 
         changes.Should().ContainSingle(change =>
             change.Category == "ProjectDeleted" &&
-            change.Label == "删除项目" &&
+            change.Label == "刪除專案" &&
             change.Before!.Contains("P-010") &&
             change.After == null);
     }
@@ -93,17 +93,17 @@ public sealed class ProjectAuditChangeBuilderTests
 
         changes.Should().Contain(change =>
             change.Category == "Field" &&
-            change.Label == "项目名称" &&
+            change.Label == "專案名稱" &&
             change.Before == "Old name" &&
             change.After == "New name");
         changes.Should().Contain(change =>
             change.Category == "Field" &&
-            change.Label == "项目进度" &&
+            change.Label == "專案進度" &&
             change.Before == "30%" &&
             change.After == "45%");
         changes.Should().Contain(change =>
             change.Category == "Field" &&
-            change.Label == "进度说明" &&
+            change.Label == "進度說明" &&
             change.Before == "old" &&
             change.After == "new");
     }
@@ -175,25 +175,25 @@ public sealed class ProjectAuditChangeBuilderTests
         changes.Should().Contain(change =>
             change.Category == "PurchaseUpdated" &&
             change.Scope == "PR-001" &&
-            change.Label == "请购金额" &&
+            change.Label == "請購金額" &&
             change.Before == "1,000.00" &&
             change.After == "1,500.00");
         changes.Should().Contain(change =>
             change.Category == "PurchaseUpdated" &&
             change.Scope == "PR-001" &&
-            change.Label == "实际已付款" &&
+            change.Label == "實際已付款" &&
             change.Before == "100.00" &&
             change.After == "300.00");
         changes.Should().Contain(change =>
             change.Category == "PurchaseDeleted" &&
             change.Scope == "PR-002" &&
-            change.Label == "删除请购" &&
+            change.Label == "刪除請購" &&
             change.Before!.Contains("2,000.00") &&
             change.After == null);
         changes.Should().Contain(change =>
             change.Category == "PurchaseAdded" &&
             change.Scope == "PR-003" &&
-            change.Label == "新增请购" &&
+            change.Label == "新增請購" &&
             change.Before == null &&
             change.After!.Contains("3,500.00"));
     }

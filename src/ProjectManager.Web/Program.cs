@@ -16,18 +16,18 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false;
-        options.Password.RequireDigit = true;
-        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = false;
+        options.Password.RequiredLength = 1;
         options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequireUppercase = true;
-        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    // 让“保持登录”真正跨浏览器重开生效，并在活跃使用时自动续期。
+    // 让“保持登入”真正跨浏览器重开生效，并在活跃使用时自动续期。
     options.ExpireTimeSpan = TimeSpan.FromDays(14);
     options.SlidingExpiration = true;
 });
@@ -45,6 +45,10 @@ builder.Services.AddScoped<PlanningProjectService>();
 builder.Services.AddScoped<MaintenanceOrderService>();
 builder.Services.AddScoped<ProjectGanttService>();
 builder.Services.AddScoped<UserLookupService>();
+builder.Services.AddScoped<SystemSettingsService>();
+builder.Services.AddScoped<ProjectArchiveService>();
+builder.Services.AddSingleton<OpenCcConverterService>();
+builder.Services.AddSingleton(TimeProvider.System);
 
 var app = builder.Build();
 

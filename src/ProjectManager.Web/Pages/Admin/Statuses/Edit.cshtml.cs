@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -116,7 +116,7 @@ public sealed class EditModel(
 
         if (duplicate)
         {
-            ModelState.AddModelError("Input.Code", "状态代码不能重复。");
+            ModelState.AddModelError("Input.Code", "狀態代码不能重复。");
         }
     }
 

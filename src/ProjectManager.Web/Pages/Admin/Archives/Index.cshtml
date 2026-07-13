@@ -1,0 +1,85 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Archives.IndexModel
+@using ProjectManager.Web.Extensions
+@{
+    ViewData["Title"] = "歸檔歷史";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">歸檔歷史</h1>
+        <div class="page-subtitle">已歸檔的專案記錄，結案日期半年內可還原</div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="data-table-wrap">
+    <table class="table table-hover align-middle data-table">
+        <thead>
+            <tr>
+                <th>項次</th>
+                <th>工程編號</th>
+                <th>專案名稱</th>
+                <th>經辦</th>
+                <th>專案類型</th>
+                <th>狀態</th>
+                <th>結案日期</th>
+                <th>金額</th>
+                <th>歸檔時間</th>
+                <th>歸檔人</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < Model.Archives.Count; i++)
+            {
+                var archive = Model.Archives[i];
+                <tr>
+                    <td class="text-center">@(i + 1)</td>
+                    <td class="text-center">@archive.ProjectNumber</td>
+                    <td>@archive.Name</td>
+                    <td>@archive.AssignmentSummary</td>
+                    <td class="text-center">@archive.ProjectType.GetDisplayName()</td>
+                    <td class="text-center">@archive.StatusName</td>
+                    <td class="text-center">@archive.ClosedYearMonth?.ToString("yyyy-MM")</td>
+                    <td class="text-end">@archive.ProjectAmount.ToString("N0")</td>
+                    <td class="text-center">@archive.ArchivedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="text-center">@archive.ArchivedByUser?.DisplayName ?? archive.ArchivedByUser?.UserName ?? "-"</td>
+                    <td class="text-end text-nowrap">
+                        @if (Model.CanRestore(archive))
+                        {
+                            <form method="post" asp-page-handler="Restore" asp-route-id="@archive.Id" class="d-inline" onsubmit="return confirm('確定還原該歸檔專案嗎？還原後專案將回到專案總覽清單。');">
+                                <button type="submit" class="btn btn-sm btn-outline-success">還原</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">超過半年</span>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Archives.Any())
+            {
+                <tr>
+                    <td colspan="11" class="text-center text-muted">暫無歸檔記錄</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

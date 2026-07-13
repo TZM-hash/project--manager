@@ -10,12 +10,17 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator)]
-public sealed class DetailsModel(ApplicationDbContext db, ProjectGanttService ganttService) : PageModel
+[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+public sealed class DetailsModel(
+    ApplicationDbContext db,
+    ProjectGanttService ganttService,
+    SystemSettingsService systemSettingsService) : PageModel
 {
     public Project Project { get; private set; } = new();
 
     public IReadOnlyList<AuditLogDisplayModel> AuditLogs { get; private set; } = [];
+
+    public DateOnly ArchiveDate { get; private set; }
 
     public AuditTrailViewModel AuditTrail { get; private set; } = new([], [], null, null, null, null);
 
@@ -60,6 +65,7 @@ public sealed class DetailsModel(ApplicationDbContext db, ProjectGanttService ga
         }
 
         Project = project;
+        ArchiveDate = await systemSettingsService.GetArchiveDateAsync(cancellationToken);
         GanttInput = await ganttService.BuildInputAsync(id, cancellationToken);
         var auditLogs = await db.AuditLogs
             .AsNoTracking()
@@ -91,7 +97,7 @@ public sealed class DetailsModel(ApplicationDbContext db, ProjectGanttService ga
 
         if (GanttErrors.Count == 0)
         {
-            GanttMessage = "甘特图已保存。";
+            GanttMessage = "甘特图已儲存。";
             return RedirectToPage("./Details", new { id, Tab = "gantt" });
         }
 

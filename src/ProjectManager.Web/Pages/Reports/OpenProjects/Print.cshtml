@@ -1,13 +1,13 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Reports.OpenProjects.PrintModel
 @{
-    ViewData["Title"] = "未结案项目打印";
+    ViewData["Title"] = "未結案專案列印";
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3 no-print">
-    <h1 class="h3 mb-0">未结案项目打印</h1>
-    <button class="btn btn-primary" type="button" onclick="window.print()">打印</button>
+    <h1 class="h3 mb-0">未結案專案列印</h1>
+    <button class="btn btn-primary" type="button" onclick="window.print()">列印</button>
 </div>
 
-<h1 class="h4">未结案项目报表</h1>
+<h1 class="h4">未結案專案報表</h1>
 <partial name="_OpenProjectsTable" model="Model.Projects" />

@@ -1,11 +1,13 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 
 namespace ProjectManager.Web.Services;
 
-public sealed class ProjectGanttService(ApplicationDbContext db)
+public sealed class ProjectGanttService(
+    ApplicationDbContext db,
+    SystemSettingsService systemSettingsService)
 {
     private const string ExcelContentType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -14,36 +16,18 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         int projectId,
         CancellationToken cancellationToken)
     {
-        var plan = await db.ProjectGanttPlans
+        var project = await db.Projects
             .AsNoTracking()
-            .Include(x => x.Tasks)
-            .SingleOrDefaultAsync(x => x.ProjectId == projectId, cancellationToken);
+            .Include(x => x.GanttPlan)
+            .ThenInclude(x => x!.Tasks)
+            .SingleOrDefaultAsync(x => !x.IsDeleted && x.Id == projectId, cancellationToken);
 
-        if (plan is null)
+        if (project is null)
         {
             return new ProjectGanttInputModel();
         }
 
-        return new ProjectGanttInputModel
-        {
-            StartDate = plan.StartDate,
-            FinishDate = plan.FinishDate,
-            ProgressNote = plan.ProgressNote,
-            Tasks = plan.Tasks
-                .OrderBy(x => x.SortOrder)
-                .ThenBy(x => x.Id)
-                .Select(x => new ProjectGanttTaskInputModel
-                {
-                    Id = x.Id,
-                    SortOrder = x.SortOrder,
-                    Name = x.Name,
-                    PlannedStartDate = x.PlannedStartDate,
-                    PlannedFinishDate = x.PlannedFinishDate,
-                    ProgressPercent = x.ProgressPercent,
-                    ProgressDescription = x.ProgressDescription
-                })
-                .ToList()
-        };
+        return ToInput(project);
     }
 
     public async Task<IReadOnlyList<string>> SaveAsync(
@@ -112,6 +96,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             .Include(x => x.Status)
             .Include(x => x.Assignments)
             .ThenInclude(x => x.User)
+            .Include(x => x.UpdatedByUser)
             .Include(x => x.GanttPlan)
             .ThenInclude(x => x!.Tasks)
             .SingleOrDefaultAsync(x => !x.IsDeleted && x.Id == projectId, cancellationToken);
@@ -123,7 +108,8 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("Gantt");
-        WriteGanttWorksheet(sheet, project);
+        var archiveDate = await systemSettingsService.GetArchiveDateAsync(cancellationToken);
+        WriteGanttWorksheet(sheet, project, archiveDate);
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -133,7 +119,9 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             stream.ToArray());
     }
 
-    public static IReadOnlyList<GanttMonth> BuildMonths(ProjectGanttInputModel input)
+    public static IReadOnlyList<GanttMonth> BuildMonths(
+        ProjectGanttInputModel input,
+        DateOnly? markerDate = null)
     {
         var dates = new List<DateOnly>();
         if (input.StartDate is not null)
@@ -161,38 +149,172 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
         if (dates.Count == 0)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            dates.Add(new DateOnly(today.Year, today.Month, 1));
-            dates.Add(new DateOnly(today.Year, today.Month, 1).AddMonths(5));
+            var anchor = markerDate ?? DateOnly.FromDateTime(DateTime.Today);
+            dates.Add(anchor);
+            dates.Add(anchor.AddMonths(1));
         }
 
-        var start = new DateOnly(dates.Min().Year, dates.Min().Month, 1);
-        var finish = new DateOnly(dates.Max().Year, dates.Max().Month, 1);
+        var start = dates.Min();
+        var finish = dates.Max();
         if (finish < start)
         {
             (start, finish) = (finish, start);
         }
 
-        if (finish < start.AddMonths(5))
+        var totalDays = finish.DayNumber - start.DayNumber + 1;
+        var unit = totalDays switch
         {
-            finish = start.AddMonths(5);
-        }
-
-        var totalMonths = CountInclusiveMonths(start, finish);
-        var stepMonths = ResolveTimelineStepMonths(totalMonths);
+            <= 21 => GanttTimeUnit.Day,
+            <= 126 => GanttTimeUnit.Week,
+            <= 548 => GanttTimeUnit.Month,
+            <= 1644 => GanttTimeUnit.Quarter,
+            _ => GanttTimeUnit.Year
+        };
+        var stepYears = unit == GanttTimeUnit.Year
+            ? Math.Max(1, (int)Math.Ceiling((finish.Year - start.Year + 1) / 18m))
+            : 1;
+        start = AlignBucketStart(start, unit, stepYears);
+        finish = AlignBucketEnd(finish, unit, stepYears);
         var months = new List<GanttMonth>();
-        for (var month = start; month <= finish; month = month.AddMonths(stepMonths))
+        for (var bucketStart = start; bucketStart <= finish;)
         {
-            var endMonth = month.AddMonths(stepMonths - 1);
-            if (endMonth > finish)
-            {
-                endMonth = finish;
-            }
-
-            months.Add(new GanttMonth(month, endMonth, month.ToString("yyyy-MM"), stepMonths));
+            var bucketEnd = GetBucketEnd(bucketStart, unit, stepYears);
+            months.Add(new GanttMonth(
+                bucketStart,
+                bucketEnd,
+                BuildBucketLabel(bucketStart, bucketEnd, unit),
+                ResolveStepMonths(unit, stepYears),
+                unit));
+            bucketStart = bucketEnd.AddDays(1);
         }
 
         return months;
+    }
+
+    public static string GetTimelineScaleText(IReadOnlyList<GanttMonth> months)
+    {
+        if (months.Count == 0)
+        {
+            return "自动";
+        }
+
+        var bucket = months[0];
+        return bucket.Unit switch
+        {
+            GanttTimeUnit.Day => "每 1 日 / 格",
+            GanttTimeUnit.Week => "每 1 週 / 格",
+            GanttTimeUnit.Month => "每 1 月 / 格",
+            GanttTimeUnit.Quarter => "每 1 季 / 格",
+            _ when bucket.StepMonths > 12 => $"每 {bucket.StepMonths / 12} 年 / 格",
+            _ => "每 1 年 / 格"
+        };
+    }
+
+    public static ArchiveDemandInfo BuildArchiveDemandInfo(Project project, DateOnly archiveDate)
+    {
+        var person = project.UpdatedByUser?.DisplayName ?? project.UpdatedByUser?.UserName;
+        if (string.IsNullOrWhiteSpace(person))
+        {
+            person = string.Join("、", project.Assignments
+                .Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId)
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        return new ArchiveDemandInfo(archiveDate, string.IsNullOrWhiteSpace(person) ? "-" : person);
+    }
+
+    public static decimal GetTimelinePositionPercent(
+        DateOnly date,
+        IReadOnlyList<GanttMonth> months)
+    {
+        if (months.Count == 0)
+        {
+            return 0;
+        }
+
+        var timelineStart = months[0].Month;
+        var timelineFinish = months[^1].EndMonth;
+        var totalDays = Math.Max(1, timelineFinish.DayNumber - timelineStart.DayNumber + 1);
+        var offsetDays = date.DayNumber - timelineStart.DayNumber;
+        return Math.Clamp(offsetDays / (decimal)totalDays * 100m, 0m, 100m);
+    }
+
+    public static IReadOnlyList<decimal> BuildTaskWeights(int taskCount)
+    {
+        if (taskCount <= 0)
+        {
+            return [];
+        }
+
+        if (taskCount == 10)
+        {
+            return [5m, 5m, 5m, 10m, 5m, 10m, 15m, 15m, 20m, 10m];
+        }
+
+        if (taskCount == 11)
+        {
+            return [5m, 5m, 5m, 5m, 5m, 10m, 10m, 10m, 10m, 20m, 15m];
+        }
+
+        var equalWeight = Math.Floor(10000m / taskCount) / 100m;
+        var weights = Enumerable.Repeat(equalWeight, taskCount).ToList();
+        weights[^1] += 100m - weights.Sum();
+        return weights;
+    }
+
+    public static decimal CalculateExpectedProgress(
+        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        IReadOnlyList<decimal> weights,
+        DateOnly asOfDate)
+    {
+        decimal result = 0;
+        for (var i = 0; i < tasks.Count && i < weights.Count; i++)
+        {
+            var task = tasks[i];
+            if (task.PlannedStartDate is null || task.PlannedFinishDate is null)
+            {
+                continue;
+            }
+
+            var start = task.PlannedStartDate.Value;
+            var finish = task.PlannedFinishDate.Value;
+            if (finish < start)
+            {
+                (start, finish) = (finish, start);
+            }
+
+            decimal completion;
+            if (asOfDate < start)
+            {
+                completion = 0;
+            }
+            else if (asOfDate >= finish)
+            {
+                completion = 1;
+            }
+            else
+            {
+                var totalDays = Math.Max(1, finish.DayNumber - start.DayNumber + 1);
+                completion = (asOfDate.DayNumber - start.DayNumber + 1m) / totalDays;
+            }
+
+            result += weights[i] * completion;
+        }
+
+        return Math.Clamp(result, 0m, 100m);
+    }
+
+    public static decimal CalculateActualProgress(
+        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        IReadOnlyList<decimal> weights)
+    {
+        decimal result = 0;
+        for (var i = 0; i < tasks.Count && i < weights.Count; i++)
+        {
+            result += weights[i] * ClampPercent(tasks[i].ProgressPercent) / 100m;
+        }
+
+        return Math.Clamp(result, 0m, 100m);
     }
 
     public static GanttBar BuildBar(ProjectGanttTaskInputModel task, IReadOnlyList<GanttMonth> months)
@@ -202,19 +324,52 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             return new GanttBar(0, 0, 0);
         }
 
-        var startMonth = new DateOnly(task.PlannedStartDate.Value.Year, task.PlannedStartDate.Value.Month, 1);
-        var finishMonth = new DateOnly(task.PlannedFinishDate.Value.Year, task.PlannedFinishDate.Value.Month, 1);
-        if (finishMonth < startMonth)
+        var startDate = task.PlannedStartDate.Value;
+        var finishDate = task.PlannedFinishDate.Value;
+        if (finishDate < startDate)
         {
-            (startMonth, finishMonth) = (finishMonth, startMonth);
+            (startDate, finishDate) = (finishDate, startDate);
         }
 
-        var startIndex = Math.Max(0, FindBucketIndex(months, startMonth));
-        var finishIndex = FindBucketIndex(months, finishMonth);
-        finishIndex = finishIndex < 0 ? startIndex : finishIndex;
-        var left = startIndex / (decimal)months.Count * 100;
-        var width = Math.Max(1, (finishIndex - startIndex + 1) / (decimal)months.Count * 100);
+        var left = GetTimelinePositionPercent(startDate, months);
+        var finish = GetTimelinePositionPercent(finishDate.AddDays(1), months);
+        var width = Math.Max(0.35m, finish - left);
         return new GanttBar(left, width, ClampPercent(task.ProgressPercent));
+    }
+
+    public static IReadOnlyList<GanttProgressPoint> BuildProgressLinePoints(
+        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        DateOnly archiveDate,
+        IReadOnlyList<GanttMonth> months)
+    {
+        var baseline = GetTimelinePositionPercent(archiveDate, months);
+        return tasks.Select(task =>
+        {
+            if (task.PlannedStartDate is null || task.PlannedFinishDate is null)
+            {
+                return new GanttProgressPoint(baseline, GanttProgressState.OnSchedule, 0);
+            }
+
+            var start = task.PlannedStartDate.Value;
+            var finish = task.PlannedFinishDate.Value;
+            if (finish < start)
+            {
+                (start, finish) = (finish, start);
+            }
+
+            var expected = CalculateTaskExpectedPercent(start, finish, archiveDate);
+            var actual = ClampPercent(task.ProgressPercent);
+            if (Math.Abs(actual - expected) < 0.5m)
+            {
+                return new GanttProgressPoint(baseline, GanttProgressState.OnSchedule, expected);
+            }
+
+            var duration = Math.Max(0, finish.DayNumber - start.DayNumber);
+            var actualOffset = (int)Math.Round(duration * actual / 100m, MidpointRounding.AwayFromZero);
+            var actualDate = start.AddDays(actualOffset);
+            var state = actual < expected ? GanttProgressState.Behind : GanttProgressState.Ahead;
+            return new GanttProgressPoint(GetTimelinePositionPercent(actualDate, months), state, expected);
+        }).ToList();
     }
 
     private static List<string> Validate(ProjectGanttInputModel input)
@@ -224,7 +379,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             input.FinishDate is not null &&
             input.FinishDate < input.StartDate)
         {
-            errors.Add("整体完成日不能早于整体开始日。");
+            errors.Add("整体完成日不能早于整体開始日。");
         }
 
         foreach (var (task, index) in input.Tasks.Select((task, index) => (task, index + 1)))
@@ -238,30 +393,33 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
                 task.PlannedFinishDate is not null &&
                 task.PlannedFinishDate < task.PlannedStartDate)
             {
-                errors.Add($"第 {index} 项细分工作的预计完成日不能早于预计开始日。");
+                errors.Add($"第 {index} 项细分工作的预计完成日不能早于预计開始日。");
             }
 
             if (task.ProgressPercent < 0 || task.ProgressPercent > 100)
             {
-                errors.Add($"第 {index} 项细分工作的当前进度必须在 0 到 100 之间。");
+                errors.Add($"第 {index} 项细分工作的当前進度必须在 0 到 100 之间。");
             }
         }
 
         return errors;
     }
 
-    private static void WriteGanttWorksheet(IXLWorksheet sheet, Project project)
+    private static void WriteGanttWorksheet(
+        IXLWorksheet sheet,
+        Project project,
+        DateOnly archiveDate)
     {
-        var plan = project.GanttPlan;
-        var tasks = plan?.Tasks.OrderBy(x => x.SortOrder).ToList() ?? [];
-        var input = ToInput(plan);
-        var months = BuildMonths(input);
+        var input = ToInput(project);
+        var archiveDemand = BuildArchiveDemandInfo(project, archiveDate);
+        var months = BuildMonths(input, archiveDemand.Date);
+        var tasks = input.Tasks.Where(HasTaskData).OrderBy(x => x.SortOrder).ToList();
+        var weights = BuildTaskWeights(tasks.Count);
 
-        const int titleRow = 1;
-        const int infoTopRow = 3;
-        const int yearRow = 6;
-        const int monthRow = 7;
-        const int firstTaskRow = 8;
+        const int infoTopRow = 1;
+        const int yearRow = 4;
+        const int monthRow = 5;
+        const int firstTaskRow = 6;
         const int leftColumns = 3;
         var monthStartColumn = leftColumns + 1;
         var ratioColumn = monthStartColumn + months.Count;
@@ -275,16 +433,19 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         sheet.Style.Font.FontName = "Microsoft YaHei";
         sheet.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-        SetMergedText(sheet, titleRow, 1, titleRow, lastColumn, $"{project.ProjectNumber}{project.Name}-预估进度");
-        sheet.Cell(titleRow, 1).Style.Font.Bold = true;
-        sheet.Cell(titleRow, 1).Style.Font.FontSize = 22;
-        sheet.Cell(titleRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
-        sheet.Row(titleRow).Height = 34;
-
-        WriteGanttProjectInfo(sheet, project, infoTopRow, monthStartColumn, lastColumn);
+        WriteGanttProjectInfo(sheet, project, archiveDemand, infoTopRow, monthStartColumn, lastColumn);
         WriteGanttTimeHeader(sheet, months, yearRow, monthRow, monthStartColumn, ratioColumn, actualColumn);
-        WriteGanttBody(sheet, tasks, months, firstTaskRow, monthStartColumn, ratioColumn, actualColumn, visibleTaskCount);
-        WriteGanttFooter(sheet, project, noteTopRow, noteBottomRow, monthStartColumn, ratioColumn, actualColumn, tasks);
+        WriteGanttBody(sheet, tasks, weights, months, firstTaskRow, monthStartColumn, ratioColumn, actualColumn);
+        PaintArchiveProgressLine(
+            sheet,
+            archiveDemand.Date,
+            tasks,
+            months,
+            monthRow,
+            firstTaskRow,
+            lastTaskRow,
+            monthStartColumn);
+        WriteGanttFooter(sheet, project, archiveDemand.Date, noteTopRow, noteBottomRow, monthStartColumn, ratioColumn, actualColumn, tasks, weights);
 
         var usedRange = sheet.Range(1, 1, noteBottomRow, lastColumn);
         usedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
@@ -306,7 +467,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         sheet.SheetView.FreezeRows(monthRow);
         sheet.SheetView.FreezeColumns(leftColumns);
         sheet.PageSetup.PageOrientation = XLPageOrientation.Landscape;
-        sheet.PageSetup.PagesWide = 2;
+        sheet.PageSetup.PagesWide = 1;
         sheet.PageSetup.Margins.Top = 0.35;
         sheet.PageSetup.Margins.Bottom = 0.35;
         sheet.PageSetup.Margins.Left = 0.25;
@@ -316,11 +477,11 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
     private static void WriteGanttProjectInfo(
         IXLWorksheet sheet,
         Project project,
+        ArchiveDemandInfo archiveDemand,
         int topRow,
         int monthStartColumn,
         int lastColumn)
     {
-        var plan = project.GanttPlan;
         var ownerText = string.Join("; ", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
         var rightStartColumn = Math.Max(monthStartColumn + 2, lastColumn - 5);
 
@@ -329,7 +490,6 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         sheet.Cell(topRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
         SetMergedText(sheet, topRow, monthStartColumn, topRow + 1, rightStartColumn - 1, project.Name);
-        sheet.Range(topRow, monthStartColumn, topRow + 1, rightStartColumn - 1).Style.Fill.BackgroundColor = XLColor.FromHtml("#dbeafe");
         sheet.Cell(topRow, monthStartColumn).Style.Font.Bold = true;
         sheet.Cell(topRow, monthStartColumn).Style.Font.FontSize = 14;
         sheet.Cell(topRow, monthStartColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -337,14 +497,13 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
         sheet.Cell(topRow, rightStartColumn).Value = "专案编号";
         SetMergedText(sheet, topRow, rightStartColumn + 1, topRow, rightStartColumn + 2, project.ProjectNumber);
-        sheet.Cell(topRow + 1, rightStartColumn).Value = "客户";
+        sheet.Cell(topRow + 1, rightStartColumn).Value = "客戶";
         SetMergedText(sheet, topRow + 1, rightStartColumn + 1, topRow + 1, rightStartColumn + 2, ownerText);
-        sheet.Cell(topRow, rightStartColumn + 3).Value = "文件编号";
+        sheet.Cell(topRow, rightStartColumn + 3).Value = "檔案编号";
         SetMergedText(sheet, topRow, rightStartColumn + 4, topRow, lastColumn, $"GANTT-{project.Id}");
         sheet.Cell(topRow + 1, rightStartColumn + 3).Value = "档案日期";
-        SetMergedText(sheet, topRow + 1, rightStartColumn + 4, topRow + 1, lastColumn, DateTime.Today.ToString("yyyy/M/d"));
+        SetMergedText(sheet, topRow + 1, rightStartColumn + 4, topRow + 1, lastColumn, archiveDemand.Date.ToString("yyyy/M/d"));
 
-        sheet.Range(topRow, rightStartColumn, topRow + 1, lastColumn).Style.Fill.BackgroundColor = XLColor.FromHtml("#dbeafe");
         sheet.Range(topRow, rightStartColumn, topRow + 1, lastColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
         SetMergedText(
@@ -353,8 +512,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             monthStartColumn,
             topRow + 2,
             lastColumn,
-            $"整体开始日：{plan?.StartDate?.ToString("yyyy-MM-dd") ?? "-"}    整体完成日：{plan?.FinishDate?.ToString("yyyy-MM-dd") ?? "-"}    状态：{project.Status?.Name ?? "-"}");
-        sheet.Cell(topRow + 2, monthStartColumn).Style.Fill.BackgroundColor = XLColor.FromHtml("#eff6ff");
+            $"進度線負責人：{archiveDemand.Person}    整体開始日：{project.GanttPlan?.StartDate?.ToString("yyyy-MM-dd") ?? "-"}    整体完成日：{project.GanttPlan?.FinishDate?.ToString("yyyy-MM-dd") ?? "-"}    狀態：{project.Status?.Name ?? "-"}");
         sheet.Cell(topRow + 2, monthStartColumn).Style.Alignment.WrapText = true;
     }
 
@@ -368,10 +526,10 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         int actualColumn)
     {
         SetMergedText(sheet, yearRow, 1, monthRow, 1, "项次");
-        SetMergedText(sheet, yearRow, 2, monthRow, 3, "名称");
-        SetMergedText(sheet, yearRow, ratioColumn, yearRow, actualColumn, "进度");
+        SetMergedText(sheet, yearRow, 2, monthRow, 3, "名稱");
+        SetMergedText(sheet, yearRow, ratioColumn, yearRow, actualColumn, "進度");
         sheet.Cell(monthRow, ratioColumn).Value = "比例";
-        sheet.Cell(monthRow, actualColumn).Value = "实际完成";
+        sheet.Cell(monthRow, actualColumn).Value = "實際完成";
 
         foreach (var group in months.Select((month, index) => new { month.Month.Year, Index = index }).GroupBy(x => x.Year))
         {
@@ -383,9 +541,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
         for (var i = 0; i < months.Count; i++)
         {
-            sheet.Cell(monthRow, monthStartColumn + i).Value = months[i].StepMonths == 1
-                ? months[i].Month.Month.ToString()
-                : months[i].Label;
+            sheet.Cell(monthRow, monthStartColumn + i).Value = months[i].Label;
             sheet.Cell(monthRow, monthStartColumn + i).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         }
 
@@ -397,13 +553,13 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
     private static void WriteGanttBody(
         IXLWorksheet sheet,
-        IReadOnlyList<ProjectGanttTask> tasks,
+        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        IReadOnlyList<decimal> weights,
         IReadOnlyList<GanttMonth> months,
         int firstTaskRow,
         int monthStartColumn,
         int ratioColumn,
-        int actualColumn,
-        int visibleTaskCount)
+        int actualColumn)
     {
         if (tasks.Count == 0)
         {
@@ -417,14 +573,13 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             return;
         }
 
-        var weight = 1m / visibleTaskCount;
         for (var i = 0; i < tasks.Count; i++)
         {
             var task = tasks[i];
             var row = firstTaskRow + i;
-            sheet.Cell(row, 1).Value = task.SortOrder;
-            SetMergedText(sheet, row, 2, row, 3, task.Name);
-            sheet.Cell(row, ratioColumn).Value = weight;
+            sheet.Cell(row, 1).Value = task.SortOrder > 0 ? task.SortOrder : i + 1;
+            SetMergedText(sheet, row, 2, row, 3, task.Name ?? string.Empty);
+            sheet.Cell(row, ratioColumn).Value = weights[i] / 100m;
             sheet.Cell(row, ratioColumn).Style.NumberFormat.Format = "0%";
             sheet.Cell(row, actualColumn).Value = task.ProgressPercent / 100m;
             sheet.Cell(row, actualColumn).Style.NumberFormat.Format = "0.00%";
@@ -437,7 +592,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
 
     private static void PaintTaskBar(
         IXLWorksheet sheet,
-        ProjectGanttTask task,
+        ProjectGanttTaskInputModel task,
         IReadOnlyList<GanttMonth> months,
         int row,
         int monthStartColumn)
@@ -447,15 +602,15 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             return;
         }
 
-        var startMonth = new DateOnly(task.PlannedStartDate.Value.Year, task.PlannedStartDate.Value.Month, 1);
-        var finishMonth = new DateOnly(task.PlannedFinishDate.Value.Year, task.PlannedFinishDate.Value.Month, 1);
-        if (finishMonth < startMonth)
+        var startDate = task.PlannedStartDate.Value;
+        var finishDate = task.PlannedFinishDate.Value;
+        if (finishDate < startDate)
         {
-            (startMonth, finishMonth) = (finishMonth, startMonth);
+            (startDate, finishDate) = (finishDate, startDate);
         }
 
-        var startIndex = FindBucketIndex(months, startMonth);
-        var finishIndex = FindBucketIndex(months, finishMonth);
+        var startIndex = FindBucketIndex(months, startDate);
+        var finishIndex = FindBucketIndex(months, finishDate);
         if (startIndex < 0 || finishIndex < 0)
         {
             return;
@@ -467,9 +622,8 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         for (var index = startIndex; index <= finishIndex; index++)
         {
             var cell = sheet.Cell(row, monthStartColumn + index);
-            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#bbf7d0");
             cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            cell.Style.Border.OutsideBorderColor = XLColor.FromHtml("#16a34a");
+            cell.Style.Border.OutsideBorderColor = XLColor.Black;
         }
 
         for (var index = startIndex; index < startIndex + completedCells && index <= finishIndex; index++)
@@ -478,17 +632,69 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         }
     }
 
+    private static void PaintArchiveProgressLine(
+        IXLWorksheet sheet,
+        DateOnly archiveDate,
+        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        IReadOnlyList<GanttMonth> months,
+        int headerRow,
+        int firstTaskRow,
+        int lastRow,
+        int monthStartColumn)
+    {
+        var monthIndex = FindBucketIndex(months, archiveDate);
+        if (monthIndex < 0)
+        {
+            return;
+        }
+
+        var archiveBucket = months[monthIndex];
+        var archiveColumn = monthStartColumn + monthIndex;
+        var useArchiveRightBorder = archiveDate.DayNumber - archiveBucket.Month.DayNumber >
+                                    (archiveBucket.EndMonth.DayNumber - archiveBucket.Month.DayNumber) / 2;
+        var headerCell = sheet.Cell(headerRow, archiveColumn);
+        if (useArchiveRightBorder)
+        {
+            headerCell.Style.Border.RightBorder = XLBorderStyleValues.Medium;
+            headerCell.Style.Border.RightBorderColor = XLColor.Red;
+        }
+        else
+        {
+            headerCell.Style.Border.LeftBorder = XLBorderStyleValues.Medium;
+            headerCell.Style.Border.LeftBorderColor = XLColor.Red;
+        }
+
+        var points = BuildProgressLinePoints(tasks, archiveDate, months);
+        for (var index = 0; index < points.Count && firstTaskRow + index <= lastRow; index++)
+        {
+            var point = points[index];
+            var timelineDays = months[^1].EndMonth.DayNumber - months[0].Month.DayNumber + 1;
+            var pointDateOffset = Math.Clamp(
+                (int)Math.Round(point.PositionPercent / 100m * timelineDays),
+                0,
+                timelineDays - 1);
+            var pointDate = months[0].Month.AddDays(pointDateOffset);
+            var pointBucketIndex = Math.Max(0, FindBucketIndex(months, pointDate));
+            var cell = sheet.Cell(firstTaskRow + index, monthStartColumn + pointBucketIndex);
+            var color = point.State == GanttProgressState.Ahead ? XLColor.Blue : XLColor.Red;
+            cell.Style.Border.LeftBorder = XLBorderStyleValues.Medium;
+            cell.Style.Border.LeftBorderColor = color;
+        }
+    }
+
     private static void WriteGanttFooter(
         IXLWorksheet sheet,
         Project project,
+        DateOnly archiveDate,
         int noteTopRow,
         int noteBottomRow,
         int monthStartColumn,
         int ratioColumn,
         int actualColumn,
-        IReadOnlyList<ProjectGanttTask> tasks)
+        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        IReadOnlyList<decimal> weights)
     {
-        SetMergedText(sheet, noteTopRow, 1, noteBottomRow, 1, "进度说明");
+        SetMergedText(sheet, noteTopRow, 1, noteBottomRow, 1, "進度說明");
         sheet.Cell(noteTopRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
         var noteRightColumn = Math.Max(monthStartColumn, ratioColumn - 2);
@@ -496,45 +702,91 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         sheet.Cell(noteTopRow, 2).Style.Alignment.WrapText = true;
         sheet.Cell(noteTopRow, 2).Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
 
-        SetMergedText(sheet, noteTopRow, ratioColumn - 1, noteTopRow, ratioColumn, "应达进度(%)");
-        sheet.Cell(noteTopRow, actualColumn).Value = "实际进度(%)";
+        SetMergedText(sheet, noteTopRow, ratioColumn - 1, noteTopRow, ratioColumn, "应达進度(%)");
+        sheet.Cell(noteTopRow, actualColumn).Value = "實際進度(%)";
         sheet.Range(noteTopRow, ratioColumn - 1, noteTopRow, actualColumn).Style.Font.Bold = true;
         sheet.Range(noteTopRow, ratioColumn - 1, noteTopRow, actualColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
         sheet.Range(noteTopRow + 1, ratioColumn - 1, noteBottomRow, ratioColumn).Merge();
-        sheet.Cell(noteTopRow + 1, ratioColumn - 1).Value = CalculateExpectedProgress(project.GanttPlan);
+        sheet.Cell(noteTopRow + 1, ratioColumn - 1).Value = CalculateExpectedProgress(tasks, weights, archiveDate) / 100m;
         sheet.Range(noteTopRow + 1, actualColumn, noteBottomRow, actualColumn).Merge();
-        sheet.Cell(noteTopRow + 1, actualColumn).Value = CalculateActualProgress(tasks);
+        sheet.Cell(noteTopRow + 1, actualColumn).Value = CalculateActualProgress(tasks, weights) / 100m;
         sheet.Range(noteTopRow + 1, ratioColumn - 1, noteBottomRow, actualColumn).Style.NumberFormat.Format = "0.00%";
         sheet.Range(noteTopRow + 1, ratioColumn - 1, noteBottomRow, actualColumn).Style.Font.FontSize = 18;
         sheet.Range(noteTopRow + 1, ratioColumn - 1, noteBottomRow, actualColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         sheet.Range(noteTopRow + 1, ratioColumn - 1, noteBottomRow, actualColumn).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
     }
 
-    private static ProjectGanttInputModel ToInput(ProjectGanttPlan? plan)
+    private static ProjectGanttInputModel ToInput(Project project)
     {
-        if (plan is null)
+        var plan = project.GanttPlan;
+        var tasks = plan?.Tasks
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Id)
+            .Select(x => new ProjectGanttTaskInputModel
+            {
+                Id = x.Id,
+                SortOrder = x.SortOrder,
+                Name = x.Name,
+                PlannedStartDate = x.PlannedStartDate,
+                PlannedFinishDate = x.PlannedFinishDate,
+                ProgressPercent = x.ProgressPercent,
+                ProgressDescription = x.ProgressDescription
+            })
+            .ToList() ?? [];
+
+        if (tasks.Count == 0)
         {
-            return new ProjectGanttInputModel();
+            tasks = BuildDefaultTasks(project);
         }
 
         return new ProjectGanttInputModel
         {
-            StartDate = plan.StartDate,
-            FinishDate = plan.FinishDate,
-            ProgressNote = plan.ProgressNote,
-            Tasks = plan.Tasks
-                .OrderBy(x => x.SortOrder)
-                .Select(x => new ProjectGanttTaskInputModel
-                {
-                    Name = x.Name,
-                    PlannedStartDate = x.PlannedStartDate,
-                    PlannedFinishDate = x.PlannedFinishDate,
-                    ProgressPercent = x.ProgressPercent,
-                    ProgressDescription = x.ProgressDescription
-                })
-                .ToList()
+            StartDate = plan?.StartDate ?? tasks.Min(x => x.PlannedStartDate),
+            FinishDate = plan?.FinishDate ?? tasks.Max(x => x.PlannedFinishDate),
+            ProgressNote = plan?.ProgressNote,
+            Tasks = tasks
         };
+    }
+
+    private static List<ProjectGanttTaskInputModel> BuildDefaultTasks(Project project)
+    {
+        var year = Math.Clamp(project.Year, 1, 9998);
+        var yearStart = new DateOnly(year, 1, 1);
+        var templates = new (string Name, int StartMonth, int FinishMonth)[]
+        {
+            ("配合客戶需求與規劃", 0, 1),
+            ("業主請購規範確認", 1, 2),
+            ("專案立案", 3, 3),
+            ("機械功能設計確認", 4, 5),
+            ("電控介面設計確認", 5, 5),
+            ("採購與製作排程", 4, 6),
+            ("現場安裝與整合", 6, 8),
+            ("系統功能測試", 7, 9),
+            ("現場試車與細部調校", 9, 11),
+            ("教育訓練及驗收", 10, 14)
+        };
+        var weights = BuildTaskWeights(templates.Length);
+        var remainingProgress = ClampPercent(project.ProgressPercent);
+        var tasks = new List<ProjectGanttTaskInputModel>(templates.Length);
+
+        for (var index = 0; index < templates.Length; index++)
+        {
+            var template = templates[index];
+            var weightedProgress = Math.Min(remainingProgress, weights[index]);
+            var taskProgress = weights[index] == 0 ? 0 : weightedProgress / weights[index] * 100m;
+            remainingProgress -= weightedProgress;
+            tasks.Add(new ProjectGanttTaskInputModel
+            {
+                SortOrder = index + 1,
+                Name = template.Name,
+                PlannedStartDate = yearStart.AddMonths(template.StartMonth),
+                PlannedFinishDate = yearStart.AddMonths(template.FinishMonth + 1).AddDays(-1),
+                ProgressPercent = taskProgress
+            });
+        }
+
+        return tasks;
     }
 
     private static string BuildProgressNote(Project project)
@@ -550,31 +802,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
             notes.Insert(0, project.GanttPlan.ProgressNote);
         }
 
-        return notes.Count == 0 ? "暂无进度说明。" : string.Join(Environment.NewLine, notes);
-    }
-
-    private static decimal CalculateExpectedProgress(ProjectGanttPlan? plan)
-    {
-        if (plan?.StartDate is null || plan.FinishDate is null)
-        {
-            return 0;
-        }
-
-        var start = plan.StartDate.Value.ToDateTime(TimeOnly.MinValue);
-        var finish = plan.FinishDate.Value.ToDateTime(TimeOnly.MinValue);
-        if (finish <= start)
-        {
-            return DateTime.Today >= finish ? 1 : 0;
-        }
-
-        var totalDays = (decimal)(finish - start).TotalDays;
-        var elapsedDays = Math.Clamp((decimal)(DateTime.Today - start).TotalDays, 0, totalDays);
-        return elapsedDays / totalDays;
-    }
-
-    private static decimal CalculateActualProgress(IReadOnlyList<ProjectGanttTask> tasks)
-    {
-        return tasks.Count == 0 ? 0 : tasks.Average(x => x.ProgressPercent) / 100m;
+        return notes.Count == 0 ? "暂无進度說明。" : string.Join(Environment.NewLine, notes);
     }
 
     private static void SetMergedText(
@@ -596,20 +824,20 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
     private static void WriteProjectHeader(IXLWorksheet sheet, Project project)
     {
         var plan = project.GanttPlan;
-        sheet.Cell(1, 1).Value = $"{project.ProjectNumber} {project.Name} 预估进度";
+        sheet.Cell(1, 1).Value = $"{project.ProjectNumber} {project.Name} 预估進度";
         sheet.Range(1, 1, 1, 8).Merge().Style.Font.SetBold().Font.SetFontSize(18);
 
         var rows = new (string Label, string Value)[]
         {
-            ("项目名称", project.Name),
-            ("项目工号", project.ProjectNumber),
-            ("母案案号", project.ParentCaseNumber ?? string.Empty),
+            ("專案名稱", project.Name),
+            ("專案工號", project.ProjectNumber),
+            ("母案案號", project.ParentCaseNumber ?? string.Empty),
             ("年度", project.Year.ToString()),
-            ("客户/负责人", string.Join("; ", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))),
-            ("状态", project.Status?.Name ?? string.Empty),
-            ("整体开始日", plan?.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty),
+            ("客戶/負責人", string.Join("; ", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))),
+            ("狀態", project.Status?.Name ?? string.Empty),
+            ("整体開始日", plan?.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty),
             ("整体完成日", plan?.FinishDate?.ToString("yyyy-MM-dd") ?? string.Empty),
-            ("进度说明", plan?.ProgressNote ?? string.Empty)
+            ("進度說明", plan?.ProgressNote ?? string.Empty)
         };
 
         var row = 3;
@@ -631,7 +859,7 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
     {
         var tasks = project.GanttPlan?.Tasks.OrderBy(x => x.SortOrder).ToList() ?? [];
         var startRow = 14;
-        var headers = new[] { "序号", "细分工作内容", "预计开始日", "预计完成日", "当前进度", "进度说明" };
+        var headers = new[] { "序号", "细分工作內容", "预计開始日", "预计完成日", "当前進度", "進度說明" };
         for (var i = 0; i < headers.Length; i++)
         {
             sheet.Cell(startRow, i + 1).Value = headers[i];
@@ -676,29 +904,101 @@ public sealed class ProjectGanttService(ApplicationDbContext db)
         return Math.Min(100, Math.Max(0, value));
     }
 
-    private static int CountInclusiveMonths(DateOnly start, DateOnly finish)
+    private static decimal CalculateTaskExpectedPercent(
+        DateOnly start,
+        DateOnly finish,
+        DateOnly archiveDate)
     {
-        return (finish.Year - start.Year) * 12 + finish.Month - start.Month + 1;
+        if (archiveDate < start)
+        {
+            return 0;
+        }
+
+        if (archiveDate >= finish)
+        {
+            return 100;
+        }
+
+        var totalDays = Math.Max(1, finish.DayNumber - start.DayNumber + 1);
+        return Math.Clamp(
+            (archiveDate.DayNumber - start.DayNumber + 1m) / totalDays * 100m,
+            0m,
+            100m);
     }
 
-    private static int ResolveTimelineStepMonths(int totalMonths)
+    private static DateOnly AlignBucketStart(
+        DateOnly date,
+        GanttTimeUnit unit,
+        int stepYears)
     {
-        return totalMonths switch
+        return unit switch
         {
-            <= 12 => 1,
-            <= 24 => 2,
-            <= 36 => 3,
-            <= 72 => 6,
-            _ => 12
+            GanttTimeUnit.Day => date,
+            GanttTimeUnit.Week => date.AddDays(-(((int)date.DayOfWeek + 6) % 7)),
+            GanttTimeUnit.Month => new DateOnly(date.Year, date.Month, 1),
+            GanttTimeUnit.Quarter => new DateOnly(date.Year, ((date.Month - 1) / 3) * 3 + 1, 1),
+            _ => new DateOnly(date.Year, 1, 1)
+        };
+    }
+
+    private static DateOnly AlignBucketEnd(
+        DateOnly date,
+        GanttTimeUnit unit,
+        int stepYears)
+    {
+        var start = AlignBucketStart(date, unit, stepYears);
+        return unit == GanttTimeUnit.Year
+            ? new DateOnly(date.Year, 12, 31)
+            : GetBucketEnd(start, unit, stepYears);
+    }
+
+    private static DateOnly GetBucketEnd(
+        DateOnly bucketStart,
+        GanttTimeUnit unit,
+        int stepYears)
+    {
+        return unit switch
+        {
+            GanttTimeUnit.Day => bucketStart,
+            GanttTimeUnit.Week => bucketStart.AddDays(6),
+            GanttTimeUnit.Month => bucketStart.AddMonths(1).AddDays(-1),
+            GanttTimeUnit.Quarter => bucketStart.AddMonths(3).AddDays(-1),
+            _ => bucketStart.AddYears(stepYears).AddDays(-1)
+        };
+    }
+
+    private static int ResolveStepMonths(GanttTimeUnit unit, int stepYears)
+    {
+        return unit switch
+        {
+            GanttTimeUnit.Month => 1,
+            GanttTimeUnit.Quarter => 3,
+            GanttTimeUnit.Year => stepYears * 12,
+            _ => 0
+        };
+    }
+
+    private static string BuildBucketLabel(
+        DateOnly start,
+        DateOnly finish,
+        GanttTimeUnit unit)
+    {
+        return unit switch
+        {
+            GanttTimeUnit.Day => start.ToString("M/d"),
+            GanttTimeUnit.Week => start.ToString("M/d"),
+            GanttTimeUnit.Month => start.ToString("yyyy/M"),
+            GanttTimeUnit.Quarter => $"{start.Year} Q{(start.Month - 1) / 3 + 1}",
+            _ when start.Year != finish.Year => $"{start.Year}-{finish.Year}",
+            _ => start.Year.ToString()
         };
     }
 
     private static int FindBucketIndex(IReadOnlyList<GanttMonth> months, DateOnly value)
     {
-        var month = new DateOnly(value.Year, value.Month, 1);
         for (var i = 0; i < months.Count; i++)
         {
-            if (month >= months[i].Month && month <= months[i].EndMonth)
+            if (value >= months[i].Month && value <= months[i].EndMonth)
             {
                 return i;
             }
@@ -747,6 +1047,34 @@ public sealed class ProjectGanttTaskInputModel
     public string? ProgressDescription { get; set; }
 }
 
-public sealed record GanttMonth(DateOnly Month, DateOnly EndMonth, string Label, int StepMonths);
+public enum GanttTimeUnit
+{
+    Day,
+    Week,
+    Month,
+    Quarter,
+    Year
+}
+
+public enum GanttProgressState
+{
+    OnSchedule,
+    Behind,
+    Ahead
+}
+
+public sealed record GanttMonth(
+    DateOnly Month,
+    DateOnly EndMonth,
+    string Label,
+    int StepMonths,
+    GanttTimeUnit Unit);
 
 public sealed record GanttBar(decimal LeftPercent, decimal WidthPercent, decimal ProgressPercent);
+
+public sealed record GanttProgressPoint(
+    decimal PositionPercent,
+    GanttProgressState State,
+    decimal ExpectedPercent);
+
+public sealed record ArchiveDemandInfo(DateOnly Date, string Person);

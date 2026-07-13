@@ -1,0 +1,145 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Settings.IndexModel
+@{
+    ViewData["Title"] = "系統設定";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">系統設定</h1>
+        <div class="page-subtitle">設定全站视觉特效等級，让不同设备和使用场景都保持舒服的交互节奏。</div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<form method="post" class="form-section ui-effects-settings">
+    <div class="form-section-header">
+        <div>
+            <div class="form-section-title">顯示主題</div>
+            <div class="form-section-subtitle">目前使用的介面已設為預設主題。選擇卡片可即時預覽，儲存後套用至全站。</div>
+        </div>
+    </div>
+
+    <div class="theme-option-grid" role="radiogroup" aria-label="顯示主題">
+        <label class="theme-option-card" data-theme-option="theme-default">
+            <input class="form-check-input" type="radio" asp-for="VisualTheme" value="Default" />
+            <span class="theme-preview theme-preview-default" aria-hidden="true">
+                <span class="theme-preview-sidebar"></span>
+                <span class="theme-preview-window">
+                    <span class="theme-preview-toolbar"></span>
+                    <span class="theme-preview-content">
+                        <span></span><span></span><span></span>
+                    </span>
+                </span>
+            </span>
+            <span class="theme-option-copy">
+                <span class="theme-option-heading"><strong>預設主題</strong><em>目前風格</em></span>
+                <span>穩重清晰的科技商務介面，保留現有色彩、卡片層次與操作習慣。</span>
+            </span>
+        </label>
+
+        <label class="theme-option-card" data-theme-option="theme-clear-glass">
+            <input class="form-check-input" type="radio" asp-for="VisualTheme" value="ClearGlass" />
+            <span class="theme-preview theme-preview-glass" aria-hidden="true">
+                <span class="theme-preview-orb theme-preview-orb-a"></span>
+                <span class="theme-preview-orb theme-preview-orb-b"></span>
+                <span class="theme-preview-sidebar"></span>
+                <span class="theme-preview-window">
+                    <span class="theme-preview-toolbar"></span>
+                    <span class="theme-preview-content">
+                        <span></span><span></span><span></span>
+                    </span>
+                </span>
+            </span>
+            <span class="theme-option-copy">
+                <span class="theme-option-heading"><strong>清透毛玻璃</strong><em>iOS 靈感</em></span>
+                <span>使用半透明材質、背景模糊、柔和高光與更圓潤的空間層次。</span>
+            </span>
+        </label>
+    </div>
+
+    <span asp-validation-for="VisualTheme" class="text-danger"></span>
+
+    <div class="form-section-header">
+        <div>
+            <div class="form-section-title">UI 特效运行等級</div>
+            <div class="form-section-subtitle">儲存后会立即影响所有頁面的背景、卡片、圖表和按钮动效。</div>
+        </div>
+    </div>
+
+    <div class="ui-effects-level-grid" role="radiogroup" aria-label="UI 特效运行等級">
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="Low" />
+            <span class="ui-effects-level-copy">
+                <strong>轻度</strong>
+                <span>保留基础 hover、focus 和展開反馈，关闭持续背景、数字滚动和发光动效。</span>
+            </span>
+        </label>
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="Medium" />
+            <span class="ui-effects-level-copy">
+                <strong>中度</strong>
+                <span>推荐默认值。啟用柔和入场、数字滚动、圖表展開和轻微按钮质感。</span>
+            </span>
+        </label>
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="UiEffectsLevel" value="High" />
+            <span class="ui-effects-level-copy">
+                <strong>高度</strong>
+                <span>展示感更强，啟用背景流动、狀態脉冲、進度发光和更完整的圖表节奏。</span>
+            </span>
+        </label>
+    </div>
+
+    <span asp-validation-for="UiEffectsLevel" class="text-danger"></span>
+
+    <div class="form-section-header mt-4">
+        <div>
+            <div class="form-section-title">顯示語言</div>
+            <div class="form-section-subtitle">切換全系統的顯示語言（繁體中文 / 簡體中文）。儲存後立即生效。</div>
+        </div>
+    </div>
+
+    <div class="ui-effects-level-grid" role="radiogroup" aria-label="顯示語言">
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="DisplayLanguage" value="TraditionalChinese" />
+            <span class="ui-effects-level-copy">
+                <strong>繁體中文</strong>
+                <span>系統預設值。所有介面文字以繁體中文顯示。</span>
+            </span>
+        </label>
+        <label class="ui-effects-level-card">
+            <input class="form-check-input" type="radio" asp-for="DisplayLanguage" value="SimplifiedChinese" />
+            <span class="ui-effects-level-copy">
+                <strong>簡體中文</strong>
+                <span>切換為簡體中文顯示。（需配合前端轉換機制使用）</span>
+            </span>
+        </label>
+    </div>
+
+    <span asp-validation-for="DisplayLanguage" class="text-danger"></span>
+
+    <div class="form-section-header mt-4">
+        <div>
+            <div class="form-section-title">甘特圖全局檔案日期</div>
+            <div class="form-section-subtitle">所有專案的甘特圖檔案日期與紅色基準線均使用此日期。</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <label class="form-label" asp-for="ArchiveDate">檔案日期</label>
+            <input class="form-control" asp-for="ArchiveDate" type="date" />
+            <span asp-validation-for="ArchiveDate" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="page-actions mt-3">
+        <button class="btn btn-primary" type="submit">儲存設定</button>
+        <a class="btn btn-outline-secondary" asp-page="/Index">返回首頁</a>
+    </div>
+</form>

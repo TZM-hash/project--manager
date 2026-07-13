@@ -609,14 +609,23 @@ namespace ProjectManager.Web.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<int>("ProjectType")
+                        .HasColumnType("int");
+
                     b.Property<int>("StatusId")
                         .HasColumnType("int");
+
+                    b.Property<DateOnly?>("TrialRunYearMonth")
+                        .HasColumnType("date");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedByUserId")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("VendorName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Year")
                         .HasColumnType("int");
@@ -626,6 +635,8 @@ namespace ProjectManager.Web.Migrations
                     b.HasIndex("ParentCaseNumber");
 
                     b.HasIndex("ProjectNumber");
+
+                    b.HasIndex("ProjectType");
 
                     b.HasIndex("StatusId");
 
@@ -638,6 +649,100 @@ namespace ProjectManager.Web.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.ProjectArchive", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("ArchivedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ArchivedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AssignmentSummary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("AssignmentUserIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly?>("ClosedYearMonth")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("CollectionPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("OriginalProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("OriginalUpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ParentCaseNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ProgressDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ProgressPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal>("ProjectAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ProjectNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ProjectType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("StatusIsClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("StatusName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchivedAt");
+
+                    b.HasIndex("ArchivedByUserId");
+
+                    b.HasIndex("OriginalProjectId");
+
+                    b.HasIndex("ParentCaseNumber");
+
+                    b.HasIndex("ProjectNumber");
+
+                    b.HasIndex("Year");
+
+                    b.ToTable("ProjectArchives");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.ProjectAssignment", b =>
@@ -898,15 +1003,122 @@ namespace ProjectManager.Web.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int?>("VendorContactId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PurchaseStaffUserId");
 
                     b.HasIndex("SubCaseContactUserId");
 
+                    b.HasIndex("VendorContactId");
+
                     b.HasIndex("ProjectId", "IsDeleted");
 
                     b.ToTable("PurchaseRequests");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SystemSettings");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.Vendor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.ToTable("Vendors");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.VendorContact", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("VendorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("VendorContacts");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1055,6 +1267,16 @@ namespace ProjectManager.Web.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
+            modelBuilder.Entity("ProjectManager.Web.Models.ProjectArchive", b =>
+                {
+                    b.HasOne("ProjectManager.Web.Models.ApplicationUser", "ArchivedByUser")
+                        .WithMany()
+                        .HasForeignKey("ArchivedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ArchivedByUser");
+                });
+
             modelBuilder.Entity("ProjectManager.Web.Models.ProjectAssignment", b =>
                 {
                     b.HasOne("ProjectManager.Web.Models.Project", "Project")
@@ -1158,11 +1380,29 @@ namespace ProjectManager.Web.Migrations
                         .HasForeignKey("SubCaseContactUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("ProjectManager.Web.Models.VendorContact", "VendorContact")
+                        .WithMany()
+                        .HasForeignKey("VendorContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Project");
 
                     b.Navigation("PurchaseStaff");
 
                     b.Navigation("SubCaseContact");
+
+                    b.Navigation("VendorContact");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.VendorContact", b =>
+                {
+                    b.HasOne("ProjectManager.Web.Models.Vendor", "Vendor")
+                        .WithMany("Contacts")
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Vendor");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.MonthlySettlementBatch", b =>
@@ -1194,6 +1434,11 @@ namespace ProjectManager.Web.Migrations
             modelBuilder.Entity("ProjectManager.Web.Models.ProjectStatus", b =>
                 {
                     b.Navigation("Style");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.Vendor", b =>
+                {
+                    b.Navigation("Contacts");
                 });
 #pragma warning restore 612, 618
         }

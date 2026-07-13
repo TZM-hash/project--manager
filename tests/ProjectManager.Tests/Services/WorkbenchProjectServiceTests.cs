@@ -87,8 +87,8 @@ public sealed class WorkbenchProjectServiceTests
         log.Action.Should().Be("ProgressUpdate");
         log.ProjectId.Should().Be(seed.AssignedProjectId);
         log.ProjectNumber.Should().Be("P-ASSIGNED");
-        log.ChangeSummary.Should().Contain("更新进度");
-        log.ChangeDetailsJson.Should().Contain("项目进度");
+        log.ChangeSummary.Should().Contain("更新進度");
+        log.ChangeDetailsJson.Should().Contain("專案進度");
         log.ChangeDetailsJson.Should().Contain("30%");
         log.ChangeDetailsJson.Should().Contain("65%");
     }

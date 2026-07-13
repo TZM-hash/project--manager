@@ -8,7 +8,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class CreateModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
@@ -48,7 +48,7 @@ public sealed class CreateModel(
         Db.Projects.Add(project);
         await Db.SaveChangesAsync(cancellationToken);
 
-        // 新增项目的审计明细以“空 -> 初始值”方式记录，方便后续回溯项目最初录入内容。
+        // 新增專案的審計明細以“空 -> 初始值”方式記錄，方便后续回溯專案最初录入內容。
         var changes = ProjectAuditChangeBuilder.BuildCreateChanges(
             ProjectAuditChangeBuilder.CreateSnapshot(project));
         await auditLogService.LogProjectChangeAsync(
@@ -56,7 +56,7 @@ public sealed class CreateModel(
             "Create",
             project.Id,
             project.ProjectNumber,
-            $"新增项目 {project.ProjectNumber}",
+            $"新增專案 {project.ProjectNumber}",
             changes,
             cancellationToken);
         return RedirectToPage("./Details", new { id = project.Id });

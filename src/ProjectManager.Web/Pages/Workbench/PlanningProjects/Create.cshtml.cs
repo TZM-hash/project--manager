@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +34,7 @@ public sealed class CreateModel(
             return Page();
         }
 
-        // 多选负责人以逗号分隔存储
+        // 多选負責人以逗号分隔存储
         var leaderUserId = Input.LeaderUserIds != null && Input.LeaderUserIds.Count > 0
             ? string.Join(",", Input.LeaderUserIds.Where(x => !string.IsNullOrWhiteSpace(x)))
             : null;
@@ -53,7 +53,7 @@ public sealed class CreateModel(
 
     private async Task LoadOptionsAsync(CancellationToken cancellationToken)
     {
-        // 只显示项目人员角色
+        // 只顯示專案人員角色
         var projectStaffUsers = await userManager.GetUsersInRoleAsync(RoleNames.ProjectStaff);
         var projectStaffUserIds = projectStaffUsers.Select(x => x.Id).ToHashSet();
 
@@ -73,17 +73,17 @@ public sealed class CreateModel(
 
     public sealed class InputModel
     {
-        [Display(Name = "项目名")]
-        [Required(ErrorMessage = "请输入项目名。")]
+        [Display(Name = "專案名")]
+        [Required(ErrorMessage = "请输入專案名。")]
         public string Name { get; set; } = string.Empty;
 
-        [Display(Name = "项目负责人")]
+        [Display(Name = "專案負責人")]
         public List<string>? LeaderUserIds { get; set; }
 
-        [Display(Name = "厂商")]
+        [Display(Name = "廠商")]
         public string? Vendor { get; set; }
 
-        [Display(Name = "最新说明")]
+        [Display(Name = "最新說明")]
         public string? LatestDescription { get; set; }
     }
 }

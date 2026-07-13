@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
@@ -19,7 +19,7 @@ public sealed class SettlementService(ApplicationDbContext db)
                 ["Settlement month must be between 1 and 12."]);
         }
 
-        // 批次号计算和明细写入必须在同一事务内完成，避免并发生成同年月批次时出现跳号或重复。
+        // 批次号計算和明細写入必须在同一事务内完成，避免并发生成同年月批次时出现跳号或重复。
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
         var nextBatchNumber = await db.MonthlySettlementBatches
@@ -59,7 +59,7 @@ public sealed class SettlementService(ApplicationDbContext db)
                 .OrderBy(x => x.RequestNumber)
                 .ToList();
 
-            // 月结明细是快照，不再通过外键实时读取项目字段，保证历史报表不被后续项目修改影响。
+            // 月結明細是快照，不再通過外键实时读取專案欄位，保证歷史報表不被后续專案修改影响。
             batch.Items.Add(new MonthlySettlementItem
             {
                 ProjectId = project.Id,

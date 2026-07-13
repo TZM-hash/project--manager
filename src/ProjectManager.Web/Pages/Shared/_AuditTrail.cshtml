@@ -1,8 +1,8 @@
-@model ProjectManager.Web.Pages.Shared.AuditTrailViewModel
+﻿@model ProjectManager.Web.Pages.Shared.AuditTrailViewModel
 
 <form method="get" class="audit-filter-panel">
     <div class="audit-filter-main">
-        <input class="form-control" name="AuditKeyword" value="@Model.Keyword" placeholder="搜索操作人、内容或明细" />
+        <input class="form-control" name="AuditKeyword" value="@Model.Keyword" placeholder="搜尋操作人、內容或明細" />
         <select class="form-select" name="AuditAction">
             <option value="">全部动作</option>
             @foreach (var option in Model.ActionOptions)
@@ -14,14 +14,14 @@
         <input class="form-control" type="date" name="AuditTo" value="@Model.To?.ToString("yyyy-MM-dd")" />
     </div>
     <div class="audit-filter-actions">
-        <button class="btn btn-outline-secondary" type="submit">筛选记录</button>
+        <button class="btn btn-outline-secondary" type="submit">篩選記錄</button>
         <a class="btn btn-outline-secondary" href="?">清空</a>
     </div>
 </form>
 
 @if (Model.Logs.Count == 0)
 {
-    <div class="empty-state">暂无符合条件的操作记录</div>
+    <div class="empty-state">暂无符合筆件的操作記錄</div>
 }
 else
 {

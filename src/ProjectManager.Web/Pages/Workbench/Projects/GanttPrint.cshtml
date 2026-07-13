@@ -2,97 +2,220 @@
 @using ProjectManager.Web.Services
 @model ProjectManager.Web.Pages.Workbench.Projects.GanttPrintModel
 @{
-    ViewData["Title"] = "甘特图报表";
+    ViewData["Title"] = "甘特圖報表";
     Layout = "_PrintLayout";
-    var months = ProjectGanttService.BuildMonths(Model.GanttInput);
+
+    var archiveDemand = ProjectGanttService.BuildArchiveDemandInfo(Model.Project, Model.ArchiveDate);
+    var months = ProjectGanttService.BuildMonths(Model.GanttInput, archiveDemand.Date);
     var tasks = Model.GanttInput.Tasks
         .Where(x => !string.IsNullOrWhiteSpace(x.Name) || x.PlannedStartDate is not null || x.PlannedFinishDate is not null || x.ProgressPercent > 0 || !string.IsNullOrWhiteSpace(x.ProgressDescription))
+        .OrderBy(x => x.SortOrder)
+        .ToList();
+    var weights = ProjectGanttService.BuildTaskWeights(tasks.Count);
+    var archiveLinePosition = ProjectGanttService.GetTimelinePositionPercent(archiveDemand.Date, months);
+    var progressPoints = ProjectGanttService.BuildProgressLinePoints(tasks, archiveDemand.Date, months);
+    var expectedProgress = ProjectGanttService.CalculateExpectedProgress(tasks, weights, archiveDemand.Date);
+    var actualProgress = ProjectGanttService.CalculateActualProgress(tasks, weights);
+    var ownerText = string.Join("、", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
+    var customerText = string.IsNullOrWhiteSpace(Model.Project.VendorName) ? ownerText : Model.Project.VendorName;
+    var documentNumber = string.IsNullOrWhiteSpace(Model.Project.ParentCaseNumber)
+        ? $"GANTT-{Model.Project.ProjectNumber}"
+        : Model.Project.ParentCaseNumber;
+    var notes = tasks
+        .Where(x => !string.IsNullOrWhiteSpace(x.ProgressDescription))
+        .Select(x => $"{x.Name}：{x.ProgressDescription}")
         .ToList();
 }
 
-<div class="gantt-print-report">
-    <div class="gantt-print-title">@Model.Project.ProjectNumber @Model.Project.Name - 预计进度</div>
-
-    <div class="gantt-print-info">
-        <div class="gantt-print-logo">台塑<br />电子材料部</div>
-        <div class="gantt-print-project">@Model.Project.Name</div>
-        <div class="gantt-print-meta">
-            <div><span>专案编号</span><strong>@Model.Project.ProjectNumber</strong></div>
-            <div><span>客户/负责人</span><strong>@string.Join("; ", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</strong></div>
-            <div><span>档案日期</span><strong>@DateTime.Today.ToString("yyyy/M/d")</strong></div>
-            <div><span>状态</span><strong>@Model.Project.Status?.Name</strong></div>
+<div class="gantt-print-report" style="--gantt-month-count:@months.Count;--gantt-task-count:@tasks.Count">
+    <div class="gantt-print-toolbar no-print">
+        <div>
+            <strong>@Model.Project.ProjectNumber @Model.Project.Name</strong>
+            <span>檔案日期進度線：@archiveDemand.Date.ToString("yyyy/M/d") · @archiveDemand.Person</span>
         </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">列印甘特圖</button>
     </div>
 
-    <div class="gantt-print-range">
-        整体开始日：@(Model.GanttInput.StartDate?.ToString("yyyy-MM-dd") ?? "-")
-        &nbsp;&nbsp;整体完成日：@(Model.GanttInput.FinishDate?.ToString("yyyy-MM-dd") ?? "-")
-    </div>
-
-    <div class="gantt-print-scroll">
-        <table class="gantt-print-table">
-            <thead>
-                <tr>
-                    <th class="gantt-print-index">项次</th>
-                    <th class="gantt-print-name">名称</th>
-                    @foreach (var month in months)
-                    {
-                        <th>@month.Label</th>
-                    }
-                    <th>比例</th>
-                    <th>实际完成</th>
-                </tr>
-            </thead>
+    <section class="gantt-print-sheet" aria-label="@Model.Project.Name 甘特圖">
+        <table class="gantt-print-header-table">
             <tbody>
-                @if (tasks.Count == 0)
-                {
-                    <tr>
-                        <td>1</td>
-                        <td>请先维护细分工作</td>
-                        @foreach (var _ in months)
-                        {
-                            <td></td>
-                        }
-                        <td>0%</td>
-                        <td>0%</td>
-                    </tr>
-                }
-                @for (var i = 0; i < tasks.Count; i++)
-                {
-                    var task = tasks[i];
-                    var bar = ProjectGanttService.BuildBar(task, months);
-                    var startCell = (int)Math.Floor(bar.LeftPercent / 100 * months.Count);
-                    var cells = (int)Math.Ceiling(bar.WidthPercent / 100 * months.Count);
-                    var doneCells = (int)Math.Ceiling(cells * bar.ProgressPercent / 100);
-                    <tr>
-                        <td>@(i + 1)</td>
-                        <td class="gantt-print-task">@task.Name</td>
-                        @for (var m = 0; m < months.Count; m++)
-                        {
-                            var inBar = bar.WidthPercent > 0 && m >= startCell && m < startCell + cells;
-                            var done = inBar && m < startCell + doneCells;
-                            <td class="@(done ? "gantt-print-done" : inBar ? "gantt-print-plan" : null)"></td>
-                        }
-                        <td>@(tasks.Count == 0 ? "0%" : $"{(100m / Math.Max(tasks.Count, 1)):0.#}%")</td>
-                        <td>@task.ProgressPercent.ToString("0.##")%</td>
-                    </tr>
-                }
+                <tr>
+                    <td class="gantt-print-brand" rowspan="3">台塑<br />電子材料部</td>
+                    <th class="gantt-print-project-name" rowspan="3">@Model.Project.Name</th>
+                    <th>專案編號</th>
+                    <td>@Model.Project.ProjectNumber</td>
+                    <th>文件編號</th>
+                    <td>@documentNumber</td>
+                </tr>
+                <tr>
+                    <th>客戶</th>
+                    <td>@(string.IsNullOrWhiteSpace(customerText) ? "-" : customerText)</td>
+                    <th>檔案日期</th>
+                    <td>@archiveDemand.Date.ToString("yyyy/M/d")</td>
+                </tr>
+                <tr>
+                    <th>進度線負責人</th>
+                    <td>@archiveDemand.Person</td>
+                    <th>進度</th>
+                    <td>@(Model.Project.Status?.Name ?? "-")</td>
+                </tr>
             </tbody>
         </table>
-    </div>
 
-    <div class="gantt-print-note">
-        <strong>进度说明</strong>
-        <div>@(string.IsNullOrWhiteSpace(Model.GanttInput.ProgressNote) ? "暂无进度说明。" : Model.GanttInput.ProgressNote)</div>
-        @foreach (var task in tasks.Where(x => !string.IsNullOrWhiteSpace(x.ProgressDescription)))
-        {
-            <div>@task.Name：@task.ProgressDescription</div>
-        }
-    </div>
+        <div class="gantt-print-grid-wrap">
+            <table class="gantt-print-grid">
+                <colgroup>
+                    <col class="gantt-col-index" />
+                    <col class="gantt-col-name" />
+                    @foreach (var _ in months)
+                    {
+                        <col class="gantt-col-month" />
+                    }
+                    <col class="gantt-col-ratio" />
+                    <col class="gantt-col-actual" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th rowspan="2">項次</th>
+                        <th rowspan="2" class="gantt-print-name-heading">名稱</th>
+                        @foreach (var yearGroup in months.GroupBy(x => x.Month.Year))
+                        {
+                            <th colspan="@yearGroup.Count()" class="gantt-print-year">@yearGroup.Key</th>
+                        }
+                        <th colspan="2">進度</th>
+                    </tr>
+                    <tr>
+                        @foreach (var month in months)
+                        {
+                            var isArchiveMonth = archiveDemand.Date >= month.Month && archiveDemand.Date <= month.EndMonth;
+                            var bucketDays = month.EndMonth.DayNumber - month.Month.DayNumber + 1m;
+                            var lineOffset = (archiveDemand.Date.DayNumber - month.Month.DayNumber) / bucketDays * 100m;
+                            <th class="gantt-print-month-heading @(isArchiveMonth ? "has-archive-redline" : null)"
+                                style="@(isArchiveMonth ? $"--redline-left:{lineOffset:0.###}%" : null)"
+                                title="@(isArchiveMonth ? $"檔案日期進度線：{archiveDemand.Date:yyyy/M/d}，{archiveDemand.Person}" : null)">@month.Label</th>
+                        }
+                        <th>比例</th>
+                        <th>實際完成</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var index = 0; index < tasks.Count; index++)
+                    {
+                        var task = tasks[index];
+                        var taskStart = task.PlannedStartDate;
+                        var taskFinish = task.PlannedFinishDate;
+                        if (taskStart is not null && taskFinish is not null && taskFinish < taskStart)
+                        {
+                            (taskStart, taskFinish) = (taskFinish, taskStart);
+                        }
+
+                        var totalTaskDays = taskStart is not null && taskFinish is not null
+                            ? taskFinish.Value.DayNumber - taskStart.Value.DayNumber + 1
+                            : 0;
+                        var completedTaskDays = totalTaskDays == 0
+                            ? 0
+                            : (int)Math.Floor(totalTaskDays * Math.Clamp(task.ProgressPercent, 0m, 100m) / 100m);
+                        var completedThrough = taskStart is not null && completedTaskDays > 0
+                            ? taskStart.Value.AddDays(completedTaskDays - 1)
+                            : (DateOnly?)null;
+
+                        <tr>
+                            <td class="gantt-print-index">@(task.SortOrder > 0 ? task.SortOrder : index + 1)</td>
+                            <td class="gantt-print-task">@task.Name</td>
+                            @foreach (var month in months)
+                            {
+                                var monthStart = month.Month;
+                                var monthFinish = month.EndMonth;
+                                var intersects = taskStart is not null && taskFinish is not null && taskStart <= monthFinish && taskFinish >= monthStart;
+                                decimal barLeft = 0;
+                                decimal barWidth = 0;
+                                decimal doneWidth = 0;
+                                if (intersects)
+                                {
+                                    var segmentStart = taskStart!.Value > monthStart ? taskStart.Value : monthStart;
+                                    var segmentFinish = taskFinish!.Value < monthFinish ? taskFinish.Value : monthFinish;
+                                    var daysInBucket = monthFinish.DayNumber - monthStart.DayNumber + 1m;
+                                    barLeft = (segmentStart.DayNumber - monthStart.DayNumber) / daysInBucket * 100m;
+                                    barWidth = (segmentFinish.DayNumber - segmentStart.DayNumber + 1m) / daysInBucket * 100m;
+                                    if (completedThrough is not null && completedThrough >= segmentStart)
+                                    {
+                                        var doneFinish = completedThrough.Value < segmentFinish ? completedThrough.Value : segmentFinish;
+                                        doneWidth = (doneFinish.DayNumber - segmentStart.DayNumber + 1m) /
+                                            (segmentFinish.DayNumber - segmentStart.DayNumber + 1m) * 100m;
+                                    }
+                                }
+
+                                <td class="gantt-print-month-cell">
+                                    @if (intersects)
+                                    {
+                                        <span class="gantt-print-plan-bar" style="left:@barLeft.ToString("0.###")%;width:@barWidth.ToString("0.###")%">
+                                            <i style="width:@doneWidth.ToString("0.###")%"></i>
+                                        </span>
+                                    }
+                                </td>
+                            }
+                            <td class="gantt-print-ratio">@weights[index].ToString("0.##")%</td>
+                            <td class="gantt-print-actual">@task.ProgressPercent.ToString("0.0")%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (tasks.Count > 0)
+            {
+                var previousX = archiveLinePosition;
+                decimal previousY = 0;
+                <svg class="gantt-print-progress-line" viewBox="0 0 100 @tasks.Count" preserveAspectRatio="none" aria-label="檔案日期進度線">
+                    @for (var pointIndex = 0; pointIndex < progressPoints.Count; pointIndex++)
+                    {
+                        var point = progressPoints[pointIndex];
+                        var currentY = pointIndex + 0.5m;
+                        var stateClass = point.State == GanttProgressState.Ahead ? "is-ahead" : point.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
+                        <line class="@stateClass" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@point.PositionPercent.ToString("0.###")" y2="@currentY.ToString("0.###")" vector-effect="non-scaling-stroke" />
+                        previousX = point.PositionPercent;
+                        previousY = currentY;
+                    }
+                    <line class="is-on-schedule" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@archiveLinePosition.ToString("0.###")" y2="@tasks.Count" vector-effect="non-scaling-stroke" />
+                </svg>
+            }
+        </div>
+
+        <table class="gantt-print-footer-table">
+            <tbody>
+                <tr>
+                    <th class="gantt-print-note-label" rowspan="2">進度說明</th>
+                    <td class="gantt-print-notes" rowspan="2">
+                        @if (!string.IsNullOrWhiteSpace(Model.GanttInput.ProgressNote))
+                        {
+                            <div>@Model.GanttInput.ProgressNote</div>
+                        }
+                        @if (notes.Count > 0)
+                        {
+                            <ol>
+                                @foreach (var note in notes)
+                                {
+                                    <li>@note</li>
+                                }
+                            </ol>
+                        }
+                        @if (string.IsNullOrWhiteSpace(Model.GanttInput.ProgressNote) && notes.Count == 0)
+                        {
+                            <div>尚無進度說明。</div>
+                        }
+                    </td>
+                    <th class="gantt-print-sign-label">主管</th>
+                    <td class="gantt-print-sign-cell"></td>
+                    <th class="gantt-print-sign-label">設計</th>
+                    <td class="gantt-print-sign-cell">@archiveDemand.Person</td>
+                    <th class="gantt-print-progress-heading">應達進度(%)</th>
+                    <th class="gantt-print-progress-heading">實際進度(%)</th>
+                </tr>
+                <tr>
+                    <td colspan="2"></td>
+                    <td colspan="2"></td>
+                    <td class="gantt-print-progress-total">@expectedProgress.ToString("0.00")%</td>
+                    <td class="gantt-print-progress-total">@actualProgress.ToString("0.00")%</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
 </div>
-
-@section Scripts {
-    <script>
-        window.setTimeout(function () { window.print(); }, 300);
-    </script>
-}

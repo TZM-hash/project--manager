@@ -1,16 +1,16 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Workbench.PlanningProjects.ImportModel
 @{
-    ViewData["Title"] = "批量导入规划中专案";
+    ViewData["Title"] = "批量匯入規劃中專案";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">批量导入规划中专案</h1>
-        <div class="page-subtitle">通过 Excel 文件批量导入规划中专案数据</div>
+        <h1 class="page-title">批量匯入規劃中專案</h1>
+        <div class="page-subtitle">通過 Excel 檔案批量匯入規劃中專案資料</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page-handler="Template">下载模板</a>
+        <a class="btn btn-outline-secondary" asp-page-handler="Template">下載模板</a>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </div>
@@ -19,48 +19,48 @@
     <form method="post" enctype="multipart/form-data">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="mb-3">
-            <label asp-for="UploadFile" class="form-label">选择 Excel 文件</label>
+            <label asp-for="UploadFile" class="form-label">選擇 Excel 檔案</label>
             <input asp-for="UploadFile" class="form-control" type="file" accept=".xlsx" />
             <span asp-validation-for="UploadFile" class="text-danger"></span>
-            <div class="form-text">支持 .xlsx 格式。请先下载模板，按模板格式填写后上传。</div>
+            <div class="form-text">支持 .xlsx 格式。请先下載模板，按模板格式填写后上傳。</div>
         </div>
         @if (Model.ImportedCount > 0)
         {
-            <div class="alert alert-success">成功导入 @Model.ImportedCount 条记录。</div>
+            <div class="alert alert-success">成功匯入 @Model.ImportedCount 筆記錄。</div>
         }
         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
         {
             <div class="alert alert-danger">@Model.ErrorMessage</div>
         }
-        <button type="submit" class="btn btn-primary">开始导入</button>
+        <button type="submit" class="btn btn-primary">開始匯入</button>
     </form>
 </div>
 
 <div class="detail-panel">
-    <h2 class="detail-panel-title">模板字段说明</h2>
+    <h2 class="detail-panel-title">模板欄位說明</h2>
     <div class="data-table-wrap">
         <table class="table table-sm data-table">
             <thead>
                 <tr>
                     <th>列名</th>
-                    <th>说明</th>
+                    <th>說明</th>
                     <th>是否必填</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>项目名</td>
-                    <td>规划中专案的名称</td>
+                    <td>專案名</td>
+                    <td>規劃中專案的名稱</td>
                     <td>是</td>
                 </tr>
                 <tr>
-                    <td>项目负责人</td>
-                    <td>负责人的用户名（账号），需与系统中已有用户匹配</td>
+                    <td>專案負責人</td>
+                    <td>負責人的使用者名稱（帳號），需与系统中已有使用者匹配</td>
                     <td>否</td>
                 </tr>
                 <tr>
-                    <td>最新说明</td>
-                    <td>项目的最新说明文字</td>
+                    <td>最新說明</td>
+                    <td>專案的最新說明文字</td>
                     <td>否</td>
                 </tr>
             </tbody>

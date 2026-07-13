@@ -1,0 +1,150 @@
+@page
+@model ProjectManager.Web.Pages.Admin.ProjectAssignments.IndexModel
+@{
+    ViewData["Title"] = "專案分配";
+}
+
+<h3>專案分配</h3>
+
+<div class="insight-grid">
+    <section class="chart-card">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-title">專案分配統計</div>
+                <div class="chart-subtitle">按人員統計專案數量</div>
+            </div>
+        </div>
+        <div class="bar-list">
+            @foreach (var slice in Model.BarSlices)
+            {
+                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                    <div class="bar-row-label">@slice.Label</div>
+                    <div class="bar-track"><span></span></div>
+                    <div class="bar-value">@slice.Value.ToString("0")</div>
+                </div>
+            }
+        </div>
+    </section>
+    <section class="chart-card">
+        <div class="chart-card-header">
+            <div>
+                <div class="chart-title">分配占比</div>
+                <div class="chart-subtitle">各人員專案數量占比</div>
+            </div>
+        </div>
+        <div class="pie-chart-container">
+            <div class="pie-chart-wrap">
+                <svg viewBox="0 0 100 100" class="pie-svg">
+                    @{
+                        var cumulativeAngle = 0.0;
+                    }
+                    @foreach (var slice in Model.PieSlices)
+                    {
+                        var angle = (double)slice.Percent * 3.6;
+                        var startAngle = cumulativeAngle - 90;
+                        var endAngle = startAngle + angle;
+                        var largeArcFlag = angle > 180 ? 1 : 0;
+                        var x1 = 50 + 40 * Math.Cos(startAngle * Math.PI / 180);
+                        var y1 = 50 + 40 * Math.Sin(startAngle * Math.PI / 180);
+                        var x2 = 50 + 40 * Math.Cos(endAngle * Math.PI / 180);
+                        var y2 = 50 + 40 * Math.Sin(endAngle * Math.PI / 180);
+                        cumulativeAngle += angle;
+                    }
+                    <circle cx="50" cy="50" r="40" fill="none" stroke-width="20" stroke-dasharray="@string.Join(", ", Model.PieSlices.Select(x => (double)x.Percent * 2.51))" stroke-dashoffset="0" style="stroke: url(#pieGradient)" />
+                    <defs>
+                        <linearGradient id="pieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            @foreach (var (slice, i) in Model.PieSlices.Select((s, idx) => (s, idx)))
+                            {
+                                var offset = i * (100.0 / Model.PieSlices.Count);
+                                <stop offset="@offset%" stop-color="@slice.Color" />
+                            }
+                            <stop offset="100%" stop-color="@Model.PieSlices.LastOrDefault()?.Color ?? "#2563eb"" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="pie-legend">
+                @foreach (var slice in Model.PieSlices)
+                {
+                    <div class="pie-legend-item">
+                        <span class="pie-legend-color" style="background-color:@slice.Color"></span>
+                        <span class="pie-legend-label">@slice.Label</span>
+                        <span class="pie-legend-value">@slice.Value (@slice.Percent%)</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="data-list-card mb-4">
+    <div class="data-table-wrap">
+        <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th>人員</th>
+                <th class="numeric">專案數量</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.UserProjectCounts)
+        {
+            <tr>
+                <td>
+                    <a asp-page="./Index" asp-route-SelectedUserId="@item.UserId" class="fw-bold text-decoration-none">
+                        @item.UserName
+                    </a>
+                </td>
+                <td class="numeric">@item.ProjectCount</td>
+            </tr>
+        }
+        @if (!Model.UserProjectCounts.Any())
+        {
+            <tr>
+                <td colspan="2">
+                    <div class="empty-state">暫無專案分配資料</div>
+                </td>
+            </tr>
+        }
+        </tbody>
+        </table>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.SelectedUserId) && Model.UserProjects.Any())
+{
+    <h4>@Model.SelectedUserName 的專案清單</h4>
+    <div class="data-list-card">
+        <div class="data-table-wrap">
+            <table class="table table-sm table-striped align-middle data-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">項次</th>
+                    <th>工程編號</th>
+                    <th style="min-width: 180px;">專案名稱</th>
+                    <th>經辦</th>
+                    <th>廠商</th>
+                    <th>狀態</th>
+                    <th class="numeric">進度</th>
+                </tr>
+            </thead>
+            <tbody>
+            @{ var idx = 1; }
+            @foreach (var project in Model.UserProjects)
+            {
+                <tr>
+                    <td>@idx</td>
+                    <td>@project.ProjectNumber</td>
+                    <td>@project.Name</td>
+                    <td>@Model.GetPersonnelNames(project)</td>
+                    <td>@Model.GetVendorName(project)</td>
+                    <td><partial name="_StatusBadge" model="project.Status" /></td>
+                    <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
+                </tr>
+                idx++;
+            }
+            </tbody>
+            </table>
+        </div>
+    </div>
+}

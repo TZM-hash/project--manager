@@ -12,12 +12,13 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class ImportModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
     UserLookupService userLookup,
-    AuditLogService auditLogService) : PageModel
+    AuditLogService auditLogService,
+    OpenCcConverterService openCcConverter) : PageModel
 {
     private const string ExcelContentType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -27,7 +28,7 @@ public sealed class ImportModel(
     public int ImportYear { get; set; } = DateTime.Today.Year;
 
     [BindProperty]
-    [Required(ErrorMessage = "请选择 Excel 文件。")]
+    [Required(ErrorMessage = "請選擇 Excel 檔案。")]
     public IFormFile? UploadFile { get; set; }
 
     public int CreatedCount { get; private set; }
@@ -51,22 +52,27 @@ public sealed class ImportModel(
 
         if (UploadFile is null || UploadFile.Length == 0)
         {
-            ModelState.AddModelError(nameof(UploadFile), "请选择有效的 Excel 文件。");
+            ModelState.AddModelError(nameof(UploadFile), "請選擇有效的 Excel 檔案。");
             return Page();
         }
 
         if (!string.Equals(Path.GetExtension(UploadFile.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
         {
-            ModelState.AddModelError(nameof(UploadFile), "当前仅支持 .xlsx 文件。");
+            ModelState.AddModelError(nameof(UploadFile), "当前仅支持 .xlsx 檔案。");
             return Page();
         }
 
         var defaultStatusId = await EnsureStatusExistsAsync(cancellationToken);
         if (defaultStatusId is null)
         {
-            ModelState.AddModelError(string.Empty, "系统中没有可用项目状态，无法导入。");
+            ModelState.AddModelError(string.Empty, "系统中没有可用專案狀態，无法匯入。");
             return Page();
         }
+
+        var allStatuses = await db.ProjectStatuses
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        var statusMap = BuildStatusMap(allStatuses);
 
         await using var stream = UploadFile.OpenReadStream();
         using var workbook = new XLWorkbook(stream);
@@ -74,14 +80,14 @@ public sealed class ImportModel(
         var rows = worksheet.RowsUsed().Skip(1).ToList();
         if (rows.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "Excel 文件中没有数据行。");
+            ModelState.AddModelError(string.Empty, "Excel 檔案中没有資料行。");
             return Page();
         }
 
         var currentUserId = userManager.GetUserId(User);
         foreach (var row in rows)
         {
-            await ImportRowAsync(row, defaultStatusId.Value, currentUserId, cancellationToken);
+            await ImportRowAsync(row, defaultStatusId.Value, statusMap, currentUserId, cancellationToken);
         }
 
         return Page();
@@ -92,17 +98,19 @@ public sealed class ImportModel(
         ImportYear = NormalizeImportYear(ImportYear);
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("ProjectsImport");
-        var headers = new[] { "工号", "工程名称", "项目人员", "金额", "进度说明" };
+        var headers = new[] { "項次", "工程編號", "工程名稱", "經辦", "專案類型", "狀態說明", "受訂金額（含稅）" };
         for (var i = 0; i < headers.Length; i++)
         {
             sheet.Cell(1, i + 1).Value = headers[i];
         }
 
-        sheet.Cell(2, 1).Value = "P-2026-001";
-        sheet.Cell(2, 2).Value = "示例工程";
-        sheet.Cell(2, 3).Value = "admin";
-        sheet.Cell(2, 4).Value = 100000;
-        sheet.Cell(2, 5).Value = "已完成资料收集";
+        sheet.Cell(2, 1).Value = 1;
+        sheet.Cell(2, 2).Value = "P-2026-001";
+        sheet.Cell(2, 3).Value = "示例工程";
+        sheet.Cell(2, 4).Value = "admin";
+        sheet.Cell(2, 5).Value = "工程";
+        sheet.Cell(2, 6).Value = "進行中";
+        sheet.Cell(2, 7).Value = 100000;
         sheet.Range(1, 1, 1, headers.Length).Style.Font.Bold = true;
         sheet.Range(1, 1, 1, headers.Length).Style.Fill.BackgroundColor = XLColor.FromHtml("#f3f6fb");
         sheet.Columns().AdjustToContents();
@@ -112,27 +120,31 @@ public sealed class ImportModel(
         return File(
             output.ToArray(),
             ExcelContentType,
-            $"项目批量导入模板-{ImportYear}.xlsx");
+            $"專案批量匯入模板-{ImportYear}.xlsx");
     }
 
     private async Task ImportRowAsync(
         IXLRow row,
         int defaultStatusId,
+        Dictionary<string, int> statusMap,
         string? currentUserId,
         CancellationToken cancellationToken)
     {
-        var projectNumber = row.Cell(1).GetFormattedString().Trim();
+        var projectNumber = row.Cell(2).GetFormattedString().Trim();
         if (string.IsNullOrWhiteSpace(projectNumber))
         {
             return;
         }
 
-        var projectName = row.Cell(2).GetFormattedString().Trim();
+        var projectName = row.Cell(3).GetFormattedString().Trim();
         if (string.IsNullOrWhiteSpace(projectName))
         {
-            RowErrors.Add($"第 {row.RowNumber()} 行：工程名称不能为空。");
+            RowErrors.Add($"第 {row.RowNumber()} 行：工程名稱不能为空。");
             return;
         }
+
+        var projectTypeText = row.Cell(5).GetFormattedString().Trim();
+        var projectType = ParseProjectType(projectTypeText);
 
         var project = await db.Projects
             .Include(x => x.Assignments)
@@ -154,14 +166,25 @@ public sealed class ImportModel(
 
         var before = isCreate ? null : ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.Name = projectName;
-        project.ProjectAmount = ParseDecimal(row.Cell(4).GetFormattedString());
-        project.ProgressDescription = RichTextSanitizer.Normalize(row.Cell(5).GetFormattedString());
+        project.ProjectType = projectType;
+        project.ProjectAmount = ParseDecimal(row.Cell(7).GetFormattedString());
+
+        var statusText = row.Cell(6).GetFormattedString().Trim();
+        if (!string.IsNullOrWhiteSpace(statusText) && statusMap.TryGetValue(statusText, out var statusId))
+        {
+            project.StatusId = statusId;
+        }
+        else if (!string.IsNullOrWhiteSpace(statusText))
+        {
+            RowErrors.Add($"第 {row.RowNumber()} 行：狀態說明「{statusText}」未匹配到系统狀態，使用預設狀態。");
+        }
+
         project.UpdatedAt = now;
         project.UpdatedByUserId = currentUserId;
         project.CollectionPercent = Math.Clamp(project.CollectionPercent, 0, 100);
         project.ProgressPercent = Math.Clamp(project.ProgressPercent, 0, 100);
 
-        var assignedUserText = row.Cell(3).GetFormattedString();
+        var assignedUserText = row.Cell(4).GetFormattedString();
         var assignedUserIds = await userLookup.ResolveUserIdsAsync(assignedUserText, cancellationToken);
         var existingAssignments = project.Assignments.ToList();
         db.ProjectAssignments.RemoveRange(existingAssignments);
@@ -176,7 +199,7 @@ public sealed class ImportModel(
         }
         if (!string.IsNullOrWhiteSpace(assignedUserText) && assignedUserIds.Count == 0)
         {
-            RowErrors.Add($"第 {row.RowNumber()} 行：项目人员未匹配到系统用户。");
+            RowErrors.Add($"第 {row.RowNumber()} 行：專案人員未匹配到系统使用者。");
         }
 
         if (isCreate)
@@ -224,9 +247,32 @@ public sealed class ImportModel(
             isCreate ? "Create" : "Update",
             project.Id,
             project.ProjectNumber,
-            isCreate ? $"批量导入项目 {project.ProjectNumber}" : $"批量更新项目 {project.ProjectNumber}",
+            isCreate ? $"批量匯入專案 {project.ProjectNumber}" : $"批量更新專案 {project.ProjectNumber}",
             changes,
             cancellationToken);
+    }
+
+    private static ProjectType ParseProjectType(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return ProjectType.Engineering;
+        }
+
+        var normalized = value.Trim();
+        if (normalized.Contains("保養") || normalized.Contains("保养") ||
+            string.Equals(normalized, "Maintenance", StringComparison.OrdinalIgnoreCase))
+        {
+            return ProjectType.Maintenance;
+        }
+
+        if (normalized.Contains("工程") ||
+            string.Equals(normalized, "Engineering", StringComparison.OrdinalIgnoreCase))
+        {
+            return ProjectType.Engineering;
+        }
+
+        return ProjectType.Engineering;
     }
 
     private static decimal ParseDecimal(string value)
@@ -237,5 +283,35 @@ public sealed class ImportModel(
     private static int NormalizeImportYear(int year)
     {
         return year is >= 2000 and <= 2100 ? year : DateTime.Today.Year;
+    }
+
+    private Dictionary<string, int> BuildStatusMap(List<ProjectStatus> statuses)
+    {
+        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var status in statuses)
+        {
+            var name = status.Name?.Trim();
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                map[name] = status.Id;
+                var traditionalName = openCcConverter.ToTraditional(name);
+                if (!string.Equals(traditionalName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    map[traditionalName] = status.Id;
+                }
+                var simplifiedName = openCcConverter.ToSimplified(name);
+                if (!string.Equals(simplifiedName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    map[simplifiedName] = status.Id;
+                }
+            }
+
+            var code = status.Code?.Trim();
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                map[code] = status.Id;
+            }
+        }
+        return map;
     }
 }

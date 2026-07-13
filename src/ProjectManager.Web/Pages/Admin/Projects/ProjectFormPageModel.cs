@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
+using ProjectType = ProjectManager.Web.Models.ProjectType;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
@@ -29,12 +31,20 @@ public abstract class ProjectFormPageModel(
 
     public List<SelectListItem> SubCaseContactOptions { get; private set; } = [];
 
+    public List<SelectListItem> VendorContactOptions { get; private set; } = [];
+
     public virtual bool IsBasicInfoReadOnly => false;
 
     public List<SelectListItem> PurchaseTypeOptions { get; } =
     [
-        new("内购", ((int)PurchaseType.InternalPurchase).ToString(CultureInfo.InvariantCulture)),
-        new("外购", ((int)PurchaseType.ExternalPurchase).ToString(CultureInfo.InvariantCulture))
+        new("內購", ((int)PurchaseType.InternalPurchase).ToString(CultureInfo.InvariantCulture)),
+        new("外購", ((int)PurchaseType.ExternalPurchase).ToString(CultureInfo.InvariantCulture))
+    ];
+
+    public List<SelectListItem> ProjectTypeOptions { get; } =
+    [
+        new("保養", ((int)ProjectType.Maintenance).ToString(CultureInfo.InvariantCulture)),
+        new("工程", ((int)ProjectType.Engineering).ToString(CultureInfo.InvariantCulture))
     ];
 
     protected async Task LoadOptionsAsync(CancellationToken cancellationToken)
@@ -53,7 +63,7 @@ public abstract class ProjectFormPageModel(
             })
             .ToList();
 
-        // 专案人员排除子案对接人角色
+        // 專案人員排除子案對接人角色
         var subCaseContactUsers = await UserManager.GetUsersInRoleAsync(RoleNames.SubCaseContact);
         var subCaseContactUserIds = subCaseContactUsers.Select(x => x.Id).ToHashSet();
 
@@ -72,11 +82,20 @@ public abstract class ProjectFormPageModel(
             .Where(x => subCaseContactUserIds.Contains(x.Id))
             .Select(user => new SelectListItem(DisplayUser(user), user.Id))
             .ToList();
+
+        VendorContactOptions = await Db.VendorContacts
+            .AsNoTracking()
+            .Include(x => x.Vendor)
+            .Where(x => !x.IsDeleted && !x.Vendor!.IsDeleted)
+            .OrderBy(x => x.Vendor!.CompanyName)
+            .ThenBy(x => x.Name)
+            .Select(x => new SelectListItem($"{x.Vendor!.CompanyName} - {x.Name}", x.Id.ToString(CultureInfo.InvariantCulture)))
+            .ToListAsync(cancellationToken);
     }
 
     protected void EnsureBlankPurchaseRows(int minimumBlankRows)
     {
-        // 表单底部始终保留空白请购行，方便用户继续新增多条请购。
+        // 表单底部始终保留空白请购行，方便使用者繼續新增多筆请购。
         var blankRows = Input.Purchases.Count(x => x.Id == 0 && !HasPurchaseData(x));
         while (blankRows < minimumBlankRows)
         {
@@ -94,12 +113,17 @@ public abstract class ProjectFormPageModel(
             closedYearMonth = null;
         }
 
+        if (!TryParseTrialRunYearMonth(out var trialRunYearMonth))
+        {
+            trialRunYearMonth = null;
+        }
+
         var status = await Db.ProjectStatuses
             .SingleOrDefaultAsync(x => x.Id == Input.StatusId, cancellationToken);
 
         if (status is null)
         {
-            ModelState.AddModelError("Input.StatusId", "请选择有效状态。");
+            ModelState.AddModelError("Input.StatusId", "請選擇有效狀態。");
         }
 
         var project = new Project
@@ -108,12 +132,15 @@ public abstract class ProjectFormPageModel(
             ParentCaseNumber = TrimToNull(Input.ParentCaseNumber),
             ProjectNumber = TrimToEmpty(Input.ProjectNumber),
             Name = TrimToEmpty(Input.Name),
+            ProjectType = Input.ProjectType,
             StatusId = Input.StatusId,
             ClosedYearMonth = ProjectRules.NormalizeClosedYearMonth(closedYearMonth),
             ProgressPercent = Input.ProgressPercent,
             ProjectAmount = Input.ProjectAmount,
             CollectionPercent = Input.CollectionPercent,
-            ProgressDescription = RichTextSanitizer.Normalize(Input.ProgressDescription)
+            ProgressDescription = RichTextSanitizer.Normalize(Input.ProgressDescription),
+            VendorName = TrimToNull(Input.VendorName),
+            TrialRunYearMonth = ProjectRules.NormalizeClosedYearMonth(trialRunYearMonth)
         };
 
         var purchaseRequests = Input.Purchases
@@ -145,6 +172,7 @@ public abstract class ProjectFormPageModel(
             ParentCaseNumber = project.ParentCaseNumber,
             ProjectNumber = project.ProjectNumber,
             Name = project.Name,
+            ProjectType = project.ProjectType,
             StatusId = project.StatusId,
             AssignedUserId = project.Assignments.FirstOrDefault()?.UserId,
             ClosedYearMonth = project.ClosedYearMonth?.ToString("yyyy-MM", CultureInfo.InvariantCulture),
@@ -152,6 +180,8 @@ public abstract class ProjectFormPageModel(
             ProjectAmount = project.ProjectAmount,
             CollectionPercent = project.CollectionPercent,
             ProgressDescription = project.ProgressDescription,
+            VendorName = project.VendorName,
+            TrialRunYearMonth = project.TrialRunYearMonth?.ToString("yyyy-MM", CultureInfo.InvariantCulture),
             Purchases = project.PurchaseRequests
                 .Where(x => !x.IsDeleted)
                 .OrderBy(x => x.Id)
@@ -166,19 +196,22 @@ public abstract class ProjectFormPageModel(
         target.ParentCaseNumber = source.ParentCaseNumber;
         target.ProjectNumber = source.ProjectNumber;
         target.Name = source.Name;
+        target.ProjectType = source.ProjectType;
         target.StatusId = source.StatusId;
         target.ClosedYearMonth = source.ClosedYearMonth;
         target.ProgressPercent = source.ProgressPercent;
         target.ProjectAmount = source.ProjectAmount;
         target.CollectionPercent = source.CollectionPercent;
         target.ProgressDescription = source.ProgressDescription;
+        target.VendorName = source.VendorName;
+        target.TrialRunYearMonth = source.TrialRunYearMonth;
         target.UpdatedByUserId = UserManager.GetUserId(User);
         target.UpdatedAt = now;
     }
 
     protected void SyncAssignments(Project project)
     {
-        // 专案人员改为单选：清空已有，设置新选中的唯一人员
+        // 專案人員改为单选：清空已有，設定新選中的唯一人员
         var existingAssignments = project.Assignments.ToList();
         foreach (var assignment in existingAssignments)
         {
@@ -190,14 +223,14 @@ public abstract class ProjectFormPageModel(
             project.Assignments.Add(new ProjectAssignment
             {
                 UserId = Input.AssignedUserId,
-                RoleInProject = "专案人员"
+                RoleInProject = "專案人員"
             });
         }
     }
 
     protected void SyncPurchaseRequests(Project project, DateTimeOffset now)
     {
-        // 请购子表以隐藏的 Id 对齐已有记录；新增行没有 Id，删除行只打软删除标记。
+        // 请购子表以隱藏的 Id 对齐已有記錄；新增行没有 Id，刪除行只打软刪除标记。
         var existingById = project.PurchaseRequests.ToDictionary(x => x.Id);
 
         foreach (var input in Input.Purchases)
@@ -255,7 +288,30 @@ public abstract class ProjectFormPageModel(
             return true;
         }
 
-        ModelState.AddModelError("Input.ClosedYearMonth", "结案日期格式不正确。");
+        ModelState.AddModelError("Input.ClosedYearMonth", "結案日期格式不正确。");
+        return false;
+    }
+
+    private bool TryParseTrialRunYearMonth(out DateOnly? value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(Input.TrialRunYearMonth))
+        {
+            return true;
+        }
+
+        if (DateOnly.TryParseExact(
+                $"{Input.TrialRunYearMonth}-01",
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var parsed))
+        {
+            value = parsed;
+            return true;
+        }
+
+        ModelState.AddModelError("Input.TrialRunYearMonth", "預計試車時間格式不正確。");
         return false;
     }
 
@@ -269,6 +325,7 @@ public abstract class ProjectFormPageModel(
             PurchaseStaffUserId = request.PurchaseStaffUserId,
             PurchaseAmount = request.PurchaseAmount,
             SubCaseContactUserId = request.SubCaseContactUserId,
+            VendorContactId = request.VendorContactId,
             PaymentPercent = request.PaymentPercent,
             ActualPaidAmount = request.ActualPaidAmount,
             Notes = request.Notes
@@ -284,6 +341,7 @@ public abstract class ProjectFormPageModel(
             PurchaseStaffUserId = TrimToNull(input.PurchaseStaffUserId),
             PurchaseAmount = input.PurchaseAmount,
             SubCaseContactUserId = TrimToNull(input.SubCaseContactUserId),
+            VendorContactId = input.VendorContactId,
             PaymentPercent = input.PaymentPercent,
             ActualPaidAmount = input.ActualPaidAmount,
             Notes = TrimToNull(input.Notes)
@@ -300,6 +358,7 @@ public abstract class ProjectFormPageModel(
         target.PurchaseStaffUserId = TrimToNull(source.PurchaseStaffUserId);
         target.PurchaseAmount = source.PurchaseAmount;
         target.SubCaseContactUserId = TrimToNull(source.SubCaseContactUserId);
+        target.VendorContactId = source.VendorContactId;
         target.PaymentPercent = source.PaymentPercent;
         target.ActualPaidAmount = source.ActualPaidAmount;
         target.Notes = TrimToNull(source.Notes);
@@ -345,6 +404,8 @@ public sealed class ProjectInputModel
 
     public string? Name { get; set; }
 
+    public ProjectType ProjectType { get; set; } = ProjectType.Engineering;
+
     public int StatusId { get; set; }
 
     public string? AssignedUserId { get; set; }
@@ -357,7 +418,12 @@ public sealed class ProjectInputModel
 
     public decimal CollectionPercent { get; set; }
 
+    [MaxLength(1000, ErrorMessage = "狀態說明最多允許1000個字符")]
     public string? ProgressDescription { get; set; }
+
+    public string? VendorName { get; set; }
+
+    public string? TrialRunYearMonth { get; set; }
 
     public List<PurchaseInputModel> Purchases { get; set; } = [];
 }
@@ -377,6 +443,8 @@ public sealed class PurchaseInputModel
     public decimal PurchaseAmount { get; set; }
 
     public string? SubCaseContactUserId { get; set; }
+
+    public int? VendorContactId { get; set; }
 
     public decimal PaymentPercent { get; set; }
 

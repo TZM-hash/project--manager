@@ -46,19 +46,20 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
             ? GenerateRandomPassword()
             : Input.Password;
 
-        IdentityResult createResult;
         if (string.IsNullOrWhiteSpace(password))
         {
-            createResult = await userManager.CreateAsync(user);
+            ModelState.AddModelError(string.Empty, "密碼不能為空。");
+            return Page();
         }
-        else
-        {
-            createResult = await userManager.CreateAsync(user, password);
-        }
+
+        var createResult = await userManager.CreateAsync(user, password);
 
         if (!createResult.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, "用户创建失败，请检查用户名、邮箱和密码复杂度。");
+            foreach (var error in createResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
             return Page();
         }
 
@@ -81,18 +82,18 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
 
     public sealed class InputModel
     {
-        [Display(Name = "用户名")]
-        [Required(ErrorMessage = "请输入用户名。")]
+        [Display(Name = "使用者名稱")]
+        [Required(ErrorMessage = "请输入使用者名稱。")]
         public string UserName { get; set; } = string.Empty;
 
         [Display(Name = "姓名")]
         public string DisplayName { get; set; } = string.Empty;
 
-        [Display(Name = "邮箱")]
-        [EmailAddress(ErrorMessage = "邮箱格式不正确。")]
+        [Display(Name = "信箱")]
+        [EmailAddress(ErrorMessage = "信箱格式不正确。")]
         public string? Email { get; set; }
 
-        [Display(Name = "初始密码")]
+        [Display(Name = "初始密碼")]
         public string Password { get; set; } = string.Empty;
 
         [Display(Name = "弱管理")]

@@ -64,6 +64,15 @@ public sealed class IndexModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(LeaderUserId))
+        {
+            var currentUserId = userManager.GetUserId(User);
+            if (!string.IsNullOrWhiteSpace(currentUserId))
+            {
+                LeaderUserId = currentUserId;
+            }
+        }
+
         await LoadUserDisplayNamesAsync(cancellationToken);
         var page = await planningProjectService.GetPlanningProjectsPageAsync(
             new PlanningProjectFilter(Name, LeaderUserId, Vendor),
@@ -117,7 +126,7 @@ public sealed class IndexModel(
 
     private async Task LoadUserDisplayNamesAsync(CancellationToken cancellationToken)
     {
-        // 负责人字段可能保存单人，也可能是逗号分隔的多人 ID，这里统一展开为显示名。
+        // 負責人欄位可能儲存单人，也可能是逗号分隔的多人 ID，这里统一展開为顯示名。
         var users = await userManager.Users
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -153,9 +162,9 @@ public sealed class IndexModel(
 
         Metrics =
         [
-            new MetricInsight("规划中专案", TotalCount.ToString("N0"), "尚未正式立项"),
-            new MetricInsight("近 30 天更新", recentCount.ToString("N0"), "有最新动态"),
-            new MetricInsight("厂商数", vendorCount.ToString("N0"), "当前资料覆盖", "success")
+            new MetricInsight("規劃中專案", TotalCount.ToString("N0"), "尚未正式立项"),
+            new MetricInsight("近 30 天更新", recentCount.ToString("N0"), "有最新動態"),
+            new MetricInsight("廠商数", vendorCount.ToString("N0"), "当前資料覆盖", "success")
         ];
 
         var leaderRows = projects
@@ -234,18 +243,18 @@ public sealed class IndexModel(
         var items = new List<FilterSummaryItem>();
         if (!string.IsNullOrWhiteSpace(Name))
         {
-            items.Add(new FilterSummaryItem("项目名称", Name));
+            items.Add(new FilterSummaryItem("專案名稱", Name));
         }
 
         if (!string.IsNullOrWhiteSpace(LeaderUserId))
         {
             var userText = UserOptions.FirstOrDefault(x => x.Value == LeaderUserId)?.Text ?? LeaderUserId;
-            items.Add(new FilterSummaryItem("项目负责人", userText));
+            items.Add(new FilterSummaryItem("專案負責人", userText));
         }
 
         if (!string.IsNullOrWhiteSpace(Vendor))
         {
-            items.Add(new FilterSummaryItem("厂商", Vendor));
+            items.Add(new FilterSummaryItem("廠商", Vendor));
         }
 
         return items;

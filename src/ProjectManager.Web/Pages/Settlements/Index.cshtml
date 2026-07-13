@@ -1,16 +1,16 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Settlements.IndexModel
 @{
-    ViewData["Title"] = "月结";
+    ViewData["Title"] = "月結";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">月结</h1>
-        <div class="page-subtitle">查看历史月结批次并进入打印或导出流程</div>
+        <h1 class="page-title">月結</h1>
+        <div class="page-subtitle">查看歷史月結批次并进入列印或匯出流程</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Create">新增月结</a>
+        <a class="btn btn-primary" asp-page="./Create">新增月結</a>
     </div>
 </div>
 
@@ -21,15 +21,15 @@
             <input class="form-control" asp-for="Month" placeholder="月" />
         </div>
         <div class="filter-quick-actions">
-            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
-            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
+            <button class="btn btn-primary" type="submit">查詢</button>
         </div>
     </div>
     <div class="filter-drawer" data-filter-drawer-panel>
         <div class="filter-drawer-header">
             <div>
-                <div class="filter-drawer-title">高级筛选</div>
-                <div class="filter-drawer-subtitle">按批次号、创建人和备注定位月结批次</div>
+                <div class="filter-drawer-title">進階篩選</div>
+                <div class="filter-drawer-subtitle">按批次号、建立人和備註定位月結批次</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
@@ -37,10 +37,10 @@
             <div class="col-md-3"><input class="form-control" asp-for="BatchNumber" placeholder="批次号" /></div>
             <div class="col-md-4">
                 <select class="form-select" asp-for="CreatedByUserId" asp-items="Model.CreatedByOptions">
-                    <option value="">创建人</option>
+                    <option value="">建立人</option>
                 </select>
             </div>
-            <div class="col-md-5"><input class="form-control" asp-for="Notes" placeholder="备注关键字" /></div>
+            <div class="col-md-5"><input class="form-control" asp-for="Notes" placeholder="備註關鍵字" /></div>
         </div>
     </div>
     <input type="hidden" asp-for="PageSize" />
@@ -51,7 +51,7 @@
     <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
     <div class="col-md-2"><input class="form-control" asp-for="Month" placeholder="月" /></div>
     <input type="hidden" asp-for="PageSize" />
-    <div class="col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">筛选</button></div>
+    <div class="col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">篩選</button></div>
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
@@ -69,8 +69,8 @@
 
 <div class="insight-grid insight-grid-single">
     <section class="chart-card">
-        <div class="chart-title">年月批次数量</div>
-        <div class="chart-subtitle">最近 6 个有月结批次的月份</div>
+        <div class="chart-title">年月批次數量</div>
+        <div class="chart-subtitle">最近 6 个有月結批次的月份</div>
         <div class="mini-bars">
             @foreach (var slice in Model.MonthSlices)
             {
@@ -86,10 +86,10 @@
 
 @if (Model.IsAdministrator)
 {
-    <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定删除选中的月结批次吗？">
+    <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定刪除選中的月結批次吗？">
         <div class="bulk-toolbar-copy">
             <span class="bulk-toolbar-count" data-selected-count>0</span>
-            <span>个批次已选择</span>
+            <span>个批次已選擇</span>
         </div>
         <div class="bulk-toolbar-actions">
             <input type="hidden" asp-for="Year" />
@@ -99,7 +99,7 @@
             <input type="hidden" asp-for="Notes" />
             <input type="hidden" asp-for="PageNumber" />
             <input type="hidden" asp-for="PageSize" />
-            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
+            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
         </div>
     </form>
 }
@@ -116,10 +116,10 @@
                 <th>年</th>
                 <th>月</th>
                 <th>批次</th>
-                <th class="numeric">项目数</th>
-                <th>创建人</th>
-                <th>创建时间</th>
-                <th>备注</th>
+                <th class="numeric">專案数</th>
+                <th>建立人</th>
+                <th>建立時間</th>
+                <th>備註</th>
                 <th class="text-end">操作</th>
             </tr>
         </thead>
@@ -139,12 +139,12 @@
                 <td>@batch.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@batch.Notes</td>
                 <td class="text-end text-nowrap">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@batch.Id">详情</a>
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@batch.Id">打印</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@batch.Id">明細</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@batch.Id">列印</a>
                     @if (Model.IsAdministrator)
                     {
-                        <form method="post" asp-page-handler="Delete" asp-route-id="@batch.Id" asp-route-Year="@Model.Year" asp-route-Month="@Model.Month" asp-route-BatchNumber="@Model.BatchNumber" asp-route-CreatedByUserId="@Model.CreatedByUserId" asp-route-Notes="@Model.Notes" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该月结批次吗？');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@batch.Id" asp-route-Year="@Model.Year" asp-route-Month="@Model.Month" asp-route-BatchNumber="@Model.BatchNumber" asp-route-CreatedByUserId="@Model.CreatedByUserId" asp-route-Notes="@Model.Notes" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定刪除该月結批次吗？');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
                         </form>
                     }
                 </td>
@@ -154,7 +154,7 @@
         {
             <tr>
                 <td colspan="@(Model.IsAdministrator ? 9 : 8)">
-                    <div class="empty-state">暂无月结批次</div>
+                    <div class="empty-state">暂无月結批次</div>
                 </td>
             </tr>
         }

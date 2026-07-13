@@ -1,32 +1,32 @@
-@page "{id:int}"
+﻿@page "{id:int}"
 @using ProjectManager.Web.Models
 @using ProjectManager.Web.Pages.Shared
 @model ProjectManager.Web.Pages.Workbench.Projects.DetailsModel
 @{
-    ViewData["Title"] = "项目详情";
+    ViewData["Title"] = "專案明細";
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-title">@Model.Project.ProjectNumber - @Model.Project.Name</h1>
-        <div class="page-subtitle">查看状态流转、进度、收款和请购摘要</div>
+        <div class="page-subtitle">查看狀態流转、進度、收款和请购摘要</div>
     </div>
     <div class="page-actions">
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
         @if (Model.CanEditProgress)
         {
-            <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Project.Id">编辑专案</a>
+            <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Project.Id">編輯专案</a>
         }
     </div>
 </div>
 
 <div class="detail-tab-shell" data-detail-tabs>
-    <div class="detail-tabs" role="tablist" aria-label="项目详情分区">
+    <div class="detail-tabs" role="tablist" aria-label="專案明細分区">
         <button type="button" class="detail-tab is-active" data-detail-tab-target="overview">概览</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="profile">项目资料</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="purchases">请购记录</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="profile">專案資料</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="purchases">請購記錄</button>
         <button type="button" class="detail-tab" data-detail-tab-target="gantt">甘特图</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="audit">操作记录</button>
+        <button type="button" class="detail-tab" data-detail-tab-target="audit">操作記錄</button>
     </div>
 
     <div class="detail-tab-panel is-active" data-detail-tab-panel="overview">
@@ -35,15 +35,15 @@
 
         <div class="summary-strip">
             <div class="summary-item">
-                <div class="summary-label">当前状态</div>
+                <div class="summary-label">当前狀態</div>
                 <div class="summary-value"><partial name="_StatusBadge" model="Model.Project.Status" /></div>
             </div>
             <div class="summary-item">
-                <div class="summary-label">专案进度</div>
+                <div class="summary-label">專案進度</div>
                 <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.ProgressPercent, compact: false)" /></div>
             </div>
             <div class="summary-item">
-                <div class="summary-label">专案金额</div>
+                <div class="summary-label">專案金額</div>
                 <div class="summary-value">@Model.Project.ProjectAmount.ToString("N2")</div>
             </div>
             <div class="summary-item">
@@ -57,21 +57,21 @@
         </div>
 
         <section class="detail-panel">
-            <h2 class="detail-panel-title">进度说明</h2>
+            <h2 class="detail-panel-title">進度說明</h2>
             <div class="detail-value rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Project.ProgressDescription))</div>
         </section>
     </div>
 
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="profile">
-        <h2 class="detail-panel-title">项目资料</h2>
+        <h2 class="detail-panel-title">專案資料</h2>
         <div class="detail-grid">
-            <div class="detail-item"><div class="detail-label">母案案号</div><div class="detail-value">@Model.Project.ParentCaseNumber</div></div>
+            <div class="detail-item"><div class="detail-label">母案案號</div><div class="detail-value">@Model.Project.ParentCaseNumber</div></div>
             <div class="detail-item"><div class="detail-label">年</div><div class="detail-value">@Model.Project.Year</div></div>
-            <div class="detail-item"><div class="detail-label">项目工号</div><div class="detail-value">@Model.Project.ProjectNumber</div></div>
-            <div class="detail-item"><div class="detail-label">项目名称</div><div class="detail-value">@Model.Project.Name</div></div>
-            <div class="detail-item"><div class="detail-label">专案人员</div><div class="detail-value">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
-            <div class="detail-item"><div class="detail-label">结案日期</div><div class="detail-value">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</div></div>
-            <div class="detail-item"><div class="detail-label">最后更新时间</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
+            <div class="detail-item"><div class="detail-label">專案工號</div><div class="detail-value">@Model.Project.ProjectNumber</div></div>
+            <div class="detail-item"><div class="detail-label">專案名稱</div><div class="detail-value">@Model.Project.Name</div></div>
+            <div class="detail-item"><div class="detail-label">專案人員</div><div class="detail-value">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
+            <div class="detail-item"><div class="detail-label">結案日期</div><div class="detail-value">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</div></div>
+            <div class="detail-item"><div class="detail-label">最后更新時間</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
         </div>
     </section>
 
@@ -81,14 +81,14 @@
             <table class="table table-sm table-striped align-middle data-table">
                 <thead>
                     <tr>
-                        <th>请购号</th>
-                        <th>类型</th>
-                        <th>请购人员</th>
-                        <th class="numeric">请购金额</th>
-                        <th>子案对接人员</th>
+                        <th>請購號</th>
+                        <th>類型</th>
+                        <th>請購人員</th>
+                        <th class="numeric">请购金額</th>
+                        <th>子案對接人員</th>
                         <th class="numeric">付款比例</th>
-                        <th class="numeric">实际已付款</th>
-                        <th>备注</th>
+                        <th class="numeric">實際已付款</th>
+                        <th>備註</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -96,7 +96,7 @@
                 {
                     <tr>
                         <td>@request.RequestNumber</td>
-                        <td>@(request.PurchaseType == PurchaseType.InternalPurchase ? "内购" : "外购")</td>
+                        <td>@(request.PurchaseType == PurchaseType.InternalPurchase ? "內購" : "外購")</td>
                         <td>@(request.PurchaseStaff?.DisplayName ?? request.PurchaseStaff?.UserName)</td>
                         <td class="numeric">@request.PurchaseAmount.ToString("N2")</td>
                         <td>@(request.SubCaseContact?.DisplayName ?? request.SubCaseContact?.UserName)</td>
@@ -108,7 +108,7 @@
                 @if (!Model.Project.PurchaseRequests.Any())
                 {
                     <tr>
-                        <td colspan="8"><div class="empty-state">暂无请购记录</div></td>
+                        <td colspan="8"><div class="empty-state">暂无請購記錄</div></td>
                     </tr>
                 }
                 </tbody>
@@ -117,11 +117,11 @@
     </section>
 
     <div class="detail-tab-panel" data-detail-tab-panel="gantt">
-        <partial name="_ProjectGanttPanel" model="new ProjectManager.Web.Pages.Shared.ProjectGanttPanelModel(Model.Project, Model.GanttInput, Model.CanEditProgress, Model.GanttMessage, Model.GanttErrors)" />
+        <partial name="_ProjectGanttPanel" model="new ProjectManager.Web.Pages.Shared.ProjectGanttPanelModel(Model.Project, Model.GanttInput, Model.ArchiveDate, Model.CanEditProgress, Model.GanttMessage, Model.GanttErrors)" />
     </div>
 
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="audit">
-        <h2 class="detail-panel-title">操作记录</h2>
+        <h2 class="detail-panel-title">操作記錄</h2>
         <partial name="_AuditTrail" model="Model.AuditTrail" />
     </section>
 </div>

@@ -35,7 +35,7 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
 
     public IList<UserListItem> Users { get; private set; } = [];
 
-    /// <summary>当前登录用户是否为 admin 账号（唯一可管理密码的账号）。</summary>
+    /// <summary>当前登入使用者是否为 admin 帳號（唯一可管理密碼的帳號）。</summary>
     public bool CanManagePassword { get; private set; }
 
     public int TotalCount { get; private set; }
@@ -95,6 +95,47 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
         PageSize = page.PageSize;
         TotalPages = page.TotalPages;
         await LoadInsightsAsync(cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(string id, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            await OnGetAsync(cancellationToken);
+            return Page();
+        }
+
+        return RedirectToPage("./Index", BuildRouteValues());
+    }
+
+    public async Task<IActionResult> OnPostBatchDeleteAsync(string[] ids, CancellationToken cancellationToken)
+    {
+        if (ids.Length == 0)
+        {
+            return RedirectToPage("./Index", BuildRouteValues());
+        }
+
+        foreach (var id in ids.Distinct())
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user != null)
+            {
+                await userManager.DeleteAsync(user);
+            }
+        }
+
+        return RedirectToPage("./Index", BuildRouteValues());
     }
 
     private async Task<IQueryable<ApplicationUser>> ApplyFilterAsync(
@@ -159,14 +200,14 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
 
         Metrics =
         [
-            new MetricInsight("用户总数", TotalCount.ToString("N0"), "系统账号"),
-            new MetricInsight("启用账号", activeCount.ToString("N0"), "可参与业务"),
-            new MetricInsight("弱管理账号", weakManagedCount.ToString("N0"), "轻量维护对象", "info")
+            new MetricInsight("使用者總數", TotalCount.ToString("N0"), "系統帳號"),
+            new MetricInsight("啟用帳號", activeCount.ToString("N0"), "可參與業務"),
+            new MetricInsight("弱管理帳號", weakManagedCount.ToString("N0"), "輕量維護對象", "info")
         ];
 
         ActiveSlices = ChartPalette.BuildSlices(
         [
-            ("启用", (decimal)activeCount),
+            ("啟用", (decimal)activeCount),
             ("停用", (decimal)inactiveCount)
         ]);
 
@@ -201,12 +242,12 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
         var items = new List<FilterSummaryItem>();
         if (!string.IsNullOrWhiteSpace(Keyword))
         {
-            items.Add(new FilterSummaryItem("关键字", Keyword));
+            items.Add(new FilterSummaryItem("關鍵字", Keyword));
         }
 
         if (IsActive is not null)
         {
-            items.Add(new FilterSummaryItem("启用", IsActive.Value ? "是" : "否"));
+            items.Add(new FilterSummaryItem("啟用", IsActive.Value ? "是" : "否"));
         }
 
         if (IsWeakManaged is not null)

@@ -1,57 +1,56 @@
 @page
 @model ProjectManager.Web.Pages.Reports.OpenProjects.IndexModel
 @{
-    ViewData["Title"] = "未结案项目报表";
+    ViewData["Title"] = "未結案專案報表";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">未结案项目报表</h1>
-        <div class="page-subtitle">筛选、统计、打印并导出未结案项目资料</div>
+        <h1 class="page-title">未結案專案報表</h1>
+        <div class="page-subtitle">篩選、統計、列印并匯出未結案專案資料</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page="./Statistics" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">统计</a>
-        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">打印</a>
-        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">导出 Excel</a>
+        <a class="btn btn-outline-secondary" asp-page="./Statistics" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">統計</a>
+        <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">列印</a>
+        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">匯出 Excel</a>
     </div>
 </div>
 
 <form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
-            <input class="form-control" asp-for="ProjectName" placeholder="搜索项目名称" />
-            <input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" />
+            <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" />
+            <input class="form-control" asp-for="ProjectNumber" placeholder="專案工號" />
         </div>
         <div class="filter-quick-actions">
-            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
-            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
+            <button class="btn btn-primary" type="submit">查詢</button>
         </div>
     </div>
     <div class="filter-drawer" data-filter-drawer-panel>
         <div class="filter-drawer-header">
             <div>
-                <div class="filter-drawer-title">高级筛选</div>
-                <div class="filter-drawer-subtitle">组合年度、母案、人员、状态和分析钻取条件</div>
+                <div class="filter-drawer-title">進階篩選</div>
+                <div class="filter-drawer-subtitle">群組合年度、母案、人员、狀態和分析钻取筆件</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
         <div class="row g-2">
             <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
-            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案号" /></div>
+            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案號" /></div>
             <div class="col-md-3">
                 <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
-                    <option value="">专案人员</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
-                    <option value="">状态</option>
+                    <option value="">狀態</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <select class="form-select" asp-for="AnalysisType">
                     <option value="">分析钻取</option>
-                    <option value="low-progress">需关注项目</option>
+                    <option value="low-progress">需关注專案</option>
                     <option value="collection-lag">回款滞后</option>
                     <option value="stale-update">久未更新</option>
                 </select>
@@ -78,8 +77,8 @@
 <section class="report-analysis-panel">
     <div class="chart-card-header">
         <div>
-            <div class="chart-title">报表分析视图</div>
-            <div class="chart-subtitle">从当前筛选结果中提取需要优先跟进的项目线索</div>
+            <div class="chart-title">報表分析视图</div>
+            <div class="chart-subtitle">从当前篩選結果中提取需要优先跟进的專案线索</div>
         </div>
     </div>
     <div class="metric-grid report-analysis-grid">
@@ -107,8 +106,8 @@
 
 <div class="insight-grid">
     <section class="chart-card">
-        <div class="chart-title">未结案状态分布</div>
-        <div class="chart-subtitle">按当前筛选条件统计</div>
+        <div class="chart-title">未結案狀態分布</div>
+        <div class="chart-subtitle">按当前篩選筆件統計</div>
         <div class="bar-list">
             @foreach (var slice in Model.StatusSlices)
             {
@@ -121,8 +120,8 @@
         </div>
     </section>
     <section class="chart-card">
-        <div class="chart-title">进度区间</div>
-        <div class="chart-subtitle">识别未结案项目推进状态</div>
+        <div class="chart-title">進度区间</div>
+        <div class="chart-subtitle">识别未結案專案推进狀態</div>
         <div class="bar-list">
             @foreach (var slice in Model.ProgressSlices)
             {

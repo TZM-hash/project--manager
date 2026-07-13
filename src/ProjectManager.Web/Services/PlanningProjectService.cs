@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 
@@ -192,7 +192,7 @@ public sealed class PlanningProjectService(ApplicationDbContext db)
 
     private IQueryable<PlanningProject> OrderForList(IQueryable<PlanningProject> query)
     {
-        // SQLite 测试库不支持 DateTimeOffset 排序；正式 SQL Server 仍按最近更新展示。
+        // SQLite 測試库不支持 DateTimeOffset 排序；正式 SQL Server 仍按最近更新展示。
         return db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite"
             ? query.OrderByDescending(x => x.Id).ThenBy(x => x.Name)
             : query.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Name);

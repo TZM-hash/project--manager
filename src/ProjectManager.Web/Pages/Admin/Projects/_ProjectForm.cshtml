@@ -5,66 +5,84 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <section class="form-section">
-        <h2 class="form-section-title">基础信息</h2>
+        <h2 class="form-section-title">基礎資訊</h2>
         <div class="row g-3">
             <div class="col-md-2"><label class="form-label">年</label><input class="form-control" asp-for="Input.Year" /></div>
-            <div class="col-md-3"><label class="form-label">母案案号</label><input class="form-control" asp-for="Input.ParentCaseNumber" /></div>
-            <div class="col-md-3"><label class="form-label">项目工号</label><input class="form-control" asp-for="Input.ProjectNumber" /></div>
-            <div class="col-md-4"><label class="form-label">项目名称</label><input class="form-control" asp-for="Input.Name" /></div>
+            <div class="col-md-2">
+                <label class="form-label">專案類型</label>
+                <select class="form-select" asp-for="Input.ProjectType" asp-items="Model.ProjectTypeOptions"></select>
+            </div>
+            <div class="col-md-3"><label class="form-label">母案案號</label><input class="form-control" asp-for="Input.ParentCaseNumber" /></div>
+            <div class="col-md-2"><label class="form-label">專案工號</label><input class="form-control" asp-for="Input.ProjectNumber" /></div>
+            <div class="col-md-3"><label class="form-label">專案名稱</label><input class="form-control" asp-for="Input.Name" /></div>
             <div class="col-md-4">
-                <label class="form-label">专案人员</label>
+                <label class="form-label">專案人員</label>
                 <select class="form-select" asp-for="Input.AssignedUserId" asp-items="Model.UserOptions">
-                    <option value="">请选择</option>
+                    <option value="">請選擇</option>
                 </select>
             </div>
         </div>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">状态、进度与财务</h2>
+        <h2 class="form-section-title">狀態、進度與財務</h2>
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">状态</label>
+                <label class="form-label">狀態</label>
                 <select class="form-select" asp-for="Input.StatusId" asp-items="Model.StatusOptions"></select>
             </div>
-            <div class="col-md-3"><label class="form-label">结案日期</label><input class="form-control" asp-for="Input.ClosedYearMonth" type="month" /></div>
-            <div class="col-md-2"><label class="form-label">专案进度 %</label><input class="form-control" asp-for="Input.ProgressPercent" /></div>
-            <div class="col-md-2"><label class="form-label">专案金额</label><input class="form-control" asp-for="Input.ProjectAmount" /></div>
+            <div class="col-md-3"><label class="form-label">結案日期</label><input class="form-control" asp-for="Input.ClosedYearMonth" type="month" /></div>
+            <div class="col-md-2"><label class="form-label">專案進度 %</label><input class="form-control" asp-for="Input.ProgressPercent" /></div>
+            <div class="col-md-2"><label class="form-label">專案金額</label><input class="form-control" asp-for="Input.ProjectAmount" /></div>
             <div class="col-md-2"><label class="form-label">收款比例 %</label><input class="form-control" asp-for="Input.CollectionPercent" /></div>
+            <div class="col-md-4">
+                <label class="form-label">廠商（實施中專案，自由輸入）</label>
+                <input class="form-control" asp-for="Input.VendorName" placeholder="請輸入廠商名稱" />
+                <span class="text-danger" asp-validation-for="Input.VendorName"></span>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">預計試車時間（年月）</label>
+                <input class="form-control" asp-for="Input.TrialRunYearMonth" type="month" />
+                <span class="text-danger" asp-validation-for="Input.TrialRunYearMonth"></span>
+            </div>
         </div>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">进度说明</h2>
+        <h2 class="form-section-title">進度說明</h2>
         <div class="rich-text-field" data-rich-text>
-            <div class="rich-text-toolbar" aria-label="进度说明颜色">
+            <div class="rich-text-toolbar" aria-label="進度說明颜色">
                 @foreach (var color in RichTextSanitizer.ColorOptions)
                 {
                     <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
                 }
-                <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+                <button type="button" class="rich-text-reset" data-rich-text-clear>預設顏色</button>
             </div>
             <textarea asp-for="Input.ProgressDescription" hidden data-rich-text-source></textarea>
             <div class="rich-text-editor" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.ProgressDescription))</div>
+            <div class="text-muted text-sm mt-1" id="progress-description-counter">
+                <span id="progress-description-count">@(Model.Input.ProgressDescription?.Length ?? 0)</span> / 1000 字符
+            </div>
         </div>
         <span class="text-danger" asp-validation-for="Input.ProgressDescription"></span>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">请购记录</h2>
+        <h2 class="form-section-title">請購記錄</h2>
         <div class="data-table-wrap">
             <table class="table table-sm align-middle data-table">
                 <thead>
                     <tr>
-                        <th>请购号</th>
-                        <th>类型</th>
-                        <th>请购人员</th>
-                        <th>金额</th>
-                        <th>子案对接人员</th>
+                        <th>請購號</th>
+                        <th>類型</th>
+                        <th>請購人員</th>
+                        <th>金額</th>
+                        <th>子案對接人員</th>
+                        <th>廠商聯絡人</th>
                         <th>付款比例</th>
-                        <th>实际已付款</th>
-                        <th>备注</th>
-                        <th>删除</th>
+                        <th>實際已付款</th>
+                        <th>備註</th>
+                        <th>刪除</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,6 +97,7 @@
                         <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseStaffUserId" asp-items="Model.UserOptions"><option value="">-</option></select></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].PurchaseAmount" /></td>
                         <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].SubCaseContactUserId" asp-items="Model.SubCaseContactOptions"><option value="">-</option></select></td>
+                        <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].VendorContactId" asp-items="Model.VendorContactOptions"><option value="">-</option></select></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].PaymentPercent" /></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].ActualPaidAmount" /></td>
                         <td><input class="form-control form-control-sm" asp-for="Input.Purchases[i].Notes" /></td>
@@ -96,7 +115,7 @@
     </section>
 
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="submit" class="btn btn-primary">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

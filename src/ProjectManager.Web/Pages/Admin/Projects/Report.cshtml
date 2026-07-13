@@ -1,0 +1,254 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Projects.ReportModel
+@using ProjectManager.Web.Extensions
+@{
+    ViewData["Title"] = Model.ReportTitle;
+    Layout = "_PrintLayout";
+}
+
+<div class="no-print report-toolbar">
+    <div class="d-flex align-items-center justify-content-between">
+        <h1 class="h4 mb-0">@Model.ReportTitle</h1>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="window.close()">關閉</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="window.print()">列印</button>
+        </div>
+    </div>
+    <hr />
+</div>
+
+<div class="print-report">
+    <div class="report-header">
+        <h1 class="report-title">@Model.ReportTitle</h1>
+        <div class="report-meta">
+            <span>列印時間：@Model.GeneratedAt</span>
+            <span>專案總數：@Model.TotalProjectCount.ToString("N0") 筆</span>
+            <span>工程類：@Model.EngineeringProjectCount.ToString("N0") 筆</span>
+            <span>保養類：@Model.MaintenanceProjectCount.ToString("N0") 筆</span>
+        </div>
+    </div>
+
+    @if (Model.IsEngineeringDoingReport)
+{
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;">項次</th>
+                <th>專案名稱</th>
+                <th style="width: 90px;">經辦</th>
+                <th style="width: 120px;">廠商</th>
+                <th style="width: 180px;">預計時間</th>
+                <th style="width: 100px;">工程進度</th>
+                <th>進度說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < Model.Projects.Count; i++)
+            {
+                var project = Model.Projects[i];
+                var staff = string.Join("、", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
+                <tr>
+                    <td class="text-center">@(i + 1)</td>
+                    <td class="text-start">@Model.Convert(project.Name)</td>
+                    <td class="text-center">@Model.Convert(staff)</td>
+                    <td class="text-start">@Model.Convert(Model.GetVendorName(project))</td>
+                    <td class="text-center">@Model.GetExpectedTime(project)</td>
+                    <td class="text-center">@project.ProgressPercent.ToString("N0")%</td>
+                    <td class="text-start">@Html.Raw(Model.GetProgressDescription(project)?.Replace("\n", "<br/>") ?? "-")</td>
+                </tr>
+            }
+            @if (!Model.Projects.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">暫無符合條件的專案</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th style="width: 50px;">項次</th>
+                <th style="width: 110px;">工程編號</th>
+                <th>工程名稱</th>
+                <th style="width: 90px;">經辦</th>
+                <th style="width: 75px;">專案類型</th>
+                <th style="width: 120px;">狀態</th>
+                <th style="width: 140px;">受訂金額（含稅）</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < Model.Projects.Count; i++)
+            {
+                var project = Model.Projects[i];
+                var staff = string.Join("、", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
+                <tr>
+                    <td class="text-center">@(i + 1)</td>
+                    <td class="text-center">@project.ProjectNumber</td>
+                    <td class="text-start">@Model.Convert(project.Name)</td>
+                    <td class="text-center">@Model.Convert(staff)</td>
+                    <td class="text-center">@Model.Convert(project.ProjectType.GetDisplayName())</td>
+                    <td class="text-start">@Model.Convert(project.Status?.Name ?? "-")</td>
+                    <td class="text-end">@project.ProjectAmount.ToString("N0")</td>
+                </tr>
+            }
+            @if (!Model.Projects.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">暫無符合條件的專案</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="report-total">
+                <td colspan="6" class="text-end"><strong>合計</strong></td>
+                <td class="text-end"><strong>@Model.TotalProjectAmount.ToString("N0")</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+    <div class="report-footer">
+        <span>第 1 頁 / 共 1 頁</span>
+    </div>
+</div>
+
+<style>
+    .report-toolbar {
+        max-width: 1000px;
+        margin: 0 auto 10px auto;
+        padding: 10px 20px 0 20px;
+    }
+
+    .print-report {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 10px 20px 20px 20px;
+        font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "SimSun", "新細明體", serif;
+    }
+
+    .report-header {
+        text-align: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #333;
+    }
+
+    .report-title {
+        font-size: 22px;
+        font-weight: bold;
+        margin: 0 0 10px 0;
+        letter-spacing: 2px;
+    }
+
+    .report-meta {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 13px;
+        color: #555;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .report-table thead th {
+        background-color: #4ECDC4;
+        color: #fff;
+        font-weight: bold;
+        padding: 8px 6px;
+        border: 1px solid #3dbbb3;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .report-table tbody td {
+        padding: 7px 6px;
+        border: 1px solid #ccc;
+        vertical-align: middle;
+    }
+
+    .report-table tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .report-table tbody tr:hover {
+        background-color: #e8f6f5;
+    }
+
+    .report-total td {
+        background-color: #e0f7f5;
+        border: 1px solid #3dbbb3;
+        padding: 10px 6px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .report-footer {
+        text-align: center;
+        font-size: 12px;
+        color: #888;
+        margin-top: 10px;
+    }
+
+    .text-center { text-align: center !important; }
+    .text-start { text-align: left !important; }
+    .text-end { text-align: right !important; }
+    .text-muted { color: #888; }
+
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        body {
+            background: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "SimSun", "新細明體", serif;
+        }
+
+        .print-report {
+            max-width: 100%;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .report-table {
+            font-size: 11px;
+            font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "SimSun", "新細明體", serif;
+        }
+
+        .report-table thead th {
+            background-color: #4ECDC4 !important;
+            color: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "新細明體", serif;
+        }
+
+        .report-table tbody td {
+            font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "SimSun", "新細明體", serif;
+        }
+
+        .report-total td {
+            background-color: #e0f7f5 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .report-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>

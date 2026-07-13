@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace ProjectManager.Web.Services;
 
 /// <summary>
-/// 列表页统一允许的分页条数。所有入口都走这里，避免页面和服务层出现不一致默认值。
+/// 列表頁统一允许的分頁筆数。所有入口都走这里，避免頁面和服務层出现不一致默认值。
 /// </summary>
 public static class PageSizeOptions
 {
@@ -23,7 +23,7 @@ public static class PageSizeOptions
 }
 
 /// <summary>
-/// 数据库分页结果。创建时会先 Count 再 Skip/Take，确保列表不会先加载全量数据再内存分页。
+/// 資料库分頁结果。建立时会先 Count 再 Skip/Take，确保列表不会先加载全量資料再内存分頁。
 /// </summary>
 public sealed class PagedResult<T>
 {
@@ -61,6 +61,11 @@ public sealed class PagedResult<T>
         var totalCount = await query.CountAsync(cancellationToken);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)normalizedPageSize));
         normalizedPageNumber = Math.Min(normalizedPageNumber, totalPages);
+
+        if (totalCount == 0)
+        {
+            return new PagedResult<T>([], 0, normalizedPageNumber, normalizedPageSize);
+        }
 
         var items = await query
             .Skip((normalizedPageNumber - 1) * normalizedPageSize)

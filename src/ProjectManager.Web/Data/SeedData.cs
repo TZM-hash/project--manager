@@ -10,11 +10,12 @@ public static class SeedData
     public static IReadOnlyList<InitialProjectStatus> InitialStatuses { get; } =
     [
         new("Created", "已立案", 10, false),
-        new("PurchaseRequested", "已请购", 20, false),
-        new("Coding", "代码中", 30, false),
-        new("TrialRun", "试车中", 40, false),
+        new("PurchaseRequested", "已請購", 20, false),
+        new("Coding", "程式中", 30, false),
+        new("TrialRun", "試車中", 40, false),
         new("WaitingCollection", "待收款", 50, false),
-        new("Closed", "已结案", 60, true)
+        new("PendingClosure", "待結案", 55, false),
+        new("Closed", "已結案", 60, true)
     ];
 
     public static IReadOnlyList<InitialStatusStyle> InitialStatusStyles { get; } =
@@ -24,6 +25,7 @@ public static class SeedData
         new("Coding", "#7c2d12", "#ffedd5", false),
         new("TrialRun", "#047857", "#d1fae5", false),
         new("WaitingCollection", "#854d0e", "#fef3c7", true),
+        new("PendingClosure", "#7c3aed", "#ede9fe", true),
         new("Closed", "#dc2626", "#fee2e2", true)
     ];
 
@@ -116,7 +118,7 @@ public static class SeedData
             {
                 UserName = userName,
                 Email = email,
-                DisplayName = "系统管理员",
+                DisplayName = "系統管理員",
                 EmailConfirmed = true,
                 IsActive = true
             };
@@ -131,7 +133,7 @@ public static class SeedData
         }
         else if (string.IsNullOrWhiteSpace(admin.DisplayName) || admin.DisplayName == "Administrator")
         {
-            admin.DisplayName = "系统管理员";
+            admin.DisplayName = "系統管理員";
             await userManager.UpdateAsync(admin);
         }
 

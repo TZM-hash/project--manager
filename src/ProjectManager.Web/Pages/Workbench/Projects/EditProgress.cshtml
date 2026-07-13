@@ -1,36 +1,36 @@
-@page "{id:int}"
+﻿@page "{id:int}"
 @model ProjectManager.Web.Pages.Workbench.Projects.EditProgressModel
 @{
-    ViewData["Title"] = "更新进度";
+    ViewData["Title"] = "更新進度";
 }
 
-<h1 class="h3">更新进度</h1>
+<h1 class="h3">更新進度</h1>
 
 <form method="post" class="mt-3">
     <input asp-for="Input.ProjectId" type="hidden" />
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row g-3">
         <div class="col-md-3">
-            <label class="form-label">项目工号</label>
+            <label class="form-label">專案工號</label>
             <input class="form-control" asp-for="Input.ProjectNumber" readonly />
         </div>
         <div class="col-md-5">
-            <label class="form-label">项目名称</label>
+            <label class="form-label">專案名稱</label>
             <input class="form-control" asp-for="Input.ProjectName" readonly />
         </div>
         <div class="col-md-2">
-            <label class="form-label">进度 %</label>
+            <label class="form-label">進度 %</label>
             <input class="form-control" asp-for="Input.ProgressPercent" />
         </div>
         <div class="col-md-12">
-            <label class="form-label">进度说明</label>
+            <label class="form-label">進度說明</label>
             <div class="rich-text-field" data-rich-text>
-                <div class="rich-text-toolbar" aria-label="进度说明颜色">
+                <div class="rich-text-toolbar" aria-label="進度說明颜色">
                     @foreach (var color in RichTextSanitizer.ColorOptions)
                     {
                         <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
                     }
-                    <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+                    <button type="button" class="rich-text-reset" data-rich-text-clear>預設顏色</button>
                 </div>
                 <textarea asp-for="Input.ProgressDescription" hidden data-rich-text-source></textarea>
                 <div class="rich-text-editor" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.ProgressDescription))</div>
@@ -39,7 +39,7 @@
         </div>
     </div>
     <div class="mt-4">
-        <button class="btn btn-primary" type="submit">保存</button>
+        <button class="btn btn-primary" type="submit">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Input.ProjectId">返回</a>
     </div>
 </form>

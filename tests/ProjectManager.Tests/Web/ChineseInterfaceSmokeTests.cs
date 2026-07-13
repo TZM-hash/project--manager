@@ -30,9 +30,9 @@ public sealed class ChineseInterfaceSmokeTests
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("项目管理系统");
-        html.Should().Contain("请先登录");
-        html.Should().Contain("登录");
+        html.Should().Contain("專案管理系統");
+        html.Should().Contain("請先登入");
+        html.Should().Contain("登入");
         html.Should().NotContain(">Project Manager<");
         html.Should().NotContain(">Login<");
         html.Should().NotContain(">Register<");
@@ -49,9 +49,9 @@ public sealed class ChineseInterfaceSmokeTests
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("登录系统");
-        html.Should().Contain("账号");
-        html.Should().Contain("密码");
+        html.Should().Contain("登入系統");
+        html.Should().Contain("帳號");
+        html.Should().Contain("密碼");
         html.Should().NotContain(">Email<");
         html.Should().NotContain(">Password<");
         html.Should().NotContain("Register as a new user");
@@ -67,8 +67,8 @@ public sealed class ChineseInterfaceSmokeTests
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("系统错误");
-        html.Should().Contain("请求编号");
+        html.Should().Contain("系統錯誤");
+        html.Should().Contain("請求編號");
         html.Should().NotContain("An error occurred while processing your request.");
         html.Should().NotContain("Development Mode");
     }
@@ -84,8 +84,8 @@ public sealed class ChineseInterfaceSmokeTests
         var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("邮箱");
-        html.Should().Contain("系统管理员");
+        html.Should().Contain("信箱");
+        html.Should().Contain("系統管理員");
         html.Should().NotContain("<th>Email</th>");
         html.Should().NotContain(">Administrator<");
     }
@@ -102,13 +102,13 @@ public sealed class ChineseInterfaceSmokeTests
             "Properties",
             "launchSettings.json");
 
-        File.Exists(indexPath).Should().BeTrue("项目文件夹根目录需要一个 WEB 端入口文件");
-        File.Exists(launchSettingsPath).Should().BeTrue("入口文件必须和 ASP.NET Core 启动地址保持一致");
+        File.Exists(indexPath).Should().BeTrue("專案資料夾根目錄需要一個 WEB 端入口檔案");
+        File.Exists(launchSettingsPath).Should().BeTrue("入口檔案必須和 ASP.NET Core 啟動位址保持一致");
 
         var html = File.ReadAllText(indexPath);
         var localHttpUrl = GetHttpApplicationUrl(launchSettingsPath);
 
-        html.Should().Contain("项目管理系统 WEB 入口");
+        html.Should().Contain("專案管理系統 WEB 入口");
         html.Should().Contain("entry-brand-mark");
         html.Should().Contain($"{localHttpUrl}/Workbench/Projects");
         html.Should().Contain($"{localHttpUrl}/Identity/Account/Login");

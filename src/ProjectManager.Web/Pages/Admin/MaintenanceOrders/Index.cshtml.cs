@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -54,8 +54,8 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
     public List<SelectListItem> MethodOptions { get; } =
     [
-        new("现场保养", MaintenanceMethod.OnSite.ToString()),
-        new("远程保养", MaintenanceMethod.Remote.ToString()),
+        new("现场保養", MaintenanceMethod.OnSite.ToString()),
+        new("远程保養", MaintenanceMethod.Remote.ToString()),
         new("均有", MaintenanceMethod.Both.ToString())
     ];
 
@@ -135,9 +135,9 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
         Metrics =
         [
-            new MetricInsight("保养订单", TotalCount.ToString("N0"), "当前有效订单"),
+            new MetricInsight("保養訂單", TotalCount.ToString("N0"), "当前有效訂單"),
             new MetricInsight("已移交完成", completedCount.ToString("N0"), "移交 100%"),
-            new MetricInsight("平均移交", $"{averageHandover:0.#}%", "整体推进状态", "info"),
+            new MetricInsight("平均移交", $"{averageHandover:0.#}%", "整体推进狀態", "info"),
             new MetricInsight("执行人数", executorCount.ToString("N0"), "已分配执行人", "success")
         ];
 
@@ -161,8 +161,8 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
     {
         return method switch
         {
-            MaintenanceMethod.OnSite => "现场保养",
-            MaintenanceMethod.Remote => "远程保养",
+            MaintenanceMethod.OnSite => "现场保養",
+            MaintenanceMethod.Remote => "远程保養",
             MaintenanceMethod.Both => "均有",
             _ => method.ToString()
         };
@@ -235,12 +235,12 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
         if (!string.IsNullOrWhiteSpace(CustomerName))
         {
-            items.Add(new FilterSummaryItem("客户名称", CustomerName));
+            items.Add(new FilterSummaryItem("客戶名稱", CustomerName));
         }
 
         if (Method is not null)
         {
-            items.Add(new FilterSummaryItem("保养方式", MethodLabel(Method.Value)));
+            items.Add(new FilterSummaryItem("保養方式", MethodLabel(Method.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(ExecutorUserId))
@@ -251,7 +251,7 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
         if (MinHandoverPercent is not null || MaxHandoverPercent is not null)
         {
-            items.Add(new FilterSummaryItem("移交进度", $"{MinHandoverPercent?.ToString() ?? "0"}%-{MaxHandoverPercent?.ToString() ?? "100"}%"));
+            items.Add(new FilterSummaryItem("移交進度", $"{MinHandoverPercent?.ToString() ?? "0"}%-{MaxHandoverPercent?.ToString() ?? "100"}%"));
         }
 
         return items;

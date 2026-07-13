@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Services;
 
@@ -32,7 +32,7 @@ public sealed record AuditLogDisplayModel(
         {
             "PurchaseAdded" => $"{detail.Scope}：{detail.After}",
             "PurchaseDeleted" => $"{detail.Scope}：{detail.Before}",
-            "ProjectDeleted" => detail.Before ?? "项目已删除",
+            "ProjectDeleted" => detail.Before ?? "專案已刪除",
             _ => $"{detail.Scope} / {detail.Label}：{DisplayValue(detail.Before)} -> {DisplayValue(detail.After)}"
         };
     }
@@ -69,8 +69,8 @@ public sealed record AuditLogDisplayModel(
         {
             "Create" => "新增",
             "Update" => "修改",
-            "Delete" => "删除",
-            "ProgressUpdate" => "更新进度",
+            "Delete" => "刪除",
+            "ProgressUpdate" => "更新進度",
             _ => action
         };
     }

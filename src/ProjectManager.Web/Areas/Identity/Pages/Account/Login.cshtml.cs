@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -41,26 +41,26 @@ public sealed class LoginModel(SignInManager<ApplicationUser> signInManager) : P
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "账号已锁定，请联系系统管理员。");
+            ModelState.AddModelError(string.Empty, "帳號已锁定，请联系系統管理員。");
             return Page();
         }
 
-        ModelState.AddModelError(string.Empty, "账号或密码不正确。");
+        ModelState.AddModelError(string.Empty, "帳號或密碼不正确。");
         return Page();
     }
 
     public sealed class InputModel
     {
-        [Display(Name = "账号")]
-        [Required(ErrorMessage = "请输入账号。")]
+        [Display(Name = "帳號")]
+        [Required(ErrorMessage = "请输入帳號。")]
         public string UserName { get; set; } = string.Empty;
 
-        [Display(Name = "密码")]
-        [Required(ErrorMessage = "请输入密码。")]
+        [Display(Name = "密碼")]
+        [Required(ErrorMessage = "请输入密碼。")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "保持登录")]
+        [Display(Name = "保持登入")]
         public bool RememberMe { get; set; } = true;
     }
 }

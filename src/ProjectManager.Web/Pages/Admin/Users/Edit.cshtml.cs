@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -58,7 +58,7 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
         var updateResult = await userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, "用户保存失败，请检查邮箱格式和账号状态。");
+            ModelState.AddModelError(string.Empty, "使用者儲存失敗，请检查信箱格式和帳號狀態。");
             return Page();
         }
 
@@ -75,17 +75,17 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
 
     public sealed class InputModel
     {
-        [Display(Name = "用户名")]
+        [Display(Name = "使用者名稱")]
         public string UserName { get; set; } = string.Empty;
 
         [Display(Name = "姓名")]
         public string DisplayName { get; set; } = string.Empty;
 
-        [Display(Name = "邮箱")]
-        [EmailAddress(ErrorMessage = "邮箱格式不正确。")]
+        [Display(Name = "信箱")]
+        [EmailAddress(ErrorMessage = "信箱格式不正确。")]
         public string? Email { get; set; }
 
-        [Display(Name = "启用账号")]
+        [Display(Name = "啟用帳號")]
         public bool IsActive { get; set; } = true;
 
         [Display(Name = "弱管理")]

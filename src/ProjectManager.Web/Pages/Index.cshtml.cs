@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Services;
@@ -61,17 +61,17 @@ public class IndexModel(ApplicationDbContext db) : PageModel
 
         Metrics =
         [
-            new MetricInsight("项目总数", TotalProjectCount.ToString("N0"), "当前有效项目"),
-            new MetricInsight("未结案项目", OpenProjectCount.ToString("N0"), $"{OpenProjectPercent:0.#}% 仍在推进"),
-            new MetricInsight("规划中专案", PlanningProjectCount.ToString("N0"), "待正式立项", "info"),
-            new MetricInsight("保养订单", MaintenanceOrderCount.ToString("N0"), "年度保养跟踪", "success"),
-            new MetricInsight("月结批次", SettlementBatchCount.ToString("N0"), "历史快照")
+            new MetricInsight("專案總數", TotalProjectCount.ToString("N0"), "当前有效專案"),
+            new MetricInsight("未結案專案", OpenProjectCount.ToString("N0"), $"{OpenProjectPercent:0.#}% 仍在推進"),
+            new MetricInsight("規劃中專案", PlanningProjectCount.ToString("N0"), "待正式立项", "info"),
+            new MetricInsight("保養訂單", MaintenanceOrderCount.ToString("N0"), "年度保養跟踪", "success"),
+            new MetricInsight("月結批次", SettlementBatchCount.ToString("N0"), "歷史快照")
         ];
 
         var statusRows = await db.Projects
             .AsNoTracking()
             .Where(x => !x.IsDeleted)
-            .GroupBy(x => x.Status == null ? "未设置" : x.Status.Name)
+            .GroupBy(x => x.Status == null ? "未設定" : x.Status.Name)
             .Select(x => new { Label = x.Key, Value = x.Count() })
             .OrderByDescending(x => x.Value)
             .ToListAsync(cancellationToken);
@@ -79,7 +79,7 @@ public class IndexModel(ApplicationDbContext db) : PageModel
 
         OpenClosedSlices = ChartPalette.BuildSlices(
         [
-            ("未结案", (decimal)OpenProjectCount),
+            ("未結案", (decimal)OpenProjectCount),
             ("已结案", (decimal)Math.Max(0, TotalProjectCount - OpenProjectCount))
         ]);
 

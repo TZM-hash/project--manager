@@ -2,17 +2,17 @@
 @using ProjectManager.Web.Security
 @model IndexModel
 @{
-    ViewData["Title"] = "首页";
+    ViewData["Title"] = "首頁";
 }
 
 <div class="dashboard-header">
     <div>
-        <h1 class="page-title">台塑电子项目管理系统</h1>
-        <div class="dashboard-subtitle">集中管理公司内网项目、请购、月结和未结案报表</div>
+        <h1 class="page-title">台塑電子專案管理系統</h1>
+        <div class="dashboard-subtitle">集中管理公司內網專案、請購、月結和未結案報表</div>
     </div>
     <div class="dashboard-meta">
-        <span>内网部署</span>
-        <span>WEB 专案管理</span>
+        <span>內網部署</span>
+        <span>WEB 我的專案</span>
     </div>
 </div>
 
@@ -31,8 +31,8 @@
     <section class="chart-card chart-card-feature">
         <div class="chart-card-header">
             <div>
-                <div class="chart-title">未结案占比</div>
-                <div class="chart-subtitle">整体项目推进压力</div>
+                <div class="chart-title">未結案占比</div>
+                <div class="chart-subtitle">整体專案推进压力</div>
             </div>
             <span class="meta-pill">@Model.OpenProjectCount / @Model.TotalProjectCount</span>
         </div>
@@ -50,8 +50,8 @@
     </section>
 
     <section class="chart-card">
-        <div class="chart-title">项目状态分布</div>
-        <div class="chart-subtitle">按状态汇总当前有效项目</div>
+        <div class="chart-title">專案狀態分布</div>
+        <div class="chart-subtitle">按狀態彙總当前有效專案</div>
         <div class="bar-list">
             @foreach (var slice in Model.StatusSlices)
             {
@@ -65,7 +65,7 @@
     </section>
 
     <section class="chart-card">
-        <div class="chart-title">月结批次趋势</div>
+        <div class="chart-title">月結批次趨勢</div>
         <div class="chart-subtitle">最近 6 个有批次月份</div>
         <div class="mini-bars">
             @foreach (var slice in Model.SettlementSlices)
@@ -84,12 +84,12 @@
     @if (User.IsInRole(RoleNames.Administrator))
     {
         <section class="module-card">
-            <div class="module-title">后台管理入口</div>
-            <div class="module-subtitle">维护用户、项目资料、请购记录和状态样式。</div>
+            <div class="module-title">後台管理入口</div>
+            <div class="module-subtitle">維護使用者、專案資料、請購記錄和狀態樣式。</div>
             <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Admin/Projects/Index">项目管理</a>
-                <a class="btn btn-outline-secondary" asp-page="/Admin/Users/Index">用户管理</a>
-                <a class="btn btn-outline-secondary" asp-page="/Admin/Statuses/Index">状态设置</a>
+                <a class="btn btn-primary" asp-page="/Admin/Projects/Index">專案總覽</a>
+                <a class="btn btn-outline-secondary" asp-page="/Admin/Users/Index">使用者管理</a>
+                <a class="btn btn-outline-secondary" asp-page="/Admin/Statuses/Index">狀態設定</a>
             </div>
         </section>
     }
@@ -97,11 +97,11 @@
     @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
     {
         <section class="module-card">
-            <div class="module-title">WEB 专案管理入口</div>
-            <div class="module-subtitle">查看项目状态图、更新项目进度、跟踪请购和收款情况。</div>
+            <div class="module-title">WEB 我的專案入口</div>
+            <div class="module-subtitle">查看專案狀態圖、更新專案進度、跟蹤請購和收款情況。</div>
             <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">专案管理</a>
-                <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Index">报表</a>
+                <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">我的專案</a>
+                <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Index">報表</a>
             </div>
         </section>
     }
@@ -109,12 +109,12 @@
     @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader))
     {
         <section class="module-card">
-            <div class="module-title">月结与统计</div>
-            <div class="module-subtitle">手动生成月度结算快照，导出 Excel，打印月结报表。</div>
+            <div class="module-title">月結與統計</div>
+            <div class="module-subtitle">手動生成月度結算快照，匯出 Excel，列印月結報表。</div>
             <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Settlements/Create">生成月结</a>
-                <a class="btn btn-outline-secondary" asp-page="/Settlements/Index">月结</a>
-                <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Statistics">统计</a>
+                <a class="btn btn-primary" asp-page="/Settlements/Create">生成月結</a>
+                <a class="btn btn-outline-secondary" asp-page="/Settlements/Index">月結</a>
+                <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Statistics">統計</a>
             </div>
         </section>
     }
@@ -122,10 +122,10 @@
     @if (!User.Identity?.IsAuthenticated ?? true)
     {
         <section class="module-card">
-            <div class="module-title">请先登录</div>
-            <div class="module-subtitle">登录后会根据角色显示对应的后台管理和 WEB 专案管理入口。</div>
+            <div class="module-title">請先登入</div>
+            <div class="module-subtitle">登入後會根據角色顯示對應的後台管理和 WEB 我的專案入口。</div>
             <div class="module-actions">
-                <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登录</a>
+                <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登入</a>
             </div>
         </section>
     }

@@ -1,32 +1,32 @@
-@page "{id:int}"
+﻿@page "{id:int}"
 @model ProjectManager.Web.Pages.Workbench.PlanningProjects.PrintModel
 @{
-    ViewData["Title"] = "规划中专案报表";
+    ViewData["Title"] = "規劃中專案報表";
     Layout = "_PrintLayout";
 }
 
 <div class="print-report" id="printContent">
     <div class="print-header">
-        <h1>规划中专案报表</h1>
-        <div class="print-date">打印日期：@DateTime.Now.ToString("yyyy-MM-dd")</div>
+        <h1>規劃中專案報表</h1>
+        <div class="print-date">列印日期：@DateTime.Now.ToString("yyyy-MM-dd")</div>
     </div>
 
     <table class="print-table">
         <tbody>
             <tr>
-                <th>项目名</th>
+                <th>專案名</th>
                 <td>@Model.Project.Name</td>
             </tr>
             <tr>
-                <th>项目负责人</th>
+                <th>專案負責人</th>
                 <td>@Model.LeaderDisplayNames</td>
             </tr>
             <tr>
-                <th>厂商</th>
+                <th>廠商</th>
                 <td>@(Model.Project.Vendor ?? "-")</td>
             </tr>
             <tr>
-                <th>最新说明</th>
+                <th>最新說明</th>
                 <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Project.LatestDescription) ?? "-")</td>
             </tr>
             <tr>
@@ -38,15 +38,15 @@
 
     @if (Model.Project.HistoryRecords.Count > 0)
     {
-        <h2 class="print-section-title">历史记录</h2>
+        <h2 class="print-section-title">歷史記錄</h2>
         <table class="print-table print-table-list">
             <thead>
                 <tr>
                     <th>年月</th>
-                    <th>上期说明</th>
-                    <th>本期记录</th>
-                    <th>记录人</th>
-                    <th>记录时间</th>
+                    <th>上期說明</th>
+                    <th>本期記錄</th>
+                    <th>記錄人</th>
+                    <th>記錄時間</th>
                 </tr>
             </thead>
             <tbody>
@@ -76,7 +76,7 @@
                 converter.convertElement(content);
                 document.title = converter.convert(document.title);
             }
-            // 转换完成后自动打印
+            // 转换完成后自动列印
             setTimeout(function() { window.print(); }, 300);
         };
     </script>

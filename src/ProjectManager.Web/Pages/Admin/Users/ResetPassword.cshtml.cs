@@ -62,10 +62,20 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager)
         var newPassword = string.IsNullOrWhiteSpace(Input.NewPassword)
             ? GenerateRandomPassword()
             : Input.NewPassword;
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            ModelState.AddModelError(string.Empty, "密碼不能為空。");
+            return Page();
+        }
+
         var result = await userManager.ResetPasswordAsync(user, token, newPassword);
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, "密码重置失败，请检查新密码复杂度。");
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
             return Page();
         }
 
@@ -80,7 +90,7 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager)
             .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-    /// <summary>判断当前登录用户是否为 admin 账号（唯一可管理密码的账号）。</summary>
+    /// <summary>判断当前登入使用者是否为 admin 帳號（唯一可管理密碼的帳號）。</summary>
     private async Task<bool> IsAdminUserAsync()
     {
         var currentUserId = userManager.GetUserId(User);
@@ -90,7 +100,7 @@ public sealed class ResetPasswordModel(UserManager<ApplicationUser> userManager)
 
     public sealed class InputModel
     {
-        [Display(Name = "新密码")]
+        [Display(Name = "新密碼")]
         public string NewPassword { get; set; } = string.Empty;
     }
 }

@@ -1,43 +1,43 @@
 @page
 @model LoginModel
 @{
-    ViewData["Title"] = "登录系统";
+    ViewData["Title"] = "登入系統";
 }
 
 <div class="account-shell">
     <section class="account-panel">
         <div class="account-logo">
-            <img src="~/img/logo.png" asp-append-version="true" alt="台塑电子项目管理系统 LOGO" />
+            <img src="~/img/logo.png" asp-append-version="true" alt="台塑電子專案管理系統 LOGO" />
         </div>
-        <h1 class="h3">登录系统</h1>
-        <p class="text-muted mb-3">请输入公司内网账号和密码。</p>
+        <h1 class="h3">登入系統</h1>
+        <p class="text-muted mb-3">請輸入公司內網帳號和密碼。</p>
 
         <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="mb-3">
-                <label asp-for="Input.UserName" class="form-label">账号</label>
+                <label asp-for="Input.UserName" class="form-label">帳號</label>
                 <input asp-for="Input.UserName" class="form-control" autocomplete="username" autofocus />
                 <span asp-validation-for="Input.UserName" class="text-danger"></span>
             </div>
             <div class="mb-3">
-                <label asp-for="Input.Password" class="form-label">密码</label>
+                <label asp-for="Input.Password" class="form-label">密碼</label>
                 <div class="password-field">
                     <input asp-for="Input.Password" class="form-control" autocomplete="current-password" data-password-input />
-                    <button class="password-toggle" type="button" data-password-toggle aria-label="显示密码" aria-pressed="false">
-                        <span data-password-toggle-text>显示</span>
+                    <button class="password-toggle" type="button" data-password-toggle aria-label="顯示密碼" aria-pressed="false">
+                        <span data-password-toggle-text>顯示</span>
                     </button>
                 </div>
                 <span asp-validation-for="Input.Password" class="text-danger"></span>
             </div>
             <div class="form-check mb-3">
                 <input asp-for="Input.RememberMe" class="form-check-input" />
-                <label asp-for="Input.RememberMe" class="form-check-label">保持登录</label>
+                <label asp-for="Input.RememberMe" class="form-check-label">保持登入</label>
             </div>
-            <button type="submit" class="btn btn-primary w-100">登录</button>
+            <button type="submit" class="btn btn-primary w-100">登入</button>
         </form>
 
         <div class="account-help">
-            忘记密码或需要开通账号时，请联系系统管理员。
+            忘記密碼或需要開通帳號時，請聯繫系統管理員。
         </div>
     </section>
 </div>

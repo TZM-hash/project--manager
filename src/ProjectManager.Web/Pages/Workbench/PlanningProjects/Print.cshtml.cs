@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -28,7 +28,7 @@ public sealed class PrintModel(
 
         Project = project;
 
-        // 解析逗号分隔的负责人 ID，显示姓名
+        // 解析逗号分隔的負責人 ID，顯示姓名
         if (!string.IsNullOrWhiteSpace(project.LeaderUserId))
         {
             var ids = project.LeaderUserId.Split(',', StringSplitOptions.RemoveEmptyEntries);

@@ -1,4 +1,4 @@
-@model ProjectManager.Web.Models.Project
+﻿@model ProjectManager.Web.Models.Project
 @using ProjectManager.Web.Models
 @using ProjectManager.Web.Pages.Shared
 @{
@@ -15,14 +15,14 @@
     <div class="project-visual-card project-visual-card-main">
         <div class="chart-card-header">
             <div>
-                <div class="chart-title">项目推进概览</div>
-                <div class="chart-subtitle">进度、收款和请购付款的综合状态</div>
+                <div class="chart-title">專案推进概览</div>
+                <div class="chart-subtitle">進度、收款和请购付款的综合狀態</div>
             </div>
             <partial name="_StatusBadge" model="Model.Status" />
         </div>
         <div class="detail-progress-stack">
             <div>
-                <div class="detail-progress-label">专案进度</div>
+                <div class="detail-progress-label">專案進度</div>
                 <partial name="_PercentBar" model="new PercentBarModel(Model.ProgressPercent, compact: false)" />
             </div>
             <div>
@@ -37,19 +37,19 @@
     </div>
 
     <div class="project-visual-card">
-        <div class="chart-title">金额结构</div>
-        <div class="chart-subtitle">项目金额、请购金额和实际付款</div>
+        <div class="chart-title">金額结构</div>
+        <div class="chart-subtitle">專案金額、请购金額和實際付款</div>
         <div class="detail-kpi-grid">
             <div class="detail-kpi">
-                <span>项目金额</span>
+                <span>專案金額</span>
                 <strong>@Model.ProjectAmount.ToString("N2")</strong>
             </div>
             <div class="detail-kpi">
-                <span>请购金额</span>
+                <span>请购金額</span>
                 <strong>@purchaseAmountTotal.ToString("N2")</strong>
             </div>
             <div class="detail-kpi">
-                <span>实际已付款</span>
+                <span>實際已付款</span>
                 <strong>@actualPaidTotal.ToString("N2")</strong>
             </div>
             <div class="detail-kpi">
@@ -61,15 +61,15 @@
 
     <div class="project-visual-card">
         <div class="chart-title">请购结构</div>
-        <div class="chart-subtitle">按内购与外购分类</div>
+        <div class="chart-subtitle">按內購与外購分類</div>
         <div class="purchase-type-bars">
             <div class="purchase-type-row" style="--bar-width:@(purchaseRequests.Count == 0 ? 0 : Math.Round(internalCount / (decimal)purchaseRequests.Count * 100, 1))%;--bar-color:#2563eb">
-                <span>内购</span>
+                <span>內購</span>
                 <div class="bar-track"><i></i></div>
                 <strong>@internalCount</strong>
             </div>
             <div class="purchase-type-row" style="--bar-width:@(purchaseRequests.Count == 0 ? 0 : Math.Round(externalCount / (decimal)purchaseRequests.Count * 100, 1))%;--bar-color:#14b8a6">
-                <span>外购</span>
+                <span>外購</span>
                 <div class="bar-track"><i></i></div>
                 <strong>@externalCount</strong>
             </div>

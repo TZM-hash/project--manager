@@ -9,7 +9,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class EditModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
@@ -17,6 +17,9 @@ public sealed class EditModel(
     AuditLogService auditLogService)
     : ProjectFormPageModel(db, userManager, maintenanceService)
 {
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnTab { get; set; }
+
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var project = await FindProjectAsync(id, asTracking: false, cancellationToken);
@@ -56,7 +59,7 @@ public sealed class EditModel(
         SyncPurchaseRequests(project, now);
 
         await Db.SaveChangesAsync(cancellationToken);
-        // 保存后再生成新快照，字段级和请购级差异都由统一 builder 计算。
+        // 儲存后再生成新快照，欄位级和请购级差異都由统一 builder 計算。
         var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
         var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after);
         if (changes.Count > 0)
@@ -66,7 +69,7 @@ public sealed class EditModel(
                 "Update",
                 project.Id,
                 project.ProjectNumber,
-                $"修改项目 {project.ProjectNumber}",
+                $"修改專案 {project.ProjectNumber}",
                 changes,
                 cancellationToken);
         }
@@ -83,7 +86,7 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
-        // 删除日志需要保留删除前的工号、名称、金额等上下文。
+        // 刪除日誌需要保留刪除前的工号、名稱、金額等上下文。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.IsDeleted = true;
         project.UpdatedAt = now;
@@ -101,7 +104,7 @@ public sealed class EditModel(
             "Delete",
             project.Id,
             project.ProjectNumber,
-            $"删除项目 {project.ProjectNumber}",
+            $"刪除專案 {project.ProjectNumber}",
             ProjectAuditChangeBuilder.BuildDeleteChanges(before),
             cancellationToken);
         return RedirectToPage("./Index");

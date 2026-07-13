@@ -1,16 +1,16 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Workbench.PlanningProjects.IndexModel
 @{
-    ViewData["Title"] = "规划中专案";
+    ViewData["Title"] = "規劃中專案";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">规划中专案</h1>
-        <div class="page-subtitle">跟踪尚未正式立项的项目意向和月度说明</div>
+        <h1 class="page-title">規劃中專案</h1>
+        <div class="page-subtitle">跟踪尚未正式立项的專案意向和月度說明</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量导入</a>
+        <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量匯入</a>
         <a class="btn btn-primary" asp-page="./Create">新增</a>
     </div>
 </div>
@@ -28,8 +28,8 @@
 
 <div class="insight-grid">
     <section class="chart-card">
-        <div class="chart-title">负责人分布</div>
-        <div class="chart-subtitle">按负责人汇总规划中项目</div>
+        <div class="chart-title">負責人分布</div>
+        <div class="chart-subtitle">按負責人彙總规划中專案</div>
         <div class="bar-list">
             @foreach (var slice in Model.LeaderSlices)
             {
@@ -42,8 +42,8 @@
         </div>
     </section>
     <section class="chart-card">
-        <div class="chart-title">厂商分布</div>
-        <div class="chart-subtitle">辅助查看供应商覆盖情况</div>
+        <div class="chart-title">廠商分布</div>
+        <div class="chart-subtitle">辅助查看供應商覆盖情况</div>
         <div class="bar-list">
             @foreach (var slice in Model.VendorSlices)
             {
@@ -60,26 +60,26 @@
 <form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
-            <input class="form-control" asp-for="Name" placeholder="搜索项目名称" />
-            <input class="form-control" asp-for="Vendor" placeholder="厂商" />
+            <input class="form-control" asp-for="Name" placeholder="搜尋專案名稱" />
+            <input class="form-control" asp-for="Vendor" placeholder="廠商" />
         </div>
         <div class="filter-quick-actions">
-            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
-            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
+            <button class="btn btn-primary" type="submit">查詢</button>
         </div>
     </div>
     <div class="filter-drawer" data-filter-drawer-panel>
         <div class="filter-drawer-header">
             <div>
-                <div class="filter-drawer-title">高级筛选</div>
-                <div class="filter-drawer-subtitle">按负责人、厂商和项目名称定位规划中专案</div>
+                <div class="filter-drawer-title">進階篩選</div>
+                <div class="filter-drawer-subtitle">按負責人、廠商和專案名稱定位規劃中專案</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
         <div class="row g-2">
             <div class="col-md-6">
                 <select class="form-select" asp-for="LeaderUserId" asp-items="Model.UserOptions">
-                    <option value="">项目负责人</option>
+                    <option value="">專案負責人</option>
                 </select>
             </div>
         </div>
@@ -93,19 +93,19 @@
 <div class="bulk-toolbar bulk-toolbar-split">
     <div class="bulk-toolbar-copy">
         <span class="bulk-toolbar-count" data-selected-count>0</span>
-        <span>个规划项目已选择</span>
+        <span>个规划專案已選擇</span>
     </div>
     <div class="bulk-toolbar-actions">
         <form method="post" asp-page-handler="BatchPrint" class="bulk-action-form" data-bulk-form>
-            <button type="submit" class="btn btn-outline-secondary" data-bulk-requires-selection>批量打印</button>
+            <button type="submit" class="btn btn-outline-secondary" data-bulk-requires-selection>批量列印</button>
         </form>
-        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定删除选中的项目吗？">
+        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="确定刪除選中的專案吗？">
             <input type="hidden" asp-for="Name" />
             <input type="hidden" asp-for="LeaderUserId" />
             <input type="hidden" asp-for="Vendor" />
             <input type="hidden" asp-for="PageNumber" />
             <input type="hidden" asp-for="PageSize" />
-            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量删除</button>
+            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
         </form>
     </div>
 </div>
@@ -117,10 +117,10 @@
             <tr>
                 <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
                 <th style="width: 60px;">项次</th>
-                <th>项目名</th>
-                <th>项目负责人</th>
-                <th>厂商</th>
-                <th>最新说明</th>
+                <th>專案名</th>
+                <th>專案負責人</th>
+                <th>廠商</th>
+                <th>最新說明</th>
                 <th>最近更新</th>
                 <th class="text-end">操作</th>
             </tr>
@@ -138,10 +138,10 @@
                 <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(project.LatestDescription) ?? "-")</td>
                 <td>@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 <td class="text-end text-nowrap">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@project.Id">打印</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" asp-route-Name="@Model.Name" asp-route-LeaderUserId="@Model.LeaderUserId" asp-route-Vendor="@Model.Vendor" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定删除该项目吗？');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@project.Id">列印</a>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" asp-route-Name="@Model.Name" asp-route-LeaderUserId="@Model.LeaderUserId" asp-route-Vendor="@Model.Vendor" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定刪除该專案吗？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
                     </form>
                 </td>
             </tr>
@@ -151,7 +151,7 @@
         {
             <tr>
                 <td colspan="8">
-                    <div class="empty-state">暂无规划中专案</div>
+                    <div class="empty-state">暂无規劃中專案</div>
                 </td>
             </tr>
         }

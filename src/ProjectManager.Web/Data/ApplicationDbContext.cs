@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Models;
 
@@ -36,13 +36,21 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<ProjectSkippedStatus> ProjectSkippedStatuses => Set<ProjectSkippedStatus>();
 
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+
+    public DbSet<Vendor> Vendors => Set<Vendor>();
+
+    public DbSet<VendorContact> VendorContacts => Set<VendorContact>();
+
+    public DbSet<ProjectArchive> ProjectArchives => Set<ProjectArchive>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
         builder.Entity<Project>(entity =>
         {
-            // 项目工号只要求“未删除项目”内唯一，软删除后允许重新使用同年度工号。
+            // 專案工號只要求「未刪除專案」內唯一，軟刪除後允許重新使用同年度工號。
             entity.HasIndex(x => new { x.Year, x.ProjectNumber })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
@@ -50,6 +58,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasIndex(x => x.UpdatedAt);
             entity.HasIndex(x => x.ProjectNumber);
             entity.HasIndex(x => x.ParentCaseNumber);
+            entity.HasIndex(x => x.ProjectType);
 
             entity.Property(x => x.ParentCaseNumber).HasMaxLength(64);
             entity.Property(x => x.ProjectNumber).HasMaxLength(64).IsRequired();
@@ -63,7 +72,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(x => x.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 更新人是审计上下文，不允许删除用户时级联删除项目。
+            // 更新人是審計上下文，不允许刪除使用者时级联刪除專案。
             entity.HasOne(x => x.UpdatedByUser)
                 .WithMany()
                 .HasForeignKey(x => x.UpdatedByUserId)
@@ -116,7 +125,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(x => x.PurchaseRequests)
                 .HasForeignKey(x => x.ProjectId);
 
-            // 人员类外键统一 Restrict，避免删除账号时影响历史项目和请购数据。
+            // 人员类外键统一 Restrict，避免刪除帳號时影响歷史專案和请购資料。
             entity.HasOne(x => x.PurchaseStaff)
                 .WithMany()
                 .HasForeignKey(x => x.PurchaseStaffUserId)
@@ -126,11 +135,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(x => x.SubCaseContactUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.VendorContact)
+                .WithMany()
+                .HasForeignKey(x => x.VendorContactId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<MonthlySettlementBatch>(entity =>
         {
-            // 同一个年月可以生成多次月结，每次生成按 BatchNumber 递增。
+            // 同一个年月可以生成多次月結，每次生成按 BatchNumber 递增。
             entity.HasIndex(x => new { x.Year, x.Month, x.BatchNumber }).IsUnique();
 
             entity.HasOne(x => x.CreatedByUser)
@@ -141,7 +155,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<MonthlySettlementItem>(entity =>
         {
-            // 月结明细保存生成当时的项目快照，因此保留较多文本汇总字段。
+            // 月結明細儲存生成当时的專案快照，因此保留较多文本彙總欄位。
             entity.Property(x => x.ParentCaseNumber).HasMaxLength(64);
             entity.Property(x => x.ProjectNumber).HasMaxLength(64).IsRequired();
             entity.Property(x => x.ProjectName).HasMaxLength(200).IsRequired();
@@ -163,7 +177,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.EntityId).HasMaxLength(120).IsRequired();
             entity.Property(x => x.ProjectNumber).HasMaxLength(64);
             entity.Property(x => x.ChangeSummary).HasMaxLength(500);
-            // 项目详情页按 ProjectId 拉取操作记录，该索引避免历史日志增长后查询变慢。
+            // 專案明細頁按 ProjectId 拉取操作記錄，该索引避免歷史日誌增长后查詢变慢。
             entity.HasIndex(x => x.ProjectId);
             entity.HasIndex(x => x.CreatedAt);
             entity.HasIndex(x => new { x.ProjectId, x.CreatedAt });
@@ -259,6 +273,54 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(x => x.CreatedByUser)
                 .WithMany()
                 .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<SystemSetting>(entity =>
+        {
+            entity.HasIndex(x => x.Key).IsUnique();
+            entity.Property(x => x.Key).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.Value).HasMaxLength(400).IsRequired();
+        });
+
+        builder.Entity<Vendor>(entity =>
+        {
+            entity.Property(x => x.CompanyName).HasMaxLength(200).IsRequired();
+            entity.HasIndex(x => x.IsDeleted);
+        });
+
+        builder.Entity<VendorContact>(entity =>
+        {
+            entity.Property(x => x.Name).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.Phone).HasMaxLength(20);
+            entity.HasIndex(x => x.VendorId);
+            entity.HasIndex(x => x.IsDeleted);
+
+            entity.HasOne(x => x.Vendor)
+                .WithMany(x => x.Contacts)
+                .HasForeignKey(x => x.VendorId);
+        });
+
+        builder.Entity<ProjectArchive>(entity =>
+        {
+            entity.HasIndex(x => x.OriginalProjectId);
+            entity.HasIndex(x => x.ProjectNumber);
+            entity.HasIndex(x => x.ParentCaseNumber);
+            entity.HasIndex(x => x.ArchivedAt);
+            entity.HasIndex(x => x.Year);
+
+            entity.Property(x => x.ParentCaseNumber).HasMaxLength(64);
+            entity.Property(x => x.ProjectNumber).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.StatusName).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.ProjectAmount).HasPrecision(18, 2);
+            entity.Property(x => x.ProgressPercent).HasPrecision(5, 2);
+            entity.Property(x => x.CollectionPercent).HasPrecision(5, 2);
+            entity.Property(x => x.AssignmentSummary).HasMaxLength(500);
+
+            entity.HasOne(x => x.ArchivedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.ArchivedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

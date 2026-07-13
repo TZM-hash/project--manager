@@ -1,24 +1,24 @@
-@page
+﻿@page
 @model ProjectManager.Web.Pages.Workbench.PlanningProjects.PrintListModel
 @{
-    ViewData["Title"] = "规划中专案清单";
+    ViewData["Title"] = "規劃中專案清单";
     Layout = "_PrintLayout";
 }
 
 <div class="print-report" id="printContent">
     <div class="print-header">
-        <h1>规划中专案清单</h1>
-        <div class="print-date">打印日期：@DateTime.Now.ToString("yyyy-MM-dd")</div>
+        <h1>規劃中專案清单</h1>
+        <div class="print-date">列印日期：@DateTime.Now.ToString("yyyy-MM-dd")</div>
     </div>
 
     <table class="print-table print-table-list">
         <thead>
             <tr>
                 <th style="width: 50px;">项次</th>
-                <th>项目名</th>
-                <th>项目负责人</th>
-                <th>厂商</th>
-                <th>最新说明</th>
+                <th>專案名</th>
+                <th>專案負責人</th>
+                <th>廠商</th>
+                <th>最新說明</th>
                 <th>最近更新</th>
             </tr>
         </thead>

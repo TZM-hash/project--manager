@@ -1,14 +1,14 @@
-@page
+﻿@page
 @using ProjectManager.Web.Security
 @model ProjectManager.Web.Pages.Admin.Users.CreateModel
 @{
-    ViewData["Title"] = "新增用户";
+    ViewData["Title"] = "新增使用者";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">新增用户</h1>
-        <div class="page-subtitle">创建账号并分配系统角色</div>
+        <h1 class="page-title">新增使用者</h1>
+        <div class="page-subtitle">建立帳號并分配系统角色</div>
     </div>
 </div>
 
@@ -16,7 +16,7 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row g-3">
         <div class="col-md-4">
-            <label asp-for="Input.UserName" class="form-label">用户名</label>
+            <label asp-for="Input.UserName" class="form-label">使用者名稱</label>
             <input asp-for="Input.UserName" class="form-control" />
             <span asp-validation-for="Input.UserName" class="text-danger"></span>
         </div>
@@ -25,19 +25,19 @@
             <input asp-for="Input.DisplayName" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label asp-for="Input.Email" class="form-label">邮箱</label>
+            <label asp-for="Input.Email" class="form-label">信箱</label>
             <input asp-for="Input.Email" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label asp-for="Input.Password" class="form-label">初始密码</label>
+            <label asp-for="Input.Password" class="form-label">初始密碼</label>
             <input asp-for="Input.Password" class="form-control" type="password" />
             <span asp-validation-for="Input.Password" class="text-danger"></span>
-            <div class="form-text">勾选弱管理后，密码可不填写。</div>
+            <div class="form-text">勾选弱管理后，密碼可不填写。</div>
         </div>
         <div class="col-12">
             <label class="form-check-label">
                 <input asp-for="Input.IsWeakManaged" class="form-check-input" />
-                弱管理（不强制密码/邮箱；子案对接人请勾选）
+                弱管理（不强制密碼/信箱；子案對接人请勾选）
             </label>
         </div>
         <div class="col-12">
@@ -54,7 +54,7 @@
         </div>
     </div>
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="submit" class="btn btn-primary">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

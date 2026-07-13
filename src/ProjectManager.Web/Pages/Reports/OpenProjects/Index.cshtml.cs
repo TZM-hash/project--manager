@@ -137,6 +137,8 @@ public sealed class IndexModel(
                 string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
                 x.Id))
             .ToList();
+
+        UserOptions.Insert(0, new SelectListItem("全部", ""));
     }
 
     private async Task LoadInsightsAsync(CancellationToken cancellationToken)
@@ -163,24 +165,24 @@ public sealed class IndexModel(
 
         Metrics =
         [
-            new MetricInsight("未结案项目", TotalCount.ToString("N0"), "当前筛选结果"),
-            new MetricInsight("项目金额", totalAmount.ToString("N2"), "未结案汇总", "success"),
-            new MetricInsight("请购金额", purchaseAmount.ToString("N2"), "未结案请购汇总", "info"),
-            new MetricInsight("平均进度", $"{averageProgress:0.#}%", "当前筛选均值")
+            new MetricInsight("未結案專案", TotalCount.ToString("N0"), "当前篩選結果"),
+            new MetricInsight("專案金額", totalAmount.ToString("N2"), "未結案彙總", "success"),
+            new MetricInsight("请购金額", purchaseAmount.ToString("N2"), "未結案请购彙總", "info"),
+            new MetricInsight("平均進度", $"{averageProgress:0.#}%", "目前篩選均值")
         ];
 
         AnalysisCards =
         [
             new MetricInsight(
-                "需关注项目",
+                "需关注專案",
                 lowProgressCount.ToString("N0"),
-                "进度低于 30%",
+                "進度低于 30%",
                 "danger",
                 BuildAnalysisRouteValues(ProjectAnalysisTypes.LowProgress)),
             new MetricInsight(
                 "回款滞后",
                 collectionLagCount.ToString("N0"),
-                "收款比例落后进度 25% 以上",
+                "收款比例落后進度 25% 以上",
                 "warning",
                 BuildAnalysisRouteValues(ProjectAnalysisTypes.CollectionLag)),
             new MetricInsight(
@@ -190,15 +192,15 @@ public sealed class IndexModel(
                 "info",
                 BuildAnalysisRouteValues(ProjectAnalysisTypes.StaleUpdate)),
             new MetricInsight(
-                "最高金额项目",
+                "最高金額專案",
                 topAmountProject is null ? "-" : topAmountProject.ProjectAmount.ToString("N2"),
-                topAmountProject is null ? "暂无项目" : $"{topAmountProject.ProjectNumber} / {topAmountProject.Name}",
+                topAmountProject is null ? "暂无專案" : $"{topAmountProject.ProjectNumber} / {topAmountProject.Name}",
                 "success",
                 topAmountProject is null ? null : BuildTopAmountRouteValues(topAmountProject.ProjectNumber))
         ];
 
         var statusRows = await query
-            .GroupBy(x => x.Status == null ? "未设置" : x.Status.Name)
+            .GroupBy(x => x.Status == null ? "未設定" : x.Status.Name)
             .Select(x => new { Label = x.Key, Value = x.Count() })
             .OrderByDescending(x => x.Value)
             .ToListAsync(cancellationToken);
@@ -306,29 +308,29 @@ public sealed class IndexModel(
 
         if (!string.IsNullOrWhiteSpace(ParentCaseNumber))
         {
-            items.Add(new FilterSummaryItem("母案案号", ParentCaseNumber));
+            items.Add(new FilterSummaryItem("母案案號", ParentCaseNumber));
         }
 
         if (!string.IsNullOrWhiteSpace(ProjectNumber))
         {
-            items.Add(new FilterSummaryItem("项目工号", ProjectNumber));
+            items.Add(new FilterSummaryItem("專案工號", ProjectNumber));
         }
 
         if (!string.IsNullOrWhiteSpace(ProjectName))
         {
-            items.Add(new FilterSummaryItem("项目名称", ProjectName));
+            items.Add(new FilterSummaryItem("專案名稱", ProjectName));
         }
 
         if (!string.IsNullOrWhiteSpace(PersonnelUserId) && !User.IsInRole(RoleNames.ProjectStaff))
         {
             var userText = UserOptions.FirstOrDefault(x => x.Value == PersonnelUserId)?.Text ?? PersonnelUserId;
-            items.Add(new FilterSummaryItem("专案人员", userText));
+            items.Add(new FilterSummaryItem("專案人員", userText));
         }
 
         if (StatusId is not null)
         {
             var statusText = StatusOptions.FirstOrDefault(x => x.Value == StatusId.Value.ToString())?.Text ?? StatusId.Value.ToString();
-            items.Add(new FilterSummaryItem("状态", statusText));
+            items.Add(new FilterSummaryItem("狀態", statusText));
         }
 
         var analysisText = DisplayAnalysisType(NormalizeAnalysisType(AnalysisType));
@@ -351,7 +353,7 @@ public sealed class IndexModel(
     {
         return analysisType switch
         {
-            ProjectAnalysisTypes.LowProgress => "需关注项目",
+            ProjectAnalysisTypes.LowProgress => "需关注專案",
             ProjectAnalysisTypes.CollectionLag => "回款滞后",
             ProjectAnalysisTypes.StaleUpdate => "久未更新",
             _ => null

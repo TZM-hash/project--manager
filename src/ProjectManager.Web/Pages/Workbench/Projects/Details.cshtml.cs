@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -16,7 +16,8 @@ public sealed class DetailsModel(
     WorkbenchProjectService workbenchProjectService,
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
-    ProjectGanttService ganttService) : PageModel
+    ProjectGanttService ganttService,
+    SystemSettingsService systemSettingsService) : PageModel
 {
     public Project Project { get; private set; } = new();
 
@@ -27,6 +28,8 @@ public sealed class DetailsModel(
     public AuditTrailViewModel AuditTrail { get; private set; } = new([], [], null, null, null, null);
 
     public bool CanEditProgress { get; private set; }
+
+    public DateOnly ArchiveDate { get; private set; }
 
     [BindProperty]
     public ProjectGanttInputModel GanttInput { get; set; } = new();
@@ -74,6 +77,7 @@ public sealed class DetailsModel(
         }
 
         CanEditProgress = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
+        ArchiveDate = await systemSettingsService.GetArchiveDateAsync(cancellationToken);
         GanttInput = await ganttService.BuildInputAsync(id, cancellationToken);
         ActiveStatuses = await db.ProjectStatuses
             .AsNoTracking()
@@ -126,7 +130,7 @@ public sealed class DetailsModel(
         GanttErrors = await ganttService.SaveAsync(id, GanttInput, userId, cancellationToken);
         if (GanttErrors.Count == 0)
         {
-            GanttMessage = "甘特图已保存。";
+            GanttMessage = "甘特图已儲存。";
             return RedirectToPage("./Details", new { id, Tab = "gantt" });
         }
 

@@ -1,4 +1,4 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
@@ -275,7 +275,7 @@ public sealed class DataExchangeService(
                 var createResult = await userManager.CreateAsync(user, password);
                 if (!createResult.Succeeded)
                 {
-                    result.AddError("Users", row.RowNumber(), $"用户 {userName} 创建失败：{string.Join("；", createResult.Errors.Select(x => x.Description))}");
+                    result.AddError("Users", row.RowNumber(), $"使用者 {userName} 建立失敗：{string.Join("；", createResult.Errors.Select(x => x.Description))}");
                     continue;
                 }
 
@@ -363,7 +363,7 @@ public sealed class DataExchangeService(
             var statusId = await ResolveStatusIdAsync(CellText(row, 6), cancellationToken);
             if (statusId is null)
             {
-                result.AddError("Projects", row.RowNumber(), "系统中没有可用项目状态，无法导入项目。");
+                result.AddError("Projects", row.RowNumber(), "系统中没有可用專案狀態，无法匯入專案。");
                 continue;
             }
 
@@ -436,7 +436,7 @@ public sealed class DataExchangeService(
                 .SingleOrDefaultAsync(x => !x.IsDeleted && x.Year == year && x.ProjectNumber == projectNumber, cancellationToken);
             if (project is null)
             {
-                result.AddError("PurchaseRequests", row.RowNumber(), $"找不到项目 {year}/{projectNumber}。");
+                result.AddError("PurchaseRequests", row.RowNumber(), $"找不到專案 {year}/{projectNumber}。");
                 continue;
             }
 
@@ -677,7 +677,7 @@ public sealed class DataExchangeService(
                value.Equals("y", StringComparison.OrdinalIgnoreCase) ||
                value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
                value.Equals("是", StringComparison.OrdinalIgnoreCase) ||
-               value.Equals("启用", StringComparison.OrdinalIgnoreCase);
+               value.Equals("啟用", StringComparison.OrdinalIgnoreCase);
     }
 
     private static DateOnly? ParseMonth(string value)
@@ -703,7 +703,7 @@ public sealed class DataExchangeService(
     {
         return value.Equals("ExternalPurchase", StringComparison.OrdinalIgnoreCase) ||
                value.Equals("external", StringComparison.OrdinalIgnoreCase) ||
-               value.Equals("外购", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("外購", StringComparison.OrdinalIgnoreCase) ||
                value.Equals("2", StringComparison.OrdinalIgnoreCase)
             ? PurchaseType.ExternalPurchase
             : PurchaseType.InternalPurchase;
@@ -808,10 +808,10 @@ public sealed class DataImportResult
     }
 
     public string Summary =>
-        $"用户 新增 {UsersCreated} / 更新 {UsersUpdated}；" +
-        $"状态 新增 {StatusesCreated} / 更新 {StatusesUpdated}；" +
-        $"项目 新增 {ProjectsCreated} / 更新 {ProjectsUpdated}；" +
+        $"使用者 新增 {UsersCreated} / 更新 {UsersUpdated}；" +
+        $"狀態 新增 {StatusesCreated} / 更新 {StatusesUpdated}；" +
+        $"專案 新增 {ProjectsCreated} / 更新 {ProjectsUpdated}；" +
         $"请购 新增 {PurchasesCreated} / 更新 {PurchasesUpdated}；" +
-        $"规划中专案 新增 {PlanningCreated} / 更新 {PlanningUpdated}；" +
-        $"保养订单 新增 {MaintenanceCreated} / 更新 {MaintenanceUpdated}";
+        $"規劃中專案 新增 {PlanningCreated} / 更新 {PlanningUpdated}；" +
+        $"保養訂單 新增 {MaintenanceCreated} / 更新 {MaintenanceUpdated}";
 }

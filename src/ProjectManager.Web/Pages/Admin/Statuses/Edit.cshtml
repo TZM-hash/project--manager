@@ -1,13 +1,13 @@
-@page "{id:int?}"
+﻿@page "{id:int?}"
 @model ProjectManager.Web.Pages.Admin.Statuses.EditModel
 @{
-    ViewData["Title"] = Model.Input.Id == 0 ? "新增状态" : "编辑状态";
+    ViewData["Title"] = Model.Input.Id == 0 ? "新增狀態" : "編輯狀態";
 }
 
 <div class="page-header">
     <div>
         <h1 class="page-title">@ViewData["Title"]</h1>
-        <div class="page-subtitle">调整状态名称、顺序、结案规则和显示样式</div>
+        <div class="page-subtitle">调整狀態名稱、顺序、结案規則和顯示样式</div>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
             <span class="text-danger" asp-validation-for="Input.Code"></span>
         </div>
         <div class="col-md-3">
-            <label class="form-label" asp-for="Input.Name">状态名称</label>
+            <label class="form-label" asp-for="Input.Name">狀態名稱</label>
             <input class="form-control" asp-for="Input.Name" />
             <span class="text-danger" asp-validation-for="Input.Name"></span>
         </div>
@@ -40,11 +40,11 @@
         <div class="col-md-12 d-flex gap-4">
             <label class="form-check-label">
                 <input class="form-check-input" asp-for="Input.IsClosed" />
-                结案状态
+                结案狀態
             </label>
             <label class="form-check-label">
                 <input class="form-check-input" asp-for="Input.IsActive" />
-                启用
+                啟用
             </label>
             <label class="form-check-label">
                 <input class="form-check-input" asp-for="Input.IsBold" />
@@ -53,7 +53,7 @@
         </div>
     </div>
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="submit" class="btn btn-primary">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

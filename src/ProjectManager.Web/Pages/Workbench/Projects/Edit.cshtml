@@ -1,17 +1,17 @@
-@page "{id:int}"
+﻿@page "{id:int}"
 @using ProjectManager.Web.Models
 @model ProjectManager.Web.Pages.Workbench.Projects.EditModel
 @{
-    ViewData["Title"] = "编辑专案";
+    ViewData["Title"] = "編輯专案";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">编辑专案</h1>
-        <div class="page-subtitle">基础信息只读，状态、进度、财务与请购记录可维护</div>
+        <h1 class="page-title">編輯专案</h1>
+        <div class="page-subtitle">基础資訊只读，狀態、進度、财务与請購記錄可维护</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Input.Id">返回详情</a>
+        <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Input.Id">返回明細</a>
     </div>
 </div>
 
@@ -20,51 +20,51 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <section class="form-section">
-        <h2 class="form-section-title">基础信息</h2>
+        <h2 class="form-section-title">基础資訊</h2>
         <div class="row g-3">
             <div class="col-md-2">
                 <label class="form-label">年</label>
                 <input class="form-control" asp-for="Input.Year" readonly />
             </div>
             <div class="col-md-3">
-                <label class="form-label">母档案号</label>
+                <label class="form-label">母檔案號</label>
                 <input class="form-control" asp-for="Input.ParentCaseNumber" readonly />
             </div>
             <div class="col-md-3">
-                <label class="form-label">项目工号</label>
+                <label class="form-label">專案工號</label>
                 <input class="form-control" asp-for="Input.ProjectNumber" readonly />
             </div>
             <div class="col-md-4">
-                <label class="form-label">项目名称</label>
+                <label class="form-label">專案名稱</label>
                 <input class="form-control" asp-for="Input.Name" readonly />
             </div>
             <div class="col-md-4">
-                <label class="form-label">专案人员</label>
+                <label class="form-label">專案人員</label>
                 <input asp-for="Input.AssignedUserId" type="hidden" />
                 <select class="form-select" asp-for="Input.AssignedUserId" asp-items="Model.UserOptions" disabled>
-                    <option value="">请选择</option>
+                    <option value="">請選擇</option>
                 </select>
             </div>
         </div>
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">状态、进度与财务</h2>
+        <h2 class="form-section-title">狀態、進度與財務</h2>
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">状态</label>
+                <label class="form-label">狀態</label>
                 <select class="form-select" asp-for="Input.StatusId" asp-items="Model.StatusOptions"></select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">结案日期</label>
+                <label class="form-label">結案日期</label>
                 <input class="form-control" asp-for="Input.ClosedYearMonth" type="month" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">专案进度 %</label>
+                <label class="form-label">專案進度 %</label>
                 <input class="form-control" asp-for="Input.ProgressPercent" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">专案金额</label>
+                <label class="form-label">專案金額</label>
                 <input class="form-control" asp-for="Input.ProjectAmount" />
             </div>
             <div class="col-md-2">
@@ -86,20 +86,20 @@
                         </label>
                     }
                 </div>
-                <div class="form-text">适用于项目无需某些流程节点的情况，详情页进度节点图会自动跳过。</div>
+                <div class="form-text">适用于專案无需某些流程节点的情况，明細頁進度节点图会自动跳过。</div>
             </div>
         }
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">进度说明</h2>
+        <h2 class="form-section-title">進度說明</h2>
         <div class="rich-text-field" data-rich-text>
-            <div class="rich-text-toolbar" aria-label="进度说明颜色">
+            <div class="rich-text-toolbar" aria-label="進度說明颜色">
                 @foreach (var color in RichTextSanitizer.ColorOptions)
                 {
                     <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
                 }
-                <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+                <button type="button" class="rich-text-reset" data-rich-text-clear>預設顏色</button>
             </div>
             <textarea asp-for="Input.ProgressDescription" hidden data-rich-text-source></textarea>
             <div class="rich-text-editor" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.ProgressDescription))</div>
@@ -108,20 +108,20 @@
     </section>
 
     <section class="form-section">
-        <h2 class="form-section-title">请购记录</h2>
+        <h2 class="form-section-title">請購記錄</h2>
         <div class="data-table-wrap">
             <table class="table table-sm align-middle data-table">
                 <thead>
                     <tr>
-                        <th>请购号</th>
-                        <th>类型</th>
-                        <th>请购人员</th>
-                        <th>金额</th>
-                        <th>子案对接人员</th>
+                        <th>請購號</th>
+                        <th>類型</th>
+                        <th>請購人員</th>
+                        <th>金額</th>
+                        <th>子案對接人員</th>
                         <th>付款比例</th>
-                        <th>实际已付款</th>
-                        <th>备注</th>
-                        <th>删除</th>
+                        <th>實際已付款</th>
+                        <th>備註</th>
+                        <th>刪除</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -153,7 +153,7 @@
     </section>
 
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="submit" class="btn btn-primary">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Input.Id">返回</a>
     </div>
 </form>

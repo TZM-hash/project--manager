@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -21,8 +21,8 @@ public sealed class EditModel(
 
     public List<SelectListItem> MethodOptions { get; } =
     [
-        new SelectListItem("现场保养", "1"),
-        new SelectListItem("远程保养", "2"),
+        new SelectListItem("现场保養", "1"),
+        new SelectListItem("远程保養", "2"),
         new SelectListItem("均有", "3")
     ];
 
@@ -108,31 +108,31 @@ public sealed class EditModel(
         [Range(2000, 2100, ErrorMessage = "请输入有效年份。")]
         public int Year { get; set; }
 
-        [Display(Name = "客户名称")]
-        [Required(ErrorMessage = "请输入客户名称。")]
+        [Display(Name = "客戶名稱")]
+        [Required(ErrorMessage = "请输入客戶名稱。")]
         public string CustomerName { get; set; } = string.Empty;
 
-        [Display(Name = "保养开始日期")]
-        [Required(ErrorMessage = "请选择保养开始日期。")]
+        [Display(Name = "保養開始日期")]
+        [Required(ErrorMessage = "請選擇保養開始日期。")]
         public DateOnly MaintenanceStartDate { get; set; }
 
-        [Display(Name = "保养结束日期")]
-        [Required(ErrorMessage = "请选择保养结束日期。")]
+        [Display(Name = "保養結束日期")]
+        [Required(ErrorMessage = "請選擇保養結束日期。")]
         public DateOnly MaintenanceEndDate { get; set; }
 
-        [Display(Name = "保养方式")]
-        [Required(ErrorMessage = "请选择保养方式。")]
+        [Display(Name = "保養方式")]
+        [Required(ErrorMessage = "請選擇保養方式。")]
         public MaintenanceMethod MaintenanceMethod { get; set; }
 
-        [Display(Name = "现场次数")]
-        [Range(0, 100, ErrorMessage = "现场次数应在0-100之间。")]
+        [Display(Name = "现场次數")]
+        [Range(0, 100, ErrorMessage = "现场次數应在0-100之间。")]
         public int OnSiteAnnualCount { get; set; }
 
-        [Display(Name = "远程次数")]
-        [Range(0, 100, ErrorMessage = "远程次数应在0-100之间。")]
+        [Display(Name = "远程次數")]
+        [Range(0, 100, ErrorMessage = "远程次數应在0-100之间。")]
         public int RemoteAnnualCount { get; set; }
 
-        [Display(Name = "保养执行人")]
+        [Display(Name = "保養执行人")]
         public string? ExecutorUserId { get; set; }
 
         [Display(Name = "签收单移交百分比")]

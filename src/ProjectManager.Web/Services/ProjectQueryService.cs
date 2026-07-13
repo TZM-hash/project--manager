@@ -111,6 +111,11 @@ public sealed class ProjectQueryService(ApplicationDbContext db)
             query = query.Where(x => x.StatusId == filter.StatusId);
         }
 
+        if (filter.ProjectType is not null)
+        {
+            query = query.Where(x => x.ProjectType == filter.ProjectType);
+        }
+
         if (filter.OpenOnly)
         {
             query = query.Where(x => x.Status != null && !x.Status.IsClosed);
@@ -136,7 +141,8 @@ public sealed record ProjectFilter(
     string? PersonnelUserId,
     int? StatusId,
     bool OpenOnly,
-    string? AnalysisType = null);
+    string? AnalysisType = null,
+    ProjectType? ProjectType = null);
 
 public static class ProjectAnalysisTypes
 {

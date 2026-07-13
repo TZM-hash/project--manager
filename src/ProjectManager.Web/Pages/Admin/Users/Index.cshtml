@@ -2,16 +2,16 @@
 @using ProjectManager.Web.Security
 @model ProjectManager.Web.Pages.Admin.Users.IndexModel
 @{
-    ViewData["Title"] = "用户管理";
+    ViewData["Title"] = "使用者管理";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">用户管理</h1>
-        <div class="page-subtitle">维护账号启用状态、角色和密码重置</div>
+        <h1 class="page-title">使用者管理</h1>
+        <div class="page-subtitle">维护帳號啟用狀態、角色和密碼重設</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Create">新增用户</a>
+        <a class="btn btn-primary" asp-page="./Create">新增使用者</a>
     </div>
 </div>
 
@@ -28,8 +28,8 @@
 
 <div class="insight-grid">
     <section class="chart-card">
-        <div class="chart-title">启用状态</div>
-        <div class="chart-subtitle">账号可用性概览</div>
+        <div class="chart-title">啟用狀態</div>
+        <div class="chart-subtitle">帳號可用性概覽</div>
         <div class="donut-wrap">
             <div class="donut-chart" style="--donut-color:@(Model.ActiveSlices.FirstOrDefault()?.Color ?? "#2563eb");--donut-percent:@(Model.ActiveSlices.FirstOrDefault()?.Percent ?? 0)">
                 <span>@(Model.ActiveSlices.FirstOrDefault()?.Percent.ToString("0.#") ?? "0")%</span>
@@ -43,8 +43,8 @@
         </div>
     </section>
     <section class="chart-card">
-        <div class="chart-title">角色分布</div>
-        <div class="chart-subtitle">按账号角色统计</div>
+        <div class="chart-title">角色分佈</div>
+        <div class="chart-subtitle">依帳號角色統計</div>
         <div class="bar-list">
             @foreach (var slice in Model.RoleSlices)
             {
@@ -61,23 +61,23 @@
 <form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
-            <input class="form-control" asp-for="Keyword" placeholder="搜索用户名、姓名、邮箱" />
+            <input class="form-control" asp-for="Keyword" placeholder="搜尋使用者名稱、姓名、信箱" />
             <select class="form-select" asp-for="IsActive">
-                <option value="">启用状态</option>
-                <option value="true">启用</option>
+                <option value="">啟用狀態</option>
+                <option value="true">啟用</option>
                 <option value="false">停用</option>
             </select>
         </div>
         <div class="filter-quick-actions">
-            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
-            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
+            <button class="btn btn-primary" type="submit">查詢</button>
         </div>
     </div>
     <div class="filter-drawer" data-filter-drawer-panel>
         <div class="filter-drawer-header">
             <div>
-                <div class="filter-drawer-title">高级筛选</div>
-                <div class="filter-drawer-subtitle">按角色和弱管理标记缩小用户范围</div>
+                <div class="filter-drawer-title">進階篩選</div>
+                <div class="filter-drawer-subtitle">依角色和弱管理標記縮小使用者範圍</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
@@ -89,7 +89,7 @@
             </div>
             <div class="col-md-4">
                 <select class="form-select" asp-for="IsWeakManaged">
-                    <option value="">弱管理账号</option>
+                    <option value="">弱管理帳號</option>
                     <option value="true">是</option>
                     <option value="false">否</option>
                 </select>
@@ -102,15 +102,32 @@
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
 
+<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的使用者嗎？">
+    <div class="bulk-toolbar-copy">
+        <span class="bulk-toolbar-count" data-selected-count>0</span>
+        <span>項已選擇</span>
+    </div>
+    <div class="bulk-toolbar-actions">
+        <input type="hidden" asp-for="Keyword" />
+        <input type="hidden" asp-for="IsActive" />
+        <input type="hidden" asp-for="IsWeakManaged" />
+        <input type="hidden" asp-for="RoleName" />
+        <input type="hidden" asp-for="PageNumber" />
+        <input type="hidden" asp-for="PageSize" />
+        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
+    </div>
+</form>
+
 <div class="data-list-card">
     <div class="data-table-wrap">
         <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
-                <th>用户名</th>
+                <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
+                <th>使用者名稱</th>
                 <th>姓名</th>
-                <th>邮箱</th>
-                <th>启用</th>
+                <th>信箱</th>
+                <th>啟用</th>
                 <th>角色</th>
                 <th class="text-end">操作</th>
             </tr>
@@ -119,25 +136,29 @@
         @foreach (var user in Model.Users)
         {
             <tr>
+                <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@user.Id" data-bulk-checkbox /></td>
                 <td>@user.UserName</td>
                 <td>@user.DisplayName</td>
                 <td>@user.Email</td>
                 <td>@(user.IsActive ? "是" : "否")</td>
                 <td>@string.Join("、", user.Roles.Select(RoleNames.GetDisplayName))</td>
                 <td class="text-end text-nowrap">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@user.Id">编辑</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@user.Id">編輯</a>
                     @if (Model.CanManagePassword)
                     {
-                        <a class="btn btn-sm btn-outline-secondary" asp-page="./ResetPassword" asp-route-id="@user.Id">重置密码</a>
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./ResetPassword" asp-route-id="@user.Id">重設密碼</a>
                     }
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@user.Id" class="d-inline" onsubmit="return confirm('確定刪除該使用者嗎？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+                    </form>
                 </td>
             </tr>
         }
         @if (!Model.Users.Any())
         {
             <tr>
-                <td colspan="6">
-                    <div class="empty-state">暂无用户资料</div>
+                <td colspan="7">
+                    <div class="empty-state">暫無使用者資料</div>
                 </td>
             </tr>
         }

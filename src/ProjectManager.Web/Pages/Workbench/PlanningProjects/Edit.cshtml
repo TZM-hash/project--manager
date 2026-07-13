@@ -1,13 +1,13 @@
-@page "{id:int}"
+﻿@page "{id:int}"
 @model ProjectManager.Web.Pages.Workbench.PlanningProjects.EditModel
 @{
-    ViewData["Title"] = "编辑规划中专案";
+    ViewData["Title"] = "編輯規劃中專案";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">编辑规划中专案</h1>
-        <div class="page-subtitle">维护项目资料并按月结算说明</div>
+        <h1 class="page-title">編輯規劃中專案</h1>
+        <div class="page-subtitle">维护專案資料并按月結算說明</div>
     </div>
 </div>
 
@@ -17,12 +17,12 @@
 
     <div class="row g-2 align-items-end mb-3">
         <div class="col-md-4">
-            <label asp-for="Input.Name" class="form-label form-label-sm">项目名</label>
+            <label asp-for="Input.Name" class="form-label form-label-sm">專案名</label>
             <input asp-for="Input.Name" class="form-control form-control-sm" />
             <span asp-validation-for="Input.Name" class="text-danger"></span>
         </div>
         <div class="col-md-3">
-            <label asp-for="Input.Vendor" class="form-label form-label-sm">厂商</label>
+            <label asp-for="Input.Vendor" class="form-label form-label-sm">廠商</label>
             <input asp-for="Input.Vendor" class="form-control form-control-sm" />
         </div>
         <div class="col-md-2">
@@ -36,34 +36,34 @@
     </div>
 
     <div class="col-md-12 mb-3">
-        <label asp-for="Input.LeaderUserIds" class="form-label form-label-sm">项目负责人（可多选）</label>
+        <label asp-for="Input.LeaderUserIds" class="form-label form-label-sm">專案負責人（可多选）</label>
         <select asp-for="Input.LeaderUserIds" asp-items="Model.UserOptions" class="form-select form-select-sm" multiple size="4"></select>
     </div>
 
     <div class="row g-3 planning-note-grid">
         <div class="col-md-6">
-            <label class="form-label form-label-sm">上期说明</label>
+            <label class="form-label form-label-sm">上期說明</label>
             <div class="planning-note-preview rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Input.PreviousDescription) ?? "-")</div>
         </div>
         <div class="col-md-6">
-            <label asp-for="Input.CurrentRecord" class="form-label form-label-sm">本期记录</label>
+            <label asp-for="Input.CurrentRecord" class="form-label form-label-sm">本期記錄</label>
             <div class="rich-text-field planning-note-editor" data-rich-text>
-                <div class="rich-text-toolbar" aria-label="本期记录颜色">
+                <div class="rich-text-toolbar" aria-label="本期記錄颜色">
                     @foreach (var color in RichTextSanitizer.ColorOptions)
                     {
                         <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>
                     }
-                    <button type="button" class="rich-text-reset" data-rich-text-clear>默认颜色</button>
+                    <button type="button" class="rich-text-reset" data-rich-text-clear>預設顏色</button>
                 </div>
                 <textarea asp-for="Input.CurrentRecord" hidden data-rich-text-source></textarea>
                 <div class="rich-text-editor current-record-input" contenteditable="true" data-rich-text-editor>@Html.Raw(RichTextSanitizer.Normalize(Model.Input.CurrentRecord))</div>
             </div>
-            <div class="form-text">填写本期记录并选择年月后保存，将按月结算一条历史记录，同时更新最新说明。</div>
+            <div class="form-text">填写本期記錄并選擇年月后儲存，将按月結算一筆歷史記錄，同时更新最新說明。</div>
         </div>
     </div>
 
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="submit" class="btn btn-primary">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>
@@ -71,15 +71,15 @@
 @if (Model.Project.HistoryRecords.Count > 0)
 {
     <div class="data-table-wrap mt-4">
-        <h2 class="h5">历史记录</h2>
+        <h2 class="h5">歷史記錄</h2>
         <table class="table table-sm table-striped align-middle data-table">
             <thead>
                 <tr>
                     <th>年月</th>
-                    <th>上期说明</th>
-                    <th>本期记录</th>
-                    <th>记录人</th>
-                    <th>记录时间</th>
+                    <th>上期說明</th>
+                    <th>本期記錄</th>
+                    <th>記錄人</th>
+                    <th>記錄時間</th>
                 </tr>
             </thead>
             <tbody>

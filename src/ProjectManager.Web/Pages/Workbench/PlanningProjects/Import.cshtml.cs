@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +15,7 @@ public sealed class ImportModel(
     UserLookupService userLookup) : PageModel
 {
     [BindProperty]
-    [Required(ErrorMessage = "请选择 Excel 文件。")]
+    [Required(ErrorMessage = "請選擇 Excel 檔案。")]
     public IFormFile? UploadFile { get; set; }
 
     public int ImportedCount { get; private set; }
@@ -31,13 +31,13 @@ public sealed class ImportModel(
     {
         if (UploadFile is null || UploadFile.Length == 0)
         {
-            ErrorMessage = "请选择有效的 Excel 文件。";
+            ErrorMessage = "請選擇有效的 Excel 檔案。";
             return Page();
         }
 
         if (!string.Equals(Path.GetExtension(UploadFile.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
         {
-            ErrorMessage = "当前仅支持 .xlsx 文件，请下载模板后重新上传。";
+            ErrorMessage = "当前仅支持 .xlsx 檔案，请下載模板后重新上傳。";
             return Page();
         }
 
@@ -50,7 +50,7 @@ public sealed class ImportModel(
 
             if (rows.Count == 0)
             {
-                ErrorMessage = "Excel 文件中没有数据行。";
+                ErrorMessage = "Excel 檔案中没有資料行。";
                 return Page();
             }
 
@@ -84,7 +84,7 @@ public sealed class ImportModel(
 
             if (projects.Count == 0)
             {
-                ErrorMessage = "未解析到有效的项目数据。";
+                ErrorMessage = "未解析到有效的專案資料。";
                 return Page();
             }
 
@@ -92,7 +92,7 @@ public sealed class ImportModel(
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"导入失败：{ex.Message}";
+            ErrorMessage = $"匯入失敗：{ex.Message}";
         }
 
         return Page();
@@ -101,16 +101,16 @@ public sealed class ImportModel(
     public IActionResult OnGetTemplate()
     {
         using var workbook = new XLWorkbook();
-        var worksheet = workbook.AddWorksheet("规划中专案");
-        worksheet.Cell(1, 1).Value = "项目名";
-        worksheet.Cell(1, 2).Value = "项目负责人";
-        worksheet.Cell(1, 3).Value = "厂商";
-        worksheet.Cell(1, 4).Value = "最新说明";
+        var worksheet = workbook.AddWorksheet("規劃中專案");
+        worksheet.Cell(1, 1).Value = "專案名";
+        worksheet.Cell(1, 2).Value = "專案負責人";
+        worksheet.Cell(1, 3).Value = "廠商";
+        worksheet.Cell(1, 4).Value = "最新說明";
 
-        worksheet.Cell(2, 1).Value = "示例项目A";
+        worksheet.Cell(2, 1).Value = "示例專案A";
         worksheet.Cell(2, 2).Value = "admin,user1";
-        worksheet.Cell(2, 3).Value = "示例厂商";
-        worksheet.Cell(2, 4).Value = "这是示例说明";
+        worksheet.Cell(2, 3).Value = "示例廠商";
+        worksheet.Cell(2, 4).Value = "这是示例說明";
 
         worksheet.Column(1).AdjustToContents();
         worksheet.Column(2).AdjustToContents();
@@ -123,6 +123,6 @@ public sealed class ImportModel(
 
         return File(stream.ToArray(),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "规划中专案导入模板.xlsx");
+            "規劃中專案匯入模板.xlsx");
     }
 }

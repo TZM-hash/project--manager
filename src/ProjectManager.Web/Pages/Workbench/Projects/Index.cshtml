@@ -1,13 +1,14 @@
 @page
 @model ProjectManager.Web.Pages.Workbench.Projects.IndexModel
+@using ProjectManager.Web.Extensions
 @{
-    ViewData["Title"] = "专案管理";
+    ViewData["Title"] = "我的專案";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">专案管理</h1>
-        <div class="page-subtitle">查看项目状态、进度、收款比例和请购摘要</div>
+        <h1 class="page-title">我的專案</h1>
+        <div class="page-subtitle">查看專案狀態、進度、收款比例和请购摘要</div>
     </div>
 </div>
 
@@ -24,8 +25,8 @@
 
 <div class="insight-grid">
     <section class="chart-card">
-        <div class="chart-title">状态分布</div>
-        <div class="chart-subtitle">当前账号可见项目</div>
+        <div class="chart-title">狀態分布</div>
+        <div class="chart-subtitle">当前帳號可見專案</div>
         <div class="bar-list">
             @foreach (var slice in Model.StatusSlices)
             {
@@ -38,8 +39,8 @@
         </div>
     </section>
     <section class="chart-card">
-        <div class="chart-title">进度区间</div>
-        <div class="chart-subtitle">按进度百分比分组</div>
+        <div class="chart-title">進度区间</div>
+        <div class="chart-subtitle">按進度百分比分群組</div>
         <div class="bar-list">
             @foreach (var slice in Model.ProgressSlices)
             {
@@ -56,39 +57,43 @@
 <form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
-            <input class="form-control" asp-for="ProjectName" placeholder="搜索项目名称" />
-            <input class="form-control" asp-for="ProjectNumber" placeholder="项目工号" />
+            <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" />
+            <input class="form-control" asp-for="ProjectNumber" placeholder="專案工號" />
         </div>
         <div class="filter-quick-actions">
-            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>高级筛选</button>
-            <button class="btn btn-primary" type="submit">查询</button>
+            <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
+            <button class="btn btn-primary" type="submit">查詢</button>
         </div>
     </div>
     <div class="filter-drawer" data-filter-drawer-panel>
         <div class="filter-drawer-header">
             <div>
-                <div class="filter-drawer-title">高级筛选</div>
-                <div class="filter-drawer-subtitle">按年度、母档案号、专案人员和状态定位项目</div>
+                <div class="filter-drawer-title">進階篩選</div>
+                <div class="filter-drawer-subtitle">按年度、母檔案號、專案人員和狀態定位專案</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
         <div class="row g-2">
             <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
-            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母档案号" /></div>
+            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母檔案號" /></div>
             <div class="col-md-3">
                 <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
-                    <option value="">专案人员</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
-                    <option value="">状态</option>
+                    <option value="">狀態</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" asp-for="ProjectType" asp-items="Model.ProjectTypeOptions">
+                    <option value="">專案類型</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <select class="form-select" asp-for="OpenOnly">
                     <option value="false">全部</option>
-                    <option value="true">未结案</option>
+                    <option value="true">未結案</option>
                 </select>
             </div>
         </div>
@@ -104,51 +109,64 @@
         <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
-                <th>母案案号</th>
-                <th>项目工号</th>
-                <th>项目名称</th>
-                <th>专案人员</th>
-                <th>状态</th>
-                <th class="numeric">进度</th>
-                <th class="numeric">金额</th>
+                <th>專案類型</th>
+                <th style="width: 60px;">項次</th>
+                <th>專案工號</th>
+                <th style="min-width: 180px;">專案名稱</th>
+                <th>專案人員</th>
+                <th>狀態</th>
+                <th class="numeric">進度</th>
+                <th class="numeric">金額</th>
                 <th class="numeric">收款比例</th>
-                <th>结案日期</th>
+                <th>結案日期</th>
                 <th>推进判断</th>
                 <th class="text-end">操作</th>
+                <th>母案案號</th>
             </tr>
         </thead>
         <tbody>
+        @{ var idx = (Model.PageNumber - 1) * Model.PageSize + 1; }
         @foreach (var project in Model.Projects)
         {
             <tr>
-                <td>@project.ParentCaseNumber</td>
+                <td>@project.ProjectType.GetDisplayName()</td>
+                <td>@idx</td>
                 <td>@project.ProjectNumber</td>
                 <td>@project.Name</td>
                 <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
                 <td><partial name="_StatusBadge" model="project.Status" /></td>
                 <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
-                <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
+                <td class="numeric">@project.ProjectAmount.ToString("N0")</td>
                 <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                 <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
                 <td><partial name="_ProgressRiskBadge" model="project" /></td>
                 <td class="text-end text-nowrap">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">详情</a>
+                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">明細</a>
                     @if (Model.CanEditAll || project.Assignments.Any(x => x.UserId == Model.CurrentUserId))
                     {
-                        <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">编辑</a>
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
                     }
                 </td>
+                <td>@project.ParentCaseNumber</td>
             </tr>
+            idx++;
         }
         @if (!Model.Projects.Any())
         {
             <tr>
-                <td colspan="11">
-                    <div class="empty-state">暂无可查看的专案资料</div>
+                <td colspan="13">
+                    <div class="empty-state">暂无可查看的专案資料</div>
                 </td>
             </tr>
         }
         </tbody>
+        <tfoot>
+            <tr class="report-total">
+                <td colspan="6" class="text-end"><strong>累積金額</strong></td>
+                <td class="numeric"><strong>@Model.TotalProjectAmount.ToString("N0")</strong></td>
+                <td colspan="6"></td>
+            </tr>
+        </tfoot>
         </table>
     </div>
     <partial name="_Pagination" model="Model.Pagination" />

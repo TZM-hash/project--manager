@@ -1,23 +1,23 @@
-﻿@page
+@page
 @model ErrorModel
 @{
-    ViewData["Title"] = "系统错误";
+    ViewData["Title"] = "系統錯誤";
 }
 
-<h1 class="text-danger">系统错误</h1>
-<h2 class="text-danger">处理请求时发生错误。</h2>
+<h1 class="text-danger">系統錯誤</h1>
+<h2 class="text-danger">處理請求時發生錯誤。</h2>
 
 @if (Model.ShowRequestId)
 {
     <p>
-        <strong>请求编号：</strong> <code>@Model.RequestId</code>
+        <strong>請求編號：</strong> <code>@Model.RequestId</code>
     </p>
 }
 
-<h3>开发环境提示</h3>
+<h3>開發環境提示</h3>
 <p>
-    开发环境会显示更详细的错误信息，方便本机调试。
+    開發環境會顯示更詳細的錯誤資訊，方便本機除錯。
 </p>
 <p>
-    正式内网部署时请使用生产环境配置，避免向用户显示敏感异常内容。
+    正式內網部署時請使用生產環境設定，避免向使用者顯示敏感異常內容。
 </p>

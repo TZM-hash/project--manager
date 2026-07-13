@@ -30,11 +30,11 @@ public sealed class DashboardSmokeTests
         var html = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("后台管理入口");
-        html.Should().Contain("WEB 专案管理入口");
-        html.Should().Contain("项目管理");
-        html.Should().Contain("月结");
-        html.Should().Contain("报表");
+        html.Should().Contain("後台管理入口");
+        html.Should().Contain("WEB 我的專案入口");
+        html.Should().Contain("專案管理");
+        html.Should().Contain("月結");
+        html.Should().Contain("報表");
     }
 
     [Fact]
@@ -48,8 +48,8 @@ public sealed class DashboardSmokeTests
         var html = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("WEB 专案管理入口");
-        html.Should().Contain("专案管理");
+        html.Should().Contain("WEB 我的專案入口");
+        html.Should().Contain("我的專案");
     }
 
     private sealed class DashboardWebFactory : WebApplicationFactory<Program>

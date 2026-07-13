@@ -1,0 +1,50 @@
+@page
+@model ProjectManager.Web.Pages.Admin.ProjectsDoing.IndexModel
+@{
+    ViewData["Title"] = "工程實施中清單";
+}
+
+<div class="data-list-card">
+    <div class="data-table-wrap">
+        <table class="table table-sm table-striped align-middle data-table">
+        <thead>
+            <tr>
+                <th style="width: 60px;">項次</th>
+                <th>工程編號</th>
+                <th style="min-width: 180px;">專案名稱</th>
+                <th>經辦</th>
+                <th>廠商</th>
+                <th>狀態</th>
+                <th class="numeric">進度</th>
+                <th>進度說明</th>
+            </tr>
+        </thead>
+        <tbody>
+        @{ var idx = (Model.PageNumber - 1) * Model.PageSize + 1; }
+        @foreach (var project in Model.Projects)
+        {
+            <tr>
+                <td>@idx</td>
+                <td>@project.ProjectNumber</td>
+                <td>@project.Name</td>
+                <td>@Model.GetPersonnelNames(project)</td>
+                <td>@Model.GetVendorName(project)</td>
+                <td><partial name="_StatusBadge" model="project.Status" /></td>
+                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
+                <td>@project.ProgressDescription</td>
+            </tr>
+            idx++;
+        }
+        @if (!Model.Projects.Any())
+        {
+            <tr>
+                <td colspan="8">
+                    <div class="empty-state">暫無符合條件的工程專案</div>
+                </td>
+            </tr>
+        }
+        </tbody>
+        </table>
+    </div>
+    <partial name="_Pagination" model="Model.Pagination" />
+</div>
