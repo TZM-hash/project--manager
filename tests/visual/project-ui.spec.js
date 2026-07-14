@@ -15,6 +15,8 @@ test.use({
   launchOptions: browserExecutablePath ? { executablePath: browserExecutablePath } : undefined
 });
 
+test.setTimeout(60000);
+
 async function signIn(page) {
   await page.goto("/Identity/Account/Login");
   await page.locator("#Input_UserName").fill(userName);
@@ -30,6 +32,11 @@ async function capture(page, name) {
     path: path.join(outputDir, `${name}.png`),
     fullPage: true
   });
+}
+
+async function captureElement(page, selector, name) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  await page.locator(selector).screenshot({ path: path.join(outputDir, `${name}.png`) });
 }
 
 async function expectPaginationUsable(page) {
@@ -70,15 +77,23 @@ test.beforeEach(async ({ page }) => {
   await signIn(page);
 });
 
-test("admin project list keeps filters compact and pagination usable", async ({ page }) => {
+test("admin project list keeps filters inside the desktop viewport and pagination usable", async ({ page }) => {
   await page.goto("/Admin/Projects?PageSize=20");
 
   await expect(page.locator(".page-title")).toBeVisible();
-  await expect(page.locator("[data-filter-drawer-panel]")).not.toBeVisible();
+  const filterDrawer = page.locator("[data-filter-drawer-panel]");
+  await expect(page.locator("[data-filter-drawer-toggle]")).toBeVisible();
+  const filterFitsViewport = await filterDrawer.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.left >= 0 && rect.right <= window.innerWidth;
+  });
+  expect(filterFitsViewport).toBeTruthy();
   await expectPaginationUsable(page);
 
-  await page.locator(".pagination-size-form select").selectOption("50");
-  await expect(page).toHaveURL(/PageSize=50/);
+  await Promise.all([
+    page.waitForURL(/PageSize=50/, { timeout: 20000 }),
+    page.locator(".pagination-size-form select").selectOption("50")
+  ]);
   await expectPaginationUsable(page);
 
   await capture(page, "admin-projects-list");
@@ -88,8 +103,10 @@ test("open project report supports analysis drill-down and pagination", async ({
   await page.goto("/Reports/OpenProjects?PageSize=20");
 
   await expect(page.locator(".analysis-card-link").first()).toBeVisible();
-  await page.locator(".analysis-card-link").first().click();
-  await expect(page).toHaveURL(/AnalysisType=/);
+  await Promise.all([
+    page.waitForURL(/AnalysisType=/, { timeout: 15000 }),
+    page.locator(".analysis-card-link").first().click()
+  ]);
   await expectPaginationUsable(page);
 
   await capture(page, "open-project-report");
@@ -99,11 +116,55 @@ test("project detail audit trail can be filtered", async ({ page }) => {
   await page.goto("/Admin/Projects?PageSize=10");
   await page.locator('.data-table tbody tr a[href*="/Details"]').first().click();
 
-  await page.locator('[data-detail-tab-target="audit"]').click();
+  await expect(page.locator(".gantt-panel")).toHaveCount(0);
+  await expect(page.locator(".audit-filter-panel")).toHaveCount(0);
+  await Promise.all([
+    page.waitForURL(/Tab=audit/),
+    page.locator('[data-detail-tab-target="audit"]').click()
+  ]);
   await expect(page.locator(".audit-filter-panel")).toBeVisible();
+  await Promise.all([
+    page.waitForURL(/AuditPageSize=10/),
+    page.locator('select[name="AuditPageSize"]').selectOption("10")
+  ]);
   await page.locator('input[name="AuditKeyword"]').fill("admin");
-  await page.locator('.audit-filter-actions button[type="submit"]').click();
+  await Promise.all([
+    page.waitForURL(/AuditKeyword=admin/),
+    page.locator('.audit-filter-actions button[type="submit"]').click()
+  ]);
+  await page.waitForLoadState("networkidle");
   await expect(page.locator(".audit-filter-panel")).toBeVisible();
 
   await capture(page, "project-detail-audit");
+});
+
+test("project detail gantt loads on demand without desktop overflow", async ({ page }) => {
+  await page.goto("/Admin/Projects?PageSize=10");
+  await page.locator('.data-table tbody tr a[href*="/Details"]').first().click();
+
+  await expect(page.locator(".gantt-panel")).toHaveCount(0);
+  await Promise.all([
+    page.waitForURL(/Tab=gantt/),
+    page.locator('[data-detail-tab-target="gantt"]').click()
+  ]);
+  await expect(page.locator(".gantt-panel")).toBeVisible();
+  await expect(page.locator(".gantt-progress-line")).toHaveCount(1);
+
+  const ganttGeometry = await page.evaluate(() => {
+    const overlay = document.querySelector(".gantt-chart-overlay");
+    const svg = document.querySelector(".gantt-progress-line");
+    const overlayRect = overlay?.getBoundingClientRect();
+    const svgRect = svg?.getBoundingClientRect();
+    return {
+      noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      widthsMatch: Boolean(overlayRect && svgRect && Math.abs(overlayRect.width - svgRect.width) < 1),
+      markerCount: document.querySelectorAll(".gantt-progress-marker").length
+    };
+  });
+
+  expect(ganttGeometry.noPageOverflow).toBeTruthy();
+  expect(ganttGeometry.widthsMatch).toBeTruthy();
+  expect(ganttGeometry.markerCount).toBeGreaterThan(0);
+  await captureElement(page, ".gantt-chart-wrap", "project-detail-gantt-chart");
+  await capture(page, "project-detail-gantt");
 });

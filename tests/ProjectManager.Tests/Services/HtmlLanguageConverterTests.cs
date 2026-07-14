@@ -54,4 +54,18 @@ public sealed class HtmlLanguageConverterTests
         result.Should().Contain("<textarea>项目原文</textarea>");
         result.Should().Contain("const label = \"系统设置\";");
     }
+
+    [Fact]
+    public void Language_preserve_marker_keeps_dynamic_names_and_nested_text_unchanged()
+    {
+        var converter = new HtmlLanguageConverter(new OpenCcConverterService());
+        const string html = """
+            <h1>專案：<span data-language-preserve><strong>後臺資料整合專案</strong></span></h1>
+            """;
+
+        var result = converter.ToSimplified(html);
+
+        result.Should().Contain("项目：");
+        result.Should().Contain("<span data-language-preserve><strong>後臺資料整合專案</strong></span>");
+    }
 }

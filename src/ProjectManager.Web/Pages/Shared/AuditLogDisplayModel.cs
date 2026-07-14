@@ -19,7 +19,7 @@ public sealed record AuditLogDisplayModel(
         return logs.Select(log => new AuditLogDisplayModel(
                 log.CreatedAt,
                 DisplayActor(log),
-                DisplayAction(log.Action),
+                GetActionLabel(log.Action),
                 string.IsNullOrWhiteSpace(log.ChangeSummary) ? log.Description : log.ChangeSummary,
                 DeserializeDetails(log.ChangeDetailsJson),
                 log.Action))
@@ -34,6 +34,18 @@ public sealed record AuditLogDisplayModel(
             "PurchaseDeleted" => $"{detail.Scope}：{detail.Before}",
             "ProjectDeleted" => detail.Before ?? "專案已刪除",
             _ => $"{detail.Scope} / {detail.Label}：{DisplayValue(detail.Before)} -> {DisplayValue(detail.After)}"
+        };
+    }
+
+    public static string GetActionLabel(string action)
+    {
+        return action switch
+        {
+            "Create" => "新增",
+            "Update" => "修改",
+            "Delete" => "刪除",
+            "ProgressUpdate" => "更新進度",
+            _ => action
         };
     }
 
@@ -61,18 +73,6 @@ public sealed record AuditLogDisplayModel(
             ?? log.User?.Email
             ?? log.UserId
             ?? "系统";
-    }
-
-    private static string DisplayAction(string action)
-    {
-        return action switch
-        {
-            "Create" => "新增",
-            "Update" => "修改",
-            "Delete" => "刪除",
-            "ProgressUpdate" => "更新進度",
-            _ => action
-        };
     }
 
     private static string DisplayValue(string? value)

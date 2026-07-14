@@ -5,32 +5,32 @@
     var isClosed = Model.Status?.IsClosed == true;
     var statusName = Model.Status?.Name ?? "未設定狀態";
     var level = "normal";
-    var label = "推进中";
+    var label = "推進中";
     var note = $"{statusName} / 進度 {progress:0.##}%";
 
     if (isClosed || progress >= 100)
     {
         level = "complete";
         label = "已完成";
-        note = isClosed ? "狀態已结案" : "進度已达 100%";
+        note = isClosed ? "狀態已結案" : "進度已達 100%";
     }
     else if (collection + 25 < progress)
     {
         level = "warning";
-        label = "回款滞后";
+        label = "回款滯後";
         note = $"進度 {progress:0.##}% / 收款 {collection:0.##}%";
     }
     else if (progress < 30)
     {
         level = "attention";
-        label = "需关注";
-        note = $"仍处早期推进 / {statusName}";
+        label = "需關注";
+        note = $"仍處早期推進 / {statusName}";
     }
     else if (progress >= 70)
     {
         level = "positive";
         label = "接近完成";
-        note = $"收尾推进 / {statusName}";
+        note = $"收尾推進 / {statusName}";
     }
 }
 

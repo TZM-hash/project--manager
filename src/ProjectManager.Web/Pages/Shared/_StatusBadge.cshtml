@@ -5,6 +5,6 @@
     var fontWeight = Model?.Style?.IsBold == true ? "700" : "500";
 }
 
-<span class="status-badge" style="color:@textColor;background-color:@backgroundColor;font-weight:@fontWeight">
+<span class="status-badge" style="color:@textColor;background-color:@backgroundColor;font-weight:@fontWeight" data-language-preserve translate="no">
     @(Model?.Name ?? "-")
 </span>

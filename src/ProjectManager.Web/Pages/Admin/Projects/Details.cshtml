@@ -7,8 +7,8 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">@Model.Project.ProjectNumber - @Model.Project.Name</h1>
-        <div class="page-subtitle">專案主档、進度、收款和請購記錄</div>
+        <h1 class="page-title"><span data-language-preserve translate="no">@Model.Project.ProjectNumber - @Model.Project.Name</span></h1>
+        <div class="page-subtitle">專案主檔、進度、收款和請購記錄</div>
     </div>
     <div class="page-actions">
         <a class="btn btn-outline-secondary" asp-page="./Index">返回總覽</a>
@@ -18,21 +18,23 @@
     </div>
 </div>
 
-<div class="detail-tab-shell" data-detail-tabs>
-    <div class="detail-tabs" role="tablist" aria-label="專案明細分区">
-        <button type="button" class="detail-tab is-active" data-detail-tab-target="overview">概览</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="profile">專案資料</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="purchases">請購記錄</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="gantt">甘特图</button>
-        <button type="button" class="detail-tab" data-detail-tab-target="audit">操作記錄</button>
+<div class="detail-tab-shell" data-detail-tabs-server>
+    <div class="detail-tabs" role="tablist" aria-label="專案明細分區">
+        <a class="detail-tab @(Model.ActiveTab == "overview" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="overview" data-detail-tab-target="overview" role="tab" aria-selected="@(Model.ActiveTab == "overview")">概覽</a>
+        <a class="detail-tab @(Model.ActiveTab == "profile" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="profile" data-detail-tab-target="profile" role="tab" aria-selected="@(Model.ActiveTab == "profile")">專案資料</a>
+        <a class="detail-tab @(Model.ActiveTab == "purchases" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="purchases" data-detail-tab-target="purchases" role="tab" aria-selected="@(Model.ActiveTab == "purchases")">請購記錄</a>
+        <a class="detail-tab @(Model.ActiveTab == "gantt" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="gantt" data-detail-tab-target="gantt" role="tab" aria-selected="@(Model.ActiveTab == "gantt")">甘特圖</a>
+        <a class="detail-tab @(Model.ActiveTab == "audit" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="audit" data-detail-tab-target="audit" role="tab" aria-selected="@(Model.ActiveTab == "audit")">操作記錄</a>
     </div>
 
-    <div class="detail-tab-panel is-active" data-detail-tab-panel="overview">
+    @if (Model.ActiveTab == "overview")
+    {
+    <div class="detail-tab-panel is-active" data-detail-tab-panel="overview" role="tabpanel">
         <partial name="_ProjectDetailVisual" model="Model.Project" />
 
         <div class="summary-strip">
             <div class="summary-item">
-                <div class="summary-label">当前狀態</div>
+                <div class="summary-label">目前狀態</div>
                 <div class="summary-value"><partial name="_StatusBadge" model="Model.Project.Status" /></div>
             </div>
             <div class="summary-item">
@@ -48,7 +50,7 @@
                 <div class="summary-value"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(Model.Project.CollectionPercent, compact: false)" /></div>
             </div>
             <div class="summary-item">
-                <div class="summary-label">推进判断</div>
+                <div class="summary-label">推進判斷</div>
                 <div class="summary-value summary-value-compact"><partial name="_ProgressRiskBadge" model="Model.Project" /></div>
             </div>
         </div>
@@ -58,21 +60,27 @@
             <div class="detail-value rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(Model.Project.ProgressDescription))</div>
         </section>
     </div>
+    }
 
+    @if (Model.ActiveTab == "profile")
+    {
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="profile">
         <h2 class="detail-panel-title">專案資料</h2>
         <div class="detail-grid">
             <div class="detail-item"><div class="detail-label">年</div><div class="detail-value">@Model.Project.Year</div></div>
-            <div class="detail-item"><div class="detail-label">母案案號</div><div class="detail-value">@Model.Project.ParentCaseNumber</div></div>
-            <div class="detail-item"><div class="detail-label">專案工號</div><div class="detail-value">@Model.Project.ProjectNumber</div></div>
-            <div class="detail-item"><div class="detail-label">專案名稱</div><div class="detail-value">@Model.Project.Name</div></div>
-            <div class="detail-item"><div class="detail-label">專案人員</div><div class="detail-value">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
+            <div class="detail-item"><div class="detail-label">母案案號</div><div class="detail-value" data-language-preserve translate="no">@Model.Project.ParentCaseNumber</div></div>
+            <div class="detail-item"><div class="detail-label">專案工號</div><div class="detail-value" data-language-preserve translate="no">@Model.Project.ProjectNumber</div></div>
+            <div class="detail-item"><div class="detail-label">專案名稱</div><div class="detail-value" data-language-preserve translate="no">@Model.Project.Name</div></div>
+            <div class="detail-item"><div class="detail-label">專案人員</div><div class="detail-value" data-language-preserve translate="no">@string.Join("；", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</div></div>
             <div class="detail-item"><div class="detail-label">結案日期</div><div class="detail-value">@Model.Project.ClosedYearMonth?.ToString("yyyy-MM")</div></div>
-            <div class="detail-item"><div class="detail-label">更新人员</div><div class="detail-value">@Model.Project.UpdatedByUser?.DisplayName</div></div>
-            <div class="detail-item"><div class="detail-label">最后更新時間</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
+            <div class="detail-item"><div class="detail-label">更新人員</div><div class="detail-value" data-language-preserve translate="no">@Model.Project.UpdatedByUser?.DisplayName</div></div>
+            <div class="detail-item"><div class="detail-label">最後更新時間</div><div class="detail-value">@Model.Project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div></div>
         </div>
     </section>
+    }
 
+    @if (Model.ActiveTab == "purchases")
+    {
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="purchases">
         <h2 class="detail-panel-title">請購記錄</h2>
         <div class="data-table-wrap">
@@ -82,7 +90,7 @@
                         <th>請購號</th>
                         <th>類型</th>
                         <th>請購人員</th>
-                        <th class="numeric">请购金額</th>
+                        <th class="numeric">請購金額</th>
                         <th>子案對接人員</th>
                         <th class="numeric">付款比例</th>
                         <th class="numeric">實際已付款</th>
@@ -105,21 +113,26 @@
                 }
                 @if (!Model.Project.PurchaseRequests.Any())
                 {
-                    <tr>
-                        <td colspan="8"><div class="empty-state">暂无請購記錄</div></td>
-                    </tr>
+                    <tr><td colspan="8"><div class="empty-state">暫無請購記錄</div></td></tr>
                 }
                 </tbody>
             </table>
         </div>
     </section>
+    }
 
+    @if (Model.ActiveTab == "gantt")
+    {
     <div class="detail-tab-panel" data-detail-tab-panel="gantt">
         <partial name="_ProjectGanttPanel" model="new ProjectManager.Web.Pages.Shared.ProjectGanttPanelModel(Model.Project, Model.GanttInput, Model.ArchiveDate, true, Model.GanttMessage, Model.GanttErrors)" />
     </div>
+    }
 
+    @if (Model.ActiveTab == "audit")
+    {
     <section class="detail-panel detail-tab-panel" data-detail-tab-panel="audit">
         <h2 class="detail-panel-title">操作記錄</h2>
         <partial name="_AuditTrail" model="Model.AuditTrail" />
     </section>
+    }
 </div>

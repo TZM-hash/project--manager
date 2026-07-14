@@ -1454,6 +1454,9 @@ body.theme-clear-glass .project-analysis-panel {
 }
 
 .detail-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 2.25rem;
   padding: 0.34rem 0.86rem;
   border: 0;
@@ -1462,6 +1465,7 @@ body.theme-clear-glass .project-analysis-panel {
   color: var(--app-muted);
   font-size: 0.88rem;
   font-weight: 800;
+  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -2467,7 +2471,7 @@ body.theme-clear-glass .project-analysis-panel {
 
 .audit-filter-main {
   display: grid;
-  grid-template-columns: minmax(14rem, 1fr) minmax(9rem, 0.5fr) minmax(8rem, 0.4fr) minmax(8rem, 0.4fr);
+  grid-template-columns: minmax(14rem, 1fr) minmax(9rem, 0.5fr) minmax(8rem, 0.4fr) minmax(8rem, 0.4fr) minmax(7rem, 0.32fr);
   gap: 0.5rem;
   flex: 1 1 34rem;
 }
@@ -2475,6 +2479,22 @@ body.theme-clear-glass .project-analysis-panel {
 .audit-filter-actions {
   display: flex;
   gap: 0.45rem;
+}
+
+.audit-result-summary {
+  margin: 0 0 0.65rem 1.4rem;
+  color: var(--app-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.audit-pagination {
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  color: var(--app-text-soft);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .audit-timeline {
@@ -2882,7 +2902,7 @@ body.theme-clear-glass .project-analysis-panel {
 }
 
 .gantt-print-grid tbody td {
-  height: 1.48rem;
+  height: 2rem;
   padding: 0.08rem 0.12rem;
 }
 
@@ -2899,8 +2919,19 @@ body.theme-clear-glass .project-analysis-panel {
 .gantt-print-task {
   overflow: hidden;
   padding: 0.1rem 0.28rem !important;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.gantt-print-task span,
+.gantt-print-task small {
+  display: block;
+}
+
+.gantt-print-task small {
+  margin-top: 0.08rem;
+  color: #475569;
+  font-size: 0.58rem;
+  line-height: 1.2;
 }
 
 .gantt-print-index,
@@ -4407,7 +4438,7 @@ body.ui-effects-high.page-transition-leaving .app-main {
 
 /* 甘特圖自適應全覽與檔案日期進度折線 */
 .gantt-chart-wrap {
-  overflow-x: hidden;
+  overflow: clip;
 }
 
 .gantt-chart-header,
@@ -4551,7 +4582,7 @@ body.ui-effects-high.page-transition-leaving .app-main {
   left: 21%;
   z-index: 8;
   width: 64%;
-  height: calc(var(--gantt-task-count) * 1.48rem);
+  height: calc(var(--gantt-task-count) * 2rem);
   overflow: visible;
   pointer-events: none;
 }
@@ -5085,6 +5116,26 @@ body.theme-clear-glass .app-footer {
   background: rgba(255, 255, 255, 0.9);
 }
 
+.gantt-panel .gantt-chart-header {
+  position: sticky;
+  top: 2.8rem;
+  z-index: 9;
+  box-shadow: 0 1px 0 var(--app-border), 0 5px 12px rgba(15, 23, 42, 0.06);
+}
+
+.gantt-panel .gantt-chart-header-label,
+.gantt-panel .gantt-chart-label {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.gantt-panel .gantt-chart-header-label {
+  z-index: 10;
+  background: #f8fafc;
+}
+
 .gantt-panel .gantt-chart-row {
   height: 3.25rem;
   min-height: 3.25rem;
@@ -5197,6 +5248,54 @@ body.theme-clear-glass .app-footer {
 .gantt-panel .gantt-progress-line line {
   stroke-width: 2;
   stroke-dasharray: none;
+}
+
+.gantt-progress-marker {
+  position: absolute;
+  z-index: 8;
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #e11d2e;
+  box-shadow: 0 0 0 2px rgba(225, 29, 46, 0.2);
+  cursor: help;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.gantt-progress-marker.is-ahead {
+  background: #1769d2;
+  box-shadow: 0 0 0 2px rgba(23, 105, 210, 0.2);
+}
+
+.gantt-progress-marker::after {
+  position: absolute;
+  bottom: calc(100% + 0.55rem);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 18rem;
+  padding: 0.42rem 0.55rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #fff;
+  content: attr(data-tooltip);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 0.25rem);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  white-space: normal;
+}
+
+.gantt-progress-marker:hover::after,
+.gantt-progress-marker:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .font-select-panel {

@@ -1,30 +1,56 @@
-﻿@model ProjectManager.Web.Pages.Shared.AuditTrailViewModel
+@model ProjectManager.Web.Pages.Shared.AuditTrailViewModel
+@using Microsoft.AspNetCore.WebUtilities
+@{
+    string PageUrl(int pageNumber)
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["Tab"] = "audit",
+            ["AuditPage"] = pageNumber.ToString(),
+            ["AuditPageSize"] = Model.PageSize.ToString(),
+            ["AuditKeyword"] = Model.Keyword,
+            ["AuditAction"] = Model.Action,
+            ["AuditFrom"] = Model.From?.ToString("yyyy-MM-dd"),
+            ["AuditTo"] = Model.To?.ToString("yyyy-MM-dd")
+        };
+
+        return QueryHelpers.AddQueryString(Context.Request.Path, values);
+    }
+}
 
 <form method="get" class="audit-filter-panel">
+    <input type="hidden" name="Tab" value="audit" />
     <div class="audit-filter-main">
-        <input class="form-control" name="AuditKeyword" value="@Model.Keyword" placeholder="搜尋操作人、內容或明細" />
-        <select class="form-select" name="AuditAction">
-            <option value="">全部动作</option>
+        <input class="form-control" name="AuditKeyword" value="@Model.Keyword" placeholder="搜尋操作人、內容或明細" aria-label="搜尋操作記錄" />
+        <select class="form-select" name="AuditAction" aria-label="篩選操作類型">
+            <option value="">全部動作</option>
             @foreach (var option in Model.ActionOptions)
             {
                 <option value="@option.Value" selected="@(option.Value == Model.Action)">@option.Text</option>
             }
         </select>
-        <input class="form-control" type="date" name="AuditFrom" value="@Model.From?.ToString("yyyy-MM-dd")" />
-        <input class="form-control" type="date" name="AuditTo" value="@Model.To?.ToString("yyyy-MM-dd")" />
+        <input class="form-control" type="date" name="AuditFrom" value="@Model.From?.ToString("yyyy-MM-dd")" aria-label="操作記錄開始日期" />
+        <input class="form-control" type="date" name="AuditTo" value="@Model.To?.ToString("yyyy-MM-dd")" aria-label="操作記錄結束日期" />
+        <select class="form-select" name="AuditPageSize" aria-label="每頁顯示筆數" onchange="this.form.submit()">
+            @foreach (var size in ProjectManager.Web.Services.AuditTrailQueryService.AllowedPageSizes)
+            {
+                <option value="@size" selected="@(size == Model.PageSize)">每頁 @size 筆</option>
+            }
+        </select>
     </div>
     <div class="audit-filter-actions">
         <button class="btn btn-outline-secondary" type="submit">篩選記錄</button>
-        <a class="btn btn-outline-secondary" href="?">清空</a>
+        <a class="btn btn-outline-secondary" href="?Tab=audit&AuditPageSize=@Model.PageSize">清除篩選</a>
     </div>
 </form>
 
 @if (Model.Logs.Count == 0)
 {
-    <div class="empty-state">暂无符合筆件的操作記錄</div>
+    <div class="empty-state">暫無符合條件的操作記錄</div>
 }
 else
 {
+    <div class="audit-result-summary">顯示第 @Model.FirstItemNumber–@Model.LastItemNumber 筆，共 @Model.TotalCount 筆</div>
     <div class="audit-timeline">
         @foreach (var log in Model.Logs)
         {
@@ -34,7 +60,7 @@ else
                     <div class="audit-timeline-head">
                         <div>
                             <div class="audit-timeline-title">@log.Action</div>
-                            <div class="audit-timeline-meta">@log.Actor · @log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                            <div class="audit-timeline-meta"><span data-language-preserve translate="no">@log.Actor</span> · @log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
                         </div>
                     </div>
                     <div class="audit-timeline-summary">@log.Summary</div>
@@ -51,4 +77,17 @@ else
             </article>
         }
     </div>
+}
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="pagination-wrap audit-pagination" aria-label="操作記錄分頁">
+        <a class="btn btn-outline-secondary btn-sm @(Model.HasPreviousPage ? null : "disabled")"
+           href="@(Model.HasPreviousPage ? PageUrl(Model.PageNumber - 1) : null)"
+           aria-disabled="@(!Model.HasPreviousPage)">上一頁</a>
+        <span>第 @Model.PageNumber / @Model.TotalPages 頁</span>
+        <a class="btn btn-outline-secondary btn-sm @(Model.HasNextPage ? null : "disabled")"
+           href="@(Model.HasNextPage ? PageUrl(Model.PageNumber + 1) : null)"
+           aria-disabled="@(!Model.HasNextPage)">下一頁</a>
+    </nav>
 }

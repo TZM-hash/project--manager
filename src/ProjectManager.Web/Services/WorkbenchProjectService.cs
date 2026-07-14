@@ -146,6 +146,7 @@ public sealed class WorkbenchProjectService(
     {
         return db.Projects
             .AsNoTracking()
+            .AsSplitQuery()
             .Include(x => x.Status)
             .ThenInclude(x => x!.Style)
             .Include(x => x.Assignments)

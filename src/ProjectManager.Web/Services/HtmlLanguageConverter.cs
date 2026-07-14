@@ -109,10 +109,14 @@ public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
                 }
 
                 var tag = html[index..(tagEnd + 1)];
-                output.Append(ConvertAttributes(tag, convert, interfaceTerms));
-
                 var (tagName, isClosing, isSelfClosing) = ParseTag(tag);
-                if (!isClosing && !isSelfClosing && tagName is not null && SkippedContentTags.Contains(tagName))
+                var preservesLanguage = tag.Contains("data-language-preserve", StringComparison.OrdinalIgnoreCase) ||
+                                        tag.Contains("translate=\"no\"", StringComparison.OrdinalIgnoreCase) ||
+                                        tag.Contains("translate='no'", StringComparison.OrdinalIgnoreCase);
+                output.Append(preservesLanguage ? tag : ConvertAttributes(tag, convert, interfaceTerms));
+
+                if (!isClosing && !isSelfClosing && tagName is not null &&
+                    (SkippedContentTags.Contains(tagName) || preservesLanguage))
                 {
                     skippedTag = tagName;
                 }

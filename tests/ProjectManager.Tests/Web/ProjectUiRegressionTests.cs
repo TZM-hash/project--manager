@@ -82,6 +82,60 @@ public sealed class ProjectUiRegressionTests
         css.Should().Contain("min-width: 10rem;");
     }
 
+    [Fact]
+    public void Project_details_load_only_the_selected_server_tab()
+    {
+        var adminPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Details.cshtml");
+        var workbenchPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Details.cshtml");
+        var adminModel = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Details.cshtml.cs");
+
+        adminPage.Should().Contain("data-detail-tabs-server");
+        workbenchPage.Should().Contain("data-detail-tabs-server");
+        adminPage.Should().Contain("asp-route-Tab=\"gantt\"");
+        adminPage.Should().Contain("@if (Model.ActiveTab == \"audit\")");
+        adminModel.Should().Contain("if (ActiveTab == \"gantt\")");
+        adminModel.Should().Contain("if (ActiveTab == \"audit\")");
+        adminModel.Should().Contain("AsSplitQuery()");
+    }
+
+    [Fact]
+    public void Audit_trail_supports_database_paging_and_user_selected_page_sizes()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_AuditTrail.cshtml");
+        var service = ReadRepositoryFile("src", "ProjectManager.Web", "Services", "AuditTrailQueryService.cs");
+
+        partial.Should().Contain("name=\"AuditPageSize\"");
+        partial.Should().Contain("操作記錄分頁");
+        service.Should().Contain("AllowedPageSizes = [10, 25, 50, 100]");
+        service.Should().Contain(".Skip((currentPage - 1) * selectedPageSize)");
+        service.Should().Contain(".Take(selectedPageSize)");
+    }
+
+    [Fact]
+    public void Gantt_exposes_progress_tooltips_and_sticky_desktop_headers()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
+        var print = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "GanttPrint.cshtml");
+        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+
+        partial.Should().Contain("gantt-progress-marker");
+        partial.Should().Contain("GetProgressSummary");
+        print.Should().Contain("GetProgressSummary(progressPoint)");
+        css.Should().Contain(".gantt-panel .gantt-chart-header");
+        css.Should().Contain("position: sticky;");
+        css.Should().Contain("content: attr(data-tooltip)");
+    }
+
+    [Fact]
+    public void Dynamic_project_values_can_opt_out_of_language_conversion()
+    {
+        var adminPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Details.cshtml");
+        var converter = ReadRepositoryFile("src", "ProjectManager.Web", "Services", "HtmlLanguageConverter.cs");
+
+        adminPage.Should().Contain("data-language-preserve");
+        converter.Should().Contain("data-language-preserve");
+    }
+
     private static string ReadRepositoryFile(params string[] pathParts)
     {
         return File.ReadAllText(RepositoryPath(pathParts));

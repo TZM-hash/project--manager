@@ -24,8 +24,8 @@
 <section class="detail-panel gantt-panel" data-gantt-editor>
     <div class="gantt-panel-head">
         <div>
-            <h2 class="detail-panel-title">甘特图</h2>
-            <div class="chart-subtitle">黑框為完整計劃工期，狀態實色為已完成部分、同色淡色為未完成部分；檔案日期折線保留進度超前與滯後判讀。当前時間單位：@scaleText。</div>
+            <h2 class="detail-panel-title">甘特圖</h2>
+            <div class="chart-subtitle">黑框為完整計劃工期，狀態實色為已完成部分、同色淡色為未完成部分；檔案日期折線保留進度超前與滯後判讀。目前時間單位：@scaleText。</div>
         </div>
         <div class="page-actions">
             <a class="btn btn-outline-secondary" asp-page="/Workbench/Projects/GanttPrint" asp-route-id="@Model.Project.Id">預覽 / 列印</a>
@@ -49,24 +49,24 @@
     }
 
     <div class="gantt-auto-grid">
-        <div class="gantt-auto-item"><span>專案名稱</span><strong>@Model.Project.Name</strong></div>
-        <div class="gantt-auto-item"><span>專案工號</span><strong>@Model.Project.ProjectNumber</strong></div>
-        <div class="gantt-auto-item"><span>母案案號</span><strong>@Model.Project.ParentCaseNumber</strong></div>
+        <div class="gantt-auto-item"><span>專案名稱</span><strong data-language-preserve translate="no">@Model.Project.Name</strong></div>
+        <div class="gantt-auto-item"><span>專案工號</span><strong data-language-preserve translate="no">@Model.Project.ProjectNumber</strong></div>
+        <div class="gantt-auto-item"><span>母案案號</span><strong data-language-preserve translate="no">@Model.Project.ParentCaseNumber</strong></div>
         <div class="gantt-auto-item"><span>年度</span><strong>@Model.Project.Year</strong></div>
-        <div class="gantt-auto-item"><span>当前狀態</span><strong>@Model.Project.Status?.Name</strong></div>
-        <div class="gantt-auto-item"><span>負責人</span><strong>@string.Join("; ", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</strong></div>
+        <div class="gantt-auto-item"><span>目前狀態</span><strong>@Model.Project.Status?.Name</strong></div>
+        <div class="gantt-auto-item"><span>負責人</span><strong data-language-preserve translate="no">@string.Join("; ", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</strong></div>
         <div class="gantt-auto-item gantt-auto-item-redline"><span>全局檔案日期</span><strong>@archiveDemand.Date.ToString("yyyy/M/d")</strong></div>
-        <div class="gantt-auto-item gantt-auto-item-redline"><span>進度線負責人</span><strong>@archiveDemand.Person</strong></div>
+        <div class="gantt-auto-item gantt-auto-item-redline"><span>進度線負責人</span><strong data-language-preserve translate="no">@archiveDemand.Person</strong></div>
     </div>
 
     <form method="post" asp-page-handler="SaveGantt" asp-route-id="@Model.Project.Id" class="gantt-form">
         <div class="gantt-plan-grid">
             <div>
-                <label class="form-label">整体開始日</label>
+                <label class="form-label">整體開始日</label>
                 <input class="form-control" asp-for="Input.StartDate" type="date" name="GanttInput.StartDate" />
             </div>
             <div>
-                <label class="form-label">整体完成日</label>
+                <label class="form-label">整體完成日</label>
                 <input class="form-control" asp-for="Input.FinishDate" type="date" name="GanttInput.FinishDate" />
             </div>
             <div class="gantt-plan-note">
@@ -92,7 +92,7 @@
             </div>
         </div>
 
-        <div class="gantt-chart-wrap" aria-label="專案甘特图時間轴：黑框顯示計劃工期，實色顯示完成進度，淡色顯示剩餘進度" style="--month-count:@months.Count;--task-count:@taskRows.Count">
+        <div class="gantt-chart-wrap" aria-label="專案甘特圖時間軸：黑框顯示計劃工期，實色顯示完成進度，淡色顯示剩餘進度" style="--month-count:@months.Count;--task-count:@taskRows.Count">
             <div class="gantt-chart-header">
                 <span class="gantt-chart-header-label">工作項目</span>
                 <div class="gantt-chart-months">
@@ -106,7 +106,7 @@
             <div class="gantt-chart-body">
                 @if (taskRows.Count == 0)
                 {
-                    <div class="empty-state">暂无细分工作，儲存后会生成甘特時間轴。</div>
+                    <div class="empty-state">暫無細分工作，儲存後會產生甘特時間軸。</div>
                 }
                 @for (var progressIndex = 0; progressIndex < taskRows.Count; progressIndex++)
                 {
@@ -117,15 +117,16 @@
                     var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
                     var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
                     var progressText = $"{bar.ProgressPercent:0.##}%";
+                    var progressTooltip = ProjectGanttService.GetProgressSummary(point);
                     <div class="gantt-chart-row">
                         <div class="gantt-chart-label">
-                            <span class="gantt-task-name">@row.Task.Name</span>
+                            <span class="gantt-task-name" data-language-preserve translate="no">@row.Task.Name</span>
                             <span class="gantt-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
                         </div>
                         <div class="gantt-chart-track">
                             @if (bar.WidthPercent > 0)
                             {
-                                <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@row.Task.Name：@visualStateLabel，完成 @progressText">
+                                <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@progressTooltip" title="@progressTooltip">
                                     <i style="width:@bar.ProgressPercent.ToString("0.##")%"></i>
                                     <span class="gantt-bar-progress-label">@progressText</span>
                                 </span>
@@ -138,8 +139,8 @@
                 {
                     var previousX = archiveLinePosition;
                     decimal previousY = 0;
-                    <div class="gantt-chart-overlay" aria-hidden="true">
-                        <svg class="gantt-progress-line" viewBox="0 0 100 @taskRows.Count" preserveAspectRatio="none">
+                    <div class="gantt-chart-overlay" aria-label="檔案日期進度折線">
+                        <svg class="gantt-progress-line" viewBox="0 0 100 @taskRows.Count" preserveAspectRatio="none" aria-hidden="true">
                             @for (var pointIndex = 0; pointIndex < progressPoints.Count; pointIndex++)
                             {
                                 var point = progressPoints[pointIndex];
@@ -151,13 +152,29 @@
                             }
                             <line class="is-on-schedule" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@archiveLinePosition.ToString("0.###")" y2="@taskRows.Count" vector-effect="non-scaling-stroke" />
                         </svg>
+                        @for (var markerIndex = 0; markerIndex < progressPoints.Count; markerIndex++)
+                        {
+                            var markerPoint = progressPoints[markerIndex];
+                            var markerTask = taskRows[markerIndex].Task;
+                            var markerStateClass = markerPoint.State == GanttProgressState.Ahead ? "is-ahead" : markerPoint.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
+                            var markerTooltip = $"{markerTask.Name}：{ProjectGanttService.GetProgressSummary(markerPoint)}";
+                            var markerTop = (markerIndex + 0.5m) / taskRows.Count * 100m;
+                            <span class="gantt-progress-marker @markerStateClass"
+                                  style="left:@markerPoint.PositionPercent.ToString("0.###")%;top:@markerTop.ToString("0.###")%"
+                                  tabindex="0"
+                                  role="img"
+                                  aria-label="@markerTooltip"
+                                  data-tooltip="@markerTooltip"
+                                  data-language-preserve
+                                  translate="no"></span>
+                        }
                     </div>
                 }
             </div>
         </div>
 
         <div class="gantt-table-actions">
-            <div class="chart-title">细分工作內容</div>
+            <div class="chart-title">細分工作內容</div>
             @if (Model.CanEdit)
             {
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-gantt-add-row>新增一项</button>
@@ -168,11 +185,11 @@
             <table class="table table-sm align-middle data-table gantt-edit-table">
                 <thead>
                     <tr>
-                        <th>序号</th>
-                        <th>细分工作內容</th>
-                        <th>预计開始日</th>
-                        <th>预计完成日</th>
-                        <th>当前進度 %</th>
+                        <th>序號</th>
+                        <th>細分工作內容</th>
+                        <th>預計開始日</th>
+                        <th>預計完成日</th>
+                        <th>目前進度 %</th>
                         <th>進度說明</th>
                         <th>操作</th>
                     </tr>
@@ -206,7 +223,7 @@
         @if (Model.CanEdit)
         {
             <div class="mt-3">
-                <button type="submit" class="btn btn-primary">儲存甘特图</button>
+                <button type="submit" class="btn btn-primary">儲存甘特圖</button>
             </div>
         }
     </form>

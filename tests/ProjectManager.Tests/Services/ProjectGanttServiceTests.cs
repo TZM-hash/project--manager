@@ -101,6 +101,10 @@ public sealed class ProjectGanttServiceTests
         points[1].State.Should().Be(GanttProgressState.Ahead);
         points[0].PositionPercent.Should().BeLessThan(ProjectGanttService.GetTimelinePositionPercent(new DateOnly(2026, 1, 16), months));
         points[1].PositionPercent.Should().BeGreaterThan(ProjectGanttService.GetTimelinePositionPercent(new DateOnly(2026, 1, 16), months));
+        points[0].VarianceDays.Should().BeNegative();
+        points[1].VarianceDays.Should().BePositive();
+        ProjectGanttService.GetProgressSummary(points[0]).Should().Contain("滯後");
+        ProjectGanttService.GetProgressSummary(points[1]).Should().Contain("超前");
     }
 
     [Fact]

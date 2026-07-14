@@ -118,10 +118,14 @@
                         var completedThrough = taskStart is not null && completedTaskDays > 0
                             ? taskStart.Value.AddDays(completedTaskDays - 1)
                             : (DateOnly?)null;
+                        var progressPoint = progressPoints[index];
 
                         <tr>
                             <td class="gantt-print-index">@(task.SortOrder > 0 ? task.SortOrder : index + 1)</td>
-                            <td class="gantt-print-task">@task.Name</td>
+                            <td class="gantt-print-task">
+                                <span>@task.Name</span>
+                                <small>@ProjectGanttService.GetProgressSummary(progressPoint)</small>
+                            </td>
                             @foreach (var month in months)
                             {
                                 var monthStart = month.Month;

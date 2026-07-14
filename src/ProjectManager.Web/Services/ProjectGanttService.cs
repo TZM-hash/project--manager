@@ -426,7 +426,12 @@ public sealed class ProjectGanttService(
         {
             if (task.PlannedStartDate is null || task.PlannedFinishDate is null)
             {
-                return new GanttProgressPoint(baseline, GanttProgressState.OnSchedule, 0);
+                return new GanttProgressPoint(
+                    baseline,
+                    GanttProgressState.OnSchedule,
+                    0,
+                    ClampPercent(task.ProgressPercent),
+                    0);
             }
 
             var start = task.PlannedStartDate.Value;
@@ -440,14 +445,19 @@ public sealed class ProjectGanttService(
             var actual = ClampPercent(task.ProgressPercent);
             if (Math.Abs(actual - expected) < 0.5m)
             {
-                return new GanttProgressPoint(baseline, GanttProgressState.OnSchedule, expected);
+                return new GanttProgressPoint(baseline, GanttProgressState.OnSchedule, expected, actual, 0);
             }
 
             var duration = Math.Max(0, finish.DayNumber - start.DayNumber);
             var actualOffset = (int)Math.Round(duration * actual / 100m, MidpointRounding.AwayFromZero);
             var actualDate = start.AddDays(actualOffset);
             var state = actual < expected ? GanttProgressState.Behind : GanttProgressState.Ahead;
-            return new GanttProgressPoint(GetTimelinePositionPercent(actualDate, months), state, expected);
+            return new GanttProgressPoint(
+                GetTimelinePositionPercent(actualDate, months),
+                state,
+                expected,
+                actual,
+                actualDate.DayNumber - archiveDate.DayNumber);
         }).ToList();
     }
 
@@ -458,7 +468,7 @@ public sealed class ProjectGanttService(
             input.FinishDate is not null &&
             input.FinishDate < input.StartDate)
         {
-            errors.Add("整体完成日不能早于整体開始日。");
+            errors.Add("整體完成日不能早於整體開始日。");
         }
 
         foreach (var (task, index) in input.Tasks.Select((task, index) => (task, index + 1)))
@@ -472,12 +482,12 @@ public sealed class ProjectGanttService(
                 task.PlannedFinishDate is not null &&
                 task.PlannedFinishDate < task.PlannedStartDate)
             {
-                errors.Add($"第 {index} 项细分工作的预计完成日不能早于预计開始日。");
+                errors.Add($"第 {index} 項細分工作的預計完成日不能早於預計開始日。");
             }
 
             if (task.ProgressPercent < 0 || task.ProgressPercent > 100)
             {
-                errors.Add($"第 {index} 项细分工作的当前進度必须在 0 到 100 之间。");
+                errors.Add($"第 {index} 項細分工作的目前進度必須在 0 到 100 之間。");
             }
         }
 
@@ -494,6 +504,7 @@ public sealed class ProjectGanttService(
         var months = BuildMonths(input, archiveDemand.Date);
         var tasks = input.Tasks.Where(HasTaskData).OrderBy(x => x.SortOrder).ToList();
         var weights = BuildTaskWeights(tasks.Count);
+        var progressPoints = BuildProgressLinePoints(tasks, archiveDemand.Date, months);
 
         const int infoTopRow = 1;
         const int yearRow = 4;
@@ -514,11 +525,11 @@ public sealed class ProjectGanttService(
 
         WriteGanttProjectInfo(sheet, project, archiveDemand, infoTopRow, monthStartColumn, lastColumn);
         WriteGanttTimeHeader(sheet, months, yearRow, monthRow, monthStartColumn, ratioColumn, actualColumn);
-        WriteGanttBody(sheet, tasks, weights, months, firstTaskRow, monthStartColumn, ratioColumn, actualColumn);
+        WriteGanttBody(sheet, tasks, weights, progressPoints, months, firstTaskRow, monthStartColumn, ratioColumn, actualColumn);
         PaintArchiveProgressLine(
             sheet,
             archiveDemand.Date,
-            tasks,
+            progressPoints,
             months,
             monthRow,
             firstTaskRow,
@@ -541,7 +552,7 @@ public sealed class ProjectGanttService(
 
         sheet.Column(ratioColumn).Width = 10;
         sheet.Column(actualColumn).Width = 13;
-        sheet.Rows(firstTaskRow, lastTaskRow).Height = 28;
+        sheet.Rows(firstTaskRow, lastTaskRow).Height = 36;
         sheet.Rows(noteTopRow, noteBottomRow).Height = 24;
         sheet.SheetView.FreezeRows(monthRow);
         sheet.SheetView.FreezeColumns(leftColumns);
@@ -564,7 +575,7 @@ public sealed class ProjectGanttService(
         var ownerText = string.Join("; ", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
         var rightStartColumn = Math.Max(monthStartColumn + 2, lastColumn - 5);
 
-        SetMergedText(sheet, topRow, 1, topRow + 2, 3, "台塑\n电子材料部");
+        SetMergedText(sheet, topRow, 1, topRow + 2, 3, "台塑\n電子材料部");
         sheet.Cell(topRow, 1).Style.Alignment.WrapText = true;
         sheet.Cell(topRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
@@ -574,13 +585,13 @@ public sealed class ProjectGanttService(
         sheet.Cell(topRow, monthStartColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         sheet.Cell(topRow, monthStartColumn).Style.Alignment.WrapText = true;
 
-        sheet.Cell(topRow, rightStartColumn).Value = "专案编号";
+        sheet.Cell(topRow, rightStartColumn).Value = "專案編號";
         SetMergedText(sheet, topRow, rightStartColumn + 1, topRow, rightStartColumn + 2, project.ProjectNumber);
         sheet.Cell(topRow + 1, rightStartColumn).Value = "客戶";
         SetMergedText(sheet, topRow + 1, rightStartColumn + 1, topRow + 1, rightStartColumn + 2, ownerText);
-        sheet.Cell(topRow, rightStartColumn + 3).Value = "檔案编号";
+        sheet.Cell(topRow, rightStartColumn + 3).Value = "檔案編號";
         SetMergedText(sheet, topRow, rightStartColumn + 4, topRow, lastColumn, $"GANTT-{project.Id}");
-        sheet.Cell(topRow + 1, rightStartColumn + 3).Value = "档案日期";
+        sheet.Cell(topRow + 1, rightStartColumn + 3).Value = "檔案日期";
         SetMergedText(sheet, topRow + 1, rightStartColumn + 4, topRow + 1, lastColumn, archiveDemand.Date.ToString("yyyy/M/d"));
 
         sheet.Range(topRow, rightStartColumn, topRow + 1, lastColumn).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
@@ -591,7 +602,7 @@ public sealed class ProjectGanttService(
             monthStartColumn,
             topRow + 2,
             lastColumn,
-            $"進度線負責人：{archiveDemand.Person}    整体開始日：{project.GanttPlan?.StartDate?.ToString("yyyy-MM-dd") ?? "-"}    整体完成日：{project.GanttPlan?.FinishDate?.ToString("yyyy-MM-dd") ?? "-"}    狀態：{project.Status?.Name ?? "-"}");
+            $"進度線負責人：{archiveDemand.Person}    整體開始日：{project.GanttPlan?.StartDate?.ToString("yyyy-MM-dd") ?? "-"}    整體完成日：{project.GanttPlan?.FinishDate?.ToString("yyyy-MM-dd") ?? "-"}    狀態：{project.Status?.Name ?? "-"}");
         sheet.Cell(topRow + 2, monthStartColumn).Style.Alignment.WrapText = true;
     }
 
@@ -604,7 +615,7 @@ public sealed class ProjectGanttService(
         int ratioColumn,
         int actualColumn)
     {
-        SetMergedText(sheet, yearRow, 1, monthRow, 1, "项次");
+        SetMergedText(sheet, yearRow, 1, monthRow, 1, "項次");
         SetMergedText(sheet, yearRow, 2, monthRow, 3, "名稱");
         SetMergedText(sheet, yearRow, ratioColumn, yearRow, actualColumn, "進度");
         sheet.Cell(monthRow, ratioColumn).Value = "比例";
@@ -634,6 +645,7 @@ public sealed class ProjectGanttService(
         IXLWorksheet sheet,
         IReadOnlyList<ProjectGanttTaskInputModel> tasks,
         IReadOnlyList<decimal> weights,
+        IReadOnlyList<GanttProgressPoint> progressPoints,
         IReadOnlyList<GanttMonth> months,
         int firstTaskRow,
         int monthStartColumn,
@@ -644,7 +656,7 @@ public sealed class ProjectGanttService(
         {
             var row = firstTaskRow;
             sheet.Cell(row, 1).Value = 1;
-            SetMergedText(sheet, row, 2, row, 3, "请先在系统内维护细分工作");
+            SetMergedText(sheet, row, 2, row, 3, "請先在系統內維護細分工作");
             sheet.Cell(row, ratioColumn).Value = 0;
             sheet.Cell(row, actualColumn).Value = 0;
             sheet.Cell(row, ratioColumn).Style.NumberFormat.Format = "0%";
@@ -657,7 +669,13 @@ public sealed class ProjectGanttService(
             var task = tasks[i];
             var row = firstTaskRow + i;
             sheet.Cell(row, 1).Value = task.SortOrder > 0 ? task.SortOrder : i + 1;
-            SetMergedText(sheet, row, 2, row, 3, task.Name ?? string.Empty);
+            SetMergedText(
+                sheet,
+                row,
+                2,
+                row,
+                3,
+                $"{task.Name ?? string.Empty}\n{GetProgressSummary(progressPoints[i])}");
             sheet.Cell(row, ratioColumn).Value = weights[i] / 100m;
             sheet.Cell(row, ratioColumn).Style.NumberFormat.Format = "0%";
             sheet.Cell(row, actualColumn).Value = task.ProgressPercent / 100m;
@@ -714,7 +732,7 @@ public sealed class ProjectGanttService(
     private static void PaintArchiveProgressLine(
         IXLWorksheet sheet,
         DateOnly archiveDate,
-        IReadOnlyList<ProjectGanttTaskInputModel> tasks,
+        IReadOnlyList<GanttProgressPoint> points,
         IReadOnlyList<GanttMonth> months,
         int headerRow,
         int firstTaskRow,
@@ -743,7 +761,6 @@ public sealed class ProjectGanttService(
             headerCell.Style.Border.LeftBorderColor = XLColor.Red;
         }
 
-        var points = BuildProgressLinePoints(tasks, archiveDate, months);
         for (var index = 0; index < points.Count && firstTaskRow + index <= lastRow; index++)
         {
             var point = points[index];
@@ -759,6 +776,21 @@ public sealed class ProjectGanttService(
             cell.Style.Border.LeftBorder = XLBorderStyleValues.Medium;
             cell.Style.Border.LeftBorderColor = color;
         }
+    }
+
+    public static string GetProgressVarianceText(GanttProgressPoint point)
+    {
+        return point.State switch
+        {
+            GanttProgressState.Ahead => $"超前 {Math.Abs(point.VarianceDays)} 天",
+            GanttProgressState.Behind => $"滯後 {Math.Abs(point.VarianceDays)} 天",
+            _ => "符合檔案日期進度"
+        };
+    }
+
+    public static string GetProgressSummary(GanttProgressPoint point)
+    {
+        return $"預期 {point.ExpectedPercent:0.##}% / 實際 {point.ActualPercent:0.##}% / {GetProgressVarianceText(point)}";
     }
 
     private static void WriteGanttFooter(
@@ -881,7 +913,7 @@ public sealed class ProjectGanttService(
             notes.Insert(0, project.GanttPlan.ProgressNote);
         }
 
-        return notes.Count == 0 ? "暂无進度說明。" : string.Join(Environment.NewLine, notes);
+        return notes.Count == 0 ? "暫無進度說明。" : string.Join(Environment.NewLine, notes);
     }
 
     private static void SetMergedText(
@@ -914,8 +946,8 @@ public sealed class ProjectGanttService(
             ("年度", project.Year.ToString()),
             ("客戶/負責人", string.Join("; ", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))),
             ("狀態", project.Status?.Name ?? string.Empty),
-            ("整体開始日", plan?.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty),
-            ("整体完成日", plan?.FinishDate?.ToString("yyyy-MM-dd") ?? string.Empty),
+            ("整體開始日", plan?.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty),
+            ("整體完成日", plan?.FinishDate?.ToString("yyyy-MM-dd") ?? string.Empty),
             ("進度說明", plan?.ProgressNote ?? string.Empty)
         };
 
@@ -938,7 +970,7 @@ public sealed class ProjectGanttService(
     {
         var tasks = project.GanttPlan?.Tasks.OrderBy(x => x.SortOrder).ToList() ?? [];
         var startRow = 14;
-        var headers = new[] { "序号", "细分工作內容", "预计開始日", "预计完成日", "当前進度", "進度說明" };
+        var headers = new[] { "序號", "細分工作內容", "預計開始日", "預計完成日", "目前進度", "進度說明" };
         for (var i = 0; i < headers.Length; i++)
         {
             sheet.Cell(startRow, i + 1).Value = headers[i];
@@ -1170,6 +1202,8 @@ public sealed record GanttBar(decimal LeftPercent, decimal WidthPercent, decimal
 public sealed record GanttProgressPoint(
     decimal PositionPercent,
     GanttProgressState State,
-    decimal ExpectedPercent);
+    decimal ExpectedPercent,
+    decimal ActualPercent,
+    int VarianceDays);
 
 public sealed record ArchiveDemandInfo(DateOnly Date, string Person);
