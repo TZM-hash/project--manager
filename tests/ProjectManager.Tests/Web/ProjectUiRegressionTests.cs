@@ -63,6 +63,16 @@ public sealed class ProjectUiRegressionTests
     }
 
     [Fact]
+    public void Gantt_rows_leave_room_for_label_metadata_and_status_badges()
+    {
+        var themes = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "themes.css");
+
+        themes.Should().Contain(".gantt-panel .gantt-chart-row {\n  height: auto;");
+        themes.Should().Contain("min-height: 5.4rem;");
+        themes.Should().Contain("overflow: visible;\n  white-space: normal;");
+    }
+
+    [Fact]
     public void Home_page_prioritizes_one_conclusion_one_action_and_four_work_queues()
     {
         var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Index.cshtml");

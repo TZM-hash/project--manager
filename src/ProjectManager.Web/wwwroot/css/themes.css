@@ -1299,7 +1299,8 @@ body.ui-effects-high.page-transition-leaving .app-main {
 
 /* 甘特圖自適應全覽與檔案日期進度折線 */
 .gantt-chart-wrap {
-  overflow: clip;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .gantt-chart-header,
@@ -1998,8 +1999,8 @@ body.theme-clear-glass .app-footer {
 }
 
 .gantt-panel .gantt-chart-row {
-  height: 3.25rem;
-  min-height: 3.25rem;
+  height: auto;
+  min-height: 5.4rem;
 }
 
 .gantt-panel .gantt-chart-label {
@@ -2007,6 +2008,7 @@ body.theme-clear-glass .app-footer {
   gap: 0.22rem;
   align-items: flex-start;
   justify-content: center;
+  overflow: visible;
   white-space: normal;
 }
 

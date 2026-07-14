@@ -276,6 +276,10 @@ test("project detail gantt loads on demand without desktop overflow", async ({ p
       noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
       widthsMatch: Boolean(overlayRect && svgRect && Math.abs(overlayRect.width - svgRect.width) < 1),
       markerCount: document.querySelectorAll(".gantt-progress-marker").length,
+      labelBoxes: Array.from(document.querySelectorAll(".gantt-chart-label")).map((label) => ({
+        contentFits: label.scrollHeight <= label.clientHeight + 1,
+        rowHeight: label.closest(".gantt-chart-row")?.getBoundingClientRect().height || 0
+      })),
       progressLabels: Array.from(document.querySelectorAll(".gantt-bar-progress-label")).map((label) => {
         const row = label.closest(".gantt-chart-row");
         const bar = row?.querySelector(".gantt-bar");
@@ -296,6 +300,8 @@ test("project detail gantt loads on demand without desktop overflow", async ({ p
   expect(ganttGeometry.noPageOverflow).toBeTruthy();
   expect(ganttGeometry.widthsMatch).toBeTruthy();
   expect(ganttGeometry.markerCount).toBeGreaterThan(0);
+  expect(ganttGeometry.labelBoxes.length).toBeGreaterThan(0);
+  expect(ganttGeometry.labelBoxes.every((label) => label.contentFits && label.rowHeight >= 86)).toBeTruthy();
   expect(ganttGeometry.progressLabels.length).toBeGreaterThan(0);
   expect(ganttGeometry.progressLabels.every((label) => label.transparent)).toBeTruthy();
   expect(ganttGeometry.progressLabels.every((label) => label.clearsBar)).toBeTruthy();
