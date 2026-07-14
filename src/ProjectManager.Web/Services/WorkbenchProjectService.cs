@@ -202,6 +202,35 @@ public sealed class WorkbenchProjectService(
             query = query.Where(x => x.Status != null && !x.Status.IsClosed);
         }
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var upcomingUntil = today.AddDays(14);
+        var staleBefore = DateTimeOffset.UtcNow.AddDays(-30);
+        query = filter.AnalysisType switch
+        {
+            ProjectAnalysisTypes.Overdue => query.Where(x =>
+                x.Status != null && !x.Status.IsClosed &&
+                x.GanttPlan != null && x.GanttPlan.FinishDate < today &&
+                x.ProgressPercent < 100),
+            ProjectAnalysisTypes.Pending => query.Where(x =>
+                x.Status != null && !x.Status.IsClosed &&
+                (x.Status.Code.ToLower().Contains("wait") ||
+                 x.Status.Code.ToLower().Contains("block") ||
+                 x.Status.Name.Contains("等待") ||
+                 x.Status.Name.Contains("待處理") ||
+                 x.Status.Name.Contains("阻塞") ||
+                 x.CollectionPercent + 25 < x.ProgressPercent)),
+            ProjectAnalysisTypes.Upcoming => query.Where(x =>
+                x.Status != null && !x.Status.IsClosed &&
+                x.GanttPlan != null && x.GanttPlan.Tasks.Any(task =>
+                    task.ProgressPercent < 100 &&
+                    task.PlannedFinishDate >= today &&
+                    task.PlannedFinishDate <= upcomingUntil)),
+            ProjectAnalysisTypes.StaleUpdate => query.Where(x =>
+                x.Status != null && !x.Status.IsClosed &&
+                x.UpdatedAt < staleBefore),
+            _ => query
+        };
+
         return query;
     }
 }

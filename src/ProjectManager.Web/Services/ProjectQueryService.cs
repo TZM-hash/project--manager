@@ -150,6 +150,9 @@ public static class ProjectAnalysisTypes
     public const string LowProgress = "low-progress";
     public const string CollectionLag = "collection-lag";
     public const string StaleUpdate = "stale-update";
+    public const string Overdue = "overdue";
+    public const string Pending = "pending";
+    public const string Upcoming = "upcoming";
 }
 
 public sealed record OpenProjectSummaryRow(

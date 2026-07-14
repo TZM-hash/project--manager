@@ -36,6 +36,31 @@ public sealed class WorkbenchProjectServiceTests
         projects.Select(x => x.ProjectNumber).Should().BeEquivalentTo("P-ASSIGNED", "P-OTHER");
     }
 
+    [Theory]
+    [InlineData(ProjectAnalysisTypes.Overdue, "P-ASSIGNED")]
+    [InlineData(ProjectAnalysisTypes.Pending, "P-OTHER")]
+    [InlineData(ProjectAnalysisTypes.Upcoming, "P-OTHER")]
+    public async Task GetProjectsForUserPageAsync_applies_personal_workbench_analysis_filter(
+        string analysisType,
+        string expectedProjectNumber)
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var seed = await SeedWorkbenchProjectsAsync(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
+
+        var page = await service.GetProjectsForUserPageAsync(
+            seed.LeaderUserId,
+            canViewAll: true,
+            new ProjectFilter(null, null, null, null, null, null, true, analysisType),
+            pageNumber: 1,
+            pageSize: 20,
+            CancellationToken.None);
+
+        page.Items.Select(x => x.ProjectNumber).Should().Equal(expectedProjectNumber);
+    }
+
     [Fact]
     public async Task UpdateProgressAsync_updates_progress_fields_only_for_assigned_project_staff()
     {
@@ -137,6 +162,14 @@ public sealed class WorkbenchProjectServiceTests
             SortOrder = 10,
             IsClosed = false
         };
+        var blockedStatus = new ProjectStatus
+        {
+            Code = "Blocked",
+            Name = "阻塞",
+            SortOrder = 20,
+            IsClosed = false
+        };
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         var assignedProject = new Project
         {
@@ -148,6 +181,11 @@ public sealed class WorkbenchProjectServiceTests
             ProjectAmount = 10000,
             ProgressPercent = 30,
             CollectionPercent = 20,
+            GanttPlan = new ProjectGanttPlan
+            {
+                StartDate = today.AddDays(-30),
+                FinishDate = today.AddDays(-1)
+            },
             UpdatedByUser = staff,
             Assignments =
             {
@@ -175,10 +213,27 @@ public sealed class WorkbenchProjectServiceTests
             ParentCaseNumber = "M-002",
             ProjectNumber = "P-OTHER",
             Name = "Other Project",
-            Status = status,
+            Status = blockedStatus,
             ProjectAmount = 20000,
             ProgressPercent = 10,
-            CollectionPercent = 0
+            CollectionPercent = 0,
+            UpdatedAt = DateTimeOffset.UtcNow.AddDays(-45),
+            GanttPlan = new ProjectGanttPlan
+            {
+                StartDate = today,
+                FinishDate = today.AddDays(30),
+                Tasks =
+                {
+                    new ProjectGanttTask
+                    {
+                        SortOrder = 10,
+                        Name = "近期節點",
+                        PlannedStartDate = today,
+                        PlannedFinishDate = today.AddDays(7),
+                        ProgressPercent = 20
+                    }
+                }
+            }
         };
         var deletedProject = new Project
         {

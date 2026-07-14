@@ -81,7 +81,7 @@ public sealed class DataViewRegistry
         var columns = ProjectColumns();
         return new(
             "workbench-projects",
-            new HashSet<string>(["Name", "ProjectNumber", "Year", "ParentCaseNumber", "PersonnelUserId", "StatusId", "ProjectType", "OpenOnly"], StringComparer.OrdinalIgnoreCase),
+            new HashSet<string>(["Name", "ProjectNumber", "Year", "ParentCaseNumber", "PersonnelUserId", "StatusId", "ProjectType", "OpenOnly", "AnalysisType"], StringComparer.OrdinalIgnoreCase),
             columns,
             [
                 Preset("my-progress", "我的進度", columns, ["projectNumber", "name", "status", "progress", "collection", "updatedAt", "actions"]),

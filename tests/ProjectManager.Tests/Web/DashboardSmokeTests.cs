@@ -20,35 +20,37 @@ namespace ProjectManager.Tests.Web;
 public sealed class DashboardSmokeTests
 {
     [Fact]
-    public async Task Administrator_home_page_shows_admin_and_workbench_entrances()
+    public async Task Administrator_home_page_shows_personal_workbench_and_shortcuts()
     {
         await using var factory = new DashboardWebFactory();
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.Administrator);
 
         var response = await client.GetAsync("/");
-        var html = await response.Content.ReadAsStringAsync();
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("後台管理入口");
-        html.Should().Contain("WEB 我的專案入口");
-        html.Should().Contain("專案管理");
-        html.Should().Contain("月結");
-        html.Should().Contain("報表");
+        html.Should().Contain("個人工作台");
+        html.Should().Contain("目前沒有高優先風險");
+        html.Should().Contain("我的逾期");
+        html.Should().Contain("待處理");
+        html.Should().Contain("近期節點");
+        html.Should().Contain("長期未更新");
+        html.Should().Contain("快捷操作");
     }
 
     [Fact]
-    public async Task ProjectStaff_home_page_shows_workbench_entrance()
+    public async Task ProjectStaff_home_page_shows_personal_workbench()
     {
         await using var factory = new DashboardWebFactory();
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.ProjectStaff);
 
         var response = await client.GetAsync("/");
-        var html = await response.Content.ReadAsStringAsync();
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        html.Should().Contain("WEB 我的專案入口");
+        html.Should().Contain("個人工作台");
         html.Should().Contain("我的專案");
     }
 

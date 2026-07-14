@@ -6,6 +6,7 @@ using ProjectManager.Web.Services;
 using ProjectManager.Web.Services.DataViews;
 using ProjectManager.Web.Pages.Shared;
 using Microsoft.AspNetCore.DataProtection;
+using ProjectManager.Web.Services.Workbench;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,7 @@ builder.Services.AddScoped<ProjectArchiveService>();
 builder.Services.AddSingleton<DataViewRegistry>();
 builder.Services.AddScoped<SavedDataViewService>();
 builder.Services.AddScoped<SavedDataViewPageSupport>();
+builder.Services.AddScoped<PersonalWorkbenchService>();
 builder.Services.AddSingleton<OpenCcConverterService>();
 builder.Services.AddSingleton<HtmlLanguageConverter>();
 builder.Services.AddSingleton(TimeProvider.System);

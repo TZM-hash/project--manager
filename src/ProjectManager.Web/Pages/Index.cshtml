@@ -2,131 +2,203 @@
 @using ProjectManager.Web.Security
 @model IndexModel
 @{
-    ViewData["Title"] = "首頁";
+    ViewData["Title"] = "個人工作台";
 }
 
-<div class="dashboard-header">
-    <div>
-        <h1 class="page-title">台塑電子專案管理系統</h1>
-        <div class="dashboard-subtitle">集中管理公司內網專案、請購、月結和未結案報表</div>
+@if (User.Identity?.IsAuthenticated == true && Model.Workbench is not null)
+{
+    <div class="workbench-heading">
+        <div>
+            <div class="eyebrow">今日工作焦點</div>
+            <h1 class="page-title">個人工作台</h1>
+            <p class="workbench-subtitle">集中查看需要立即處理的專案風險與近期節點。</p>
+        </div>
+        <span class="meta-pill">依目前帳號權限顯示</span>
     </div>
-    <div class="dashboard-meta">
-        <span>內網部署</span>
-        <span>WEB 我的專案</span>
-    </div>
-</div>
 
-<div class="metric-grid dashboard-grid">
-    @foreach (var metric in Model.Metrics)
-    {
-        <div class="metric-card metric-@metric.Accent">
-            <div class="metric-label">@metric.Label</div>
-            <div class="metric-value" data-countup>@metric.Value</div>
-            <div class="metric-hint">@metric.Hint</div>
+    <section class="workbench-hero workbench-hero-@Model.Workbench.HeroTone" aria-labelledby="workbench-conclusion">
+        <div class="workbench-hero-content">
+            <span class="workbench-hero-label">主結論</span>
+            <h2 id="workbench-conclusion">@Model.Workbench.HeroTitle</h2>
+            <p>@Model.Workbench.HeroDescription</p>
         </div>
-    }
-</div>
-
-<div class="dashboard-visual-grid">
-    <section class="chart-card chart-card-feature">
-        <div class="chart-card-header">
-            <div>
-                <div class="chart-title">未結案占比</div>
-                <div class="chart-subtitle">整體專案推進壓力</div>
-            </div>
-            <span class="meta-pill">@Model.OpenProjectCount / @Model.TotalProjectCount</span>
-        </div>
-        <div class="donut-wrap">
-            <div class="donut-chart" style="--donut-color:#2563eb;--donut-percent:@Model.OpenProjectPercent">
-                <span>@Model.OpenProjectPercent.ToString("0.#")%</span>
-            </div>
-            <div class="legend-list">
-                @foreach (var slice in Model.OpenClosedSlices)
-                {
-                    <div class="legend-item"><span style="background:@slice.Color"></span>@slice.Label @slice.Value.ToString("0")</div>
-                }
-            </div>
-        </div>
+        <a class="btn btn-primary workbench-primary-action" href="@Model.Workbench.PrimaryActionUrl">
+            @Model.Workbench.PrimaryActionText
+        </a>
     </section>
 
-    <section class="chart-card">
-        <div class="chart-title">專案狀態分布</div>
-        <div class="chart-subtitle">按狀態彙總目前有效專案</div>
-        <div class="bar-list">
-            @foreach (var slice in Model.StatusSlices)
-            {
-                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
-                    <div class="bar-row-label">@slice.Label</div>
-                    <div class="bar-track"><span></span></div>
-                    <div class="bar-value">@slice.Value.ToString("0")</div>
+    <nav class="workbench-counters" aria-label="工作佇列摘要">
+        <a href="/Workbench/Projects/Index?AnalysisType=overdue" class="workbench-counter workbench-counter-danger">
+            <span>我的逾期</span>
+            <strong>@Model.Workbench.OverdueCount</strong>
+            <small>超過計畫完成日</small>
+        </a>
+        <a href="/Workbench/Projects/Index?AnalysisType=pending" class="workbench-counter workbench-counter-warning">
+            <span>待處理</span>
+            <strong>@Model.Workbench.PendingCount</strong>
+            <small>等待、阻塞或收款落後</small>
+        </a>
+        <a href="/Workbench/Projects/Index?AnalysisType=upcoming" class="workbench-counter workbench-counter-info">
+            <span>近期節點</span>
+            <strong>@Model.Workbench.UpcomingNodeCount</strong>
+            <small>未來 14 天到期</small>
+        </a>
+        <a href="/Workbench/Projects/Index?AnalysisType=stale-update" class="workbench-counter workbench-counter-neutral">
+            <span>長期未更新</span>
+            <strong>@Model.Workbench.StaleCount</strong>
+            <small>超過 30 天未更新</small>
+        </a>
+    </nav>
+
+    <div class="workbench-queue-grid">
+        <section class="workbench-queue" aria-labelledby="overdue-title">
+            <header>
+                <div>
+                    <span class="queue-kicker queue-kicker-danger">優先處理</span>
+                    <h2 id="overdue-title">我的逾期</h2>
                 </div>
+                <a href="/Workbench/Projects/Index?AnalysisType=overdue">查看全部</a>
+            </header>
+            @if (Model.Workbench.OverdueProjects.Count == 0)
+            {
+                <div class="workbench-empty">
+                    <strong>目前沒有逾期專案</strong>
+                    <span>所有未結案專案都仍在計畫完成日前。</span>
+                    <a asp-page="/Workbench/Projects/Index">查看我的專案</a>
+                </div>
+            }
+            else
+            {
+                <div class="workbench-list">
+                    @foreach (var item in Model.Workbench.OverdueProjects)
+                    {
+                        <a class="workbench-list-item" asp-page="/Workbench/Projects/Details" asp-route-id="@item.ProjectId">
+                            <span><strong>@item.ProjectNumber</strong>@item.Name</span>
+                            <small>@item.Reason · 進度 @item.ProgressPercent.ToString("0.#")%</small>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="workbench-queue" aria-labelledby="pending-title">
+            <header>
+                <div>
+                    <span class="queue-kicker queue-kicker-warning">需要確認</span>
+                    <h2 id="pending-title">待處理</h2>
+                </div>
+                <a href="/Workbench/Projects/Index?AnalysisType=pending">查看全部</a>
+            </header>
+            @if (Model.Workbench.PendingProjects.Count == 0)
+            {
+                <div class="workbench-empty">
+                    <strong>目前沒有待處理專案</strong>
+                    <span>沒有等待、阻塞或收款進度明顯落後的專案。</span>
+                    <a asp-page="/Workbench/Projects/Index">檢視專案狀態</a>
+                </div>
+            }
+            else
+            {
+                <div class="workbench-list">
+                    @foreach (var item in Model.Workbench.PendingProjects)
+                    {
+                        <a class="workbench-list-item" asp-page="/Workbench/Projects/Details" asp-route-id="@item.ProjectId">
+                            <span><strong>@item.ProjectNumber</strong>@item.Name</span>
+                            <small>@item.Reason · 收款 @item.CollectionPercent.ToString("0.#")%</small>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="workbench-queue" aria-labelledby="upcoming-title">
+            <header>
+                <div>
+                    <span class="queue-kicker queue-kicker-info">提前準備</span>
+                    <h2 id="upcoming-title">近期節點</h2>
+                </div>
+                <a href="/Workbench/Projects/Index?AnalysisType=upcoming">查看全部</a>
+            </header>
+            @if (Model.Workbench.UpcomingNodes.Count == 0)
+            {
+                <div class="workbench-empty">
+                    <strong>未來 14 天沒有到期節點</strong>
+                    <span>目前沒有尚未完成且即將到期的甘特任務。</span>
+                    <a asp-page="/Workbench/Projects/Index">查看甘特計畫</a>
+                </div>
+            }
+            else
+            {
+                <div class="workbench-list">
+                    @foreach (var item in Model.Workbench.UpcomingNodes)
+                    {
+                        <a class="workbench-list-item" asp-page="/Workbench/Projects/Details" asp-route-id="@item.ProjectId" asp-fragment="gantt">
+                            <span><strong>@item.TaskName</strong>@item.ProjectNumber · @item.ProjectName</span>
+                            <small>@item.PlannedFinishDate.ToString("yyyy/MM/dd") 到期 · 進度 @item.ProgressPercent.ToString("0.#")%</small>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="workbench-queue" aria-labelledby="stale-title">
+            <header>
+                <div>
+                    <span class="queue-kicker">補充現況</span>
+                    <h2 id="stale-title">長期未更新</h2>
+                </div>
+                <a href="/Workbench/Projects/Index?AnalysisType=stale-update">查看全部</a>
+            </header>
+            @if (Model.Workbench.StaleProjects.Count == 0)
+            {
+                <div class="workbench-empty">
+                    <strong>近期更新狀況良好</strong>
+                    <span>所有未結案專案都在最近 30 天內更新過。</span>
+                    <a asp-page="/Workbench/Projects/Index">維護專案進度</a>
+                </div>
+            }
+            else
+            {
+                <div class="workbench-list">
+                    @foreach (var item in Model.Workbench.StaleProjects)
+                    {
+                        <a class="workbench-list-item" asp-page="/Workbench/Projects/Details" asp-route-id="@item.ProjectId">
+                            <span><strong>@item.ProjectNumber</strong>@item.Name</span>
+                            <small>@item.Reason · @item.StatusName</small>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+
+    <section class="workbench-shortcuts" aria-labelledby="shortcut-title">
+        <div>
+            <span class="eyebrow">常用入口</span>
+            <h2 id="shortcut-title">快捷操作</h2>
+        </div>
+        <div class="workbench-shortcut-actions">
+            <a class="btn btn-outline-primary" asp-page="/Workbench/Projects/Index">我的專案</a>
+            <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Index">未結案報表</a>
+            @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader))
+            {
+                <a class="btn btn-outline-secondary" asp-page="/Settlements/Create">生成月結</a>
+            }
+            @if (User.IsInRole(RoleNames.Administrator))
+            {
+                <a class="btn btn-outline-secondary" asp-page="/Admin/Projects/Index">專案管理</a>
             }
         </div>
     </section>
-
-    <section class="chart-card">
-        <div class="chart-title">月結批次趨勢</div>
-        <div class="chart-subtitle">最近 6 个有批次月份</div>
-        <div class="mini-bars">
-            @foreach (var slice in Model.SettlementSlices)
-            {
-                <div class="mini-bar" style="--bar-height:@slice.Percent%;--bar-color:@slice.Color">
-                    <span></span>
-                    <strong>@slice.Value.ToString("0")</strong>
-                    <small>@slice.Label</small>
-                </div>
-            }
+}
+else
+{
+    <section class="workbench-login" aria-labelledby="login-title">
+        <div>
+            <div class="eyebrow">台塑電子專案管理系統</div>
+            <h1 id="login-title" class="page-title">請先登入，開啟個人工作台</h1>
+            <p>系統會依照角色顯示可處理的逾期專案、待辦事項、近期節點與常用入口。</p>
         </div>
+        <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登入</a>
     </section>
-</div>
-
-<div class="module-grid">
-    @if (User.IsInRole(RoleNames.Administrator))
-    {
-        <section class="module-card">
-            <div class="module-title">後台管理入口</div>
-            <div class="module-subtitle">維護使用者、專案資料、請購記錄和狀態樣式。</div>
-            <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Admin/Projects/Index">專案總覽</a>
-                <a class="btn btn-outline-secondary" asp-page="/Admin/Users/Index">使用者管理</a>
-                <a class="btn btn-outline-secondary" asp-page="/Admin/Statuses/Index">狀態設定</a>
-            </div>
-        </section>
-    }
-
-    @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer))
-    {
-        <section class="module-card">
-            <div class="module-title">WEB 我的專案入口</div>
-            <div class="module-subtitle">查看專案狀態圖、更新專案進度、跟蹤請購和收款情況。</div>
-            <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Workbench/Projects/Index">我的專案</a>
-                <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Index">報表</a>
-            </div>
-        </section>
-    }
-
-    @if (User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader))
-    {
-        <section class="module-card">
-            <div class="module-title">月結與統計</div>
-            <div class="module-subtitle">手動生成月度結算快照，匯出 Excel，列印月結報表。</div>
-            <div class="module-actions">
-                <a class="btn btn-primary" asp-page="/Settlements/Create">生成月結</a>
-                <a class="btn btn-outline-secondary" asp-page="/Settlements/Index">月結</a>
-                <a class="btn btn-outline-secondary" asp-page="/Reports/OpenProjects/Statistics">統計</a>
-            </div>
-        </section>
-    }
-
-    @if (!User.Identity?.IsAuthenticated ?? true)
-    {
-        <section class="module-card">
-            <div class="module-title">請先登入</div>
-            <div class="module-subtitle">登入後會根據角色顯示對應的後台管理和 WEB 我的專案入口。</div>
-            <div class="module-actions">
-                <a class="btn btn-primary" asp-area="Identity" asp-page="/Account/Login">登入</a>
-            </div>
-        </section>
-    }
-</div>
+}

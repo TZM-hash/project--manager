@@ -5,6 +5,21 @@ namespace ProjectManager.Tests.Web;
 public sealed class ProjectUiRegressionTests
 {
     [Fact]
+    public void Home_page_prioritizes_one_conclusion_one_action_and_four_work_queues()
+    {
+        var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Index.cshtml");
+
+        page.Should().Contain("workbench-hero");
+        page.Should().Contain("Model.Workbench.HeroTitle");
+        page.Should().Contain("Model.Workbench.PrimaryActionText");
+        page.Should().Contain("我的逾期");
+        page.Should().Contain("待處理");
+        page.Should().Contain("近期節點");
+        page.Should().Contain("長期未更新");
+        page.Should().NotContain("metric-grid dashboard-grid");
+    }
+
+    [Fact]
     public void Saved_view_bar_exposes_presets_personal_actions_and_accessible_hooks()
     {
         var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_SavedDataViewBar.cshtml");

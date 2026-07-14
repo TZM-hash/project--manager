@@ -2,7 +2,7 @@ const { test, expect } = require("@playwright/test");
 const fs = require("fs");
 const path = require("path");
 
-const baseURL = process.env.BASE_URL || "http://localhost:62382";
+const baseURL = process.env.BASE_URL || "http://localhost:62383";
 const userName = process.env.VISUAL_USER || "admin";
 const password = process.env.VISUAL_PASSWORD || "ChangeMe123!";
 const outputDir =
@@ -89,6 +89,40 @@ function contrastRatio(foreground, background) {
 
 test.beforeEach(async ({ page }) => {
   await signIn(page);
+});
+
+test("personal workbench keeps one primary action keyboard accessible at 200 percent zoom", async ({ page }) => {
+  await page.setViewportSize({ width: 720, height: 900 });
+  await page.goto("/");
+
+  const hero = page.locator(".workbench-hero");
+  const primaryAction = page.locator(".workbench-primary-action");
+  await expect(hero).toBeVisible();
+  await expect(primaryAction).toHaveCount(1);
+  await expect(page.locator(".workbench-counter")).toHaveCount(4);
+  await primaryAction.focus();
+  await expect(primaryAction).toBeFocused();
+
+  const layout = await page.evaluate(() => {
+    const action = document.querySelector(".workbench-primary-action");
+    const style = action ? getComputedStyle(action) : null;
+    const parseRgb = (value) => (value.match(/\d+(?:\.\d+)?/g) || []).slice(0, 3).map(Number);
+    return {
+      noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      actionWidth: action?.getBoundingClientRect().width || 0,
+      viewportWidth: window.innerWidth,
+      foreground: style ? parseRgb(style.color) : [],
+      background: style ? parseRgb(style.backgroundColor) : []
+    };
+  });
+
+  expect(layout.noPageOverflow).toBeTruthy();
+  expect(layout.actionWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  expect(contrastRatio(layout.foreground, layout.background)).toBeGreaterThanOrEqual(4.5);
+  await Promise.all([
+    page.waitForURL(/\/Workbench\/Projects/),
+    page.keyboard.press("Enter")
+  ]);
 });
 
 test("admin project list keeps filters inside the desktop viewport and pagination usable", async ({ page }) => {

@@ -54,6 +54,9 @@ public sealed class IndexModel(
     public bool OpenOnly { get; set; }
 
     [BindProperty(SupportsGet = true)]
+    public string? AnalysisType { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public string? ViewPreset { get; set; }
 
     [BindProperty(SupportsGet = true)]
@@ -111,15 +114,16 @@ public sealed class IndexModel(
         await ResolveSavedViewAsync(cancellationToken);
         await LoadOptionsAsync(cancellationToken);
         CanEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+        var canViewAll = CanEditAll || User.IsInRole(RoleNames.Viewer);
 
-        if (PersonnelUserId == null)
+        if (!canViewAll && PersonnelUserId == null)
         {
             PersonnelUserId = CurrentUserId;
         }
 
         var page = await workbenchProjectService.GetProjectsForUserPageAsync(
             CurrentUserId,
-            false,
+            canViewAll,
             CreateFilter(),
             PageNumber,
             PageSize,
@@ -130,7 +134,7 @@ public sealed class IndexModel(
         PageSize = page.PageSize;
         TotalPages = page.TotalPages;
         TotalProjectAmount = Projects.Sum(x => x.ProjectAmount);
-        await LoadInsightsAsync(CurrentUserId, false, cancellationToken);
+        await LoadInsightsAsync(CurrentUserId, canViewAll, cancellationToken);
     }
 
     public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
@@ -175,9 +179,10 @@ public sealed class IndexModel(
             ["PersonnelUserId"] = PersonnelUserId,
             ["StatusId"] = StatusId?.ToString(),
             ["ProjectType"] = ProjectType.HasValue ? ((int)ProjectType.Value).ToString() : null,
-            ["OpenOnly"] = OpenOnly.ToString()
+            ["OpenOnly"] = OpenOnly.ToString(),
+            ["AnalysisType"] = AnalysisType
         };
-        var filterKeys = new[] { "Year", "ParentCaseNumber", "ProjectNumber", "ProjectName", "Name", "PersonnelUserId", "StatusId", "ProjectType", "OpenOnly" };
+        var filterKeys = new[] { "Year", "ParentCaseNumber", "ProjectNumber", "ProjectName", "Name", "PersonnelUserId", "StatusId", "ProjectType", "OpenOnly", "AnalysisType" };
         var hasExplicitFilters = filterKeys.Any(key => Request.Query.ContainsKey(key));
         var resolved = await savedDataViews.ResolveAsync(
             CurrentUserId,
@@ -199,6 +204,7 @@ public sealed class IndexModel(
             StatusId = ParseInt(resolved.Filters, "StatusId");
             ProjectType = Enum.TryParse<ProjectType>(Value(resolved.Filters, "ProjectType"), out var projectType) ? projectType : null;
             OpenOnly = bool.TryParse(Value(resolved.Filters, "OpenOnly"), out var openOnly) && openOnly;
+            AnalysisType = Value(resolved.Filters, "AnalysisType");
         }
     }
 
@@ -223,7 +229,7 @@ public sealed class IndexModel(
             PersonnelUserId,
             StatusId,
             OpenOnly,
-            null,
+            AnalysisType,
             ProjectType);
     }
 
@@ -337,6 +343,18 @@ public sealed class IndexModel(
             query = query.Where(x => x.Status != null && !x.Status.IsClosed);
         }
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var upcomingUntil = today.AddDays(14);
+        var staleBefore = DateTimeOffset.UtcNow.AddDays(-30);
+        query = filter.AnalysisType switch
+        {
+            ProjectAnalysisTypes.Overdue => query.Where(x => x.Status != null && !x.Status.IsClosed && x.GanttPlan != null && x.GanttPlan.FinishDate < today && x.ProgressPercent < 100),
+            ProjectAnalysisTypes.Pending => query.Where(x => x.Status != null && !x.Status.IsClosed && (x.Status.Code.ToLower().Contains("wait") || x.Status.Code.ToLower().Contains("block") || x.Status.Name.Contains("等待") || x.Status.Name.Contains("待處理") || x.Status.Name.Contains("阻塞") || x.CollectionPercent + 25 < x.ProgressPercent)),
+            ProjectAnalysisTypes.Upcoming => query.Where(x => x.Status != null && !x.Status.IsClosed && x.GanttPlan != null && x.GanttPlan.Tasks.Any(task => task.ProgressPercent < 100 && task.PlannedFinishDate >= today && task.PlannedFinishDate <= upcomingUntil)),
+            ProjectAnalysisTypes.StaleUpdate => query.Where(x => x.Status != null && !x.Status.IsClosed && x.UpdatedAt < staleBefore),
+            _ => query
+        };
+
         return query;
     }
 
@@ -352,6 +370,7 @@ public sealed class IndexModel(
             [nameof(StatusId)] = StatusId?.ToString(),
             [nameof(ProjectType)] = ProjectType.HasValue ? ((int)ProjectType.Value).ToString() : null,
             [nameof(OpenOnly)] = OpenOnly.ToString(),
+            [nameof(AnalysisType)] = AnalysisType,
             [nameof(ViewPreset)] = ViewPreset,
             [nameof(SavedViewId)] = SavedViewId?.ToString()
         };
@@ -403,6 +422,20 @@ public sealed class IndexModel(
             items.Add(new FilterSummaryItem("範圍", "未結案"));
         }
 
+        if (!string.IsNullOrWhiteSpace(AnalysisType))
+        {
+            items.Add(new FilterSummaryItem("工作佇列", DisplayAnalysisType(AnalysisType)));
+        }
+
         return items;
     }
+
+    private static string DisplayAnalysisType(string analysisType) => analysisType switch
+    {
+        ProjectAnalysisTypes.Overdue => "我的逾期",
+        ProjectAnalysisTypes.Pending => "待處理",
+        ProjectAnalysisTypes.Upcoming => "近期節點",
+        ProjectAnalysisTypes.StaleUpdate => "長期未更新",
+        _ => analysisType
+    };
 }
