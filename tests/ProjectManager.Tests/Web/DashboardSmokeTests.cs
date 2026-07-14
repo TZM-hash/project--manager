@@ -20,6 +20,19 @@ namespace ProjectManager.Tests.Web;
 public sealed class DashboardSmokeTests
 {
     [Fact]
+    public async Task Health_endpoints_report_live_and_ready()
+    {
+        await using var factory = new DashboardWebFactory();
+        var client = factory.CreateClient();
+
+        var live = await client.GetAsync("/health/live");
+        var ready = await client.GetAsync("/health/ready");
+
+        live.StatusCode.Should().Be(HttpStatusCode.OK);
+        ready.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Administrator_home_page_shows_personal_workbench_and_shortcuts()
     {
         await using var factory = new DashboardWebFactory();

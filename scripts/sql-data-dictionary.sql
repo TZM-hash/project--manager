@@ -26,7 +26,8 @@ VALUES
     (N'PurchaseRequests', N'请购记录表', N'项目下的内购/外购记录、金额、付款比例、实付金额。'),
     (N'MonthlySettlementBatches', N'月结批次表', N'每次生成月结报表的批次头。'),
     (N'MonthlySettlementItems', N'月结明细表', N'月结时从项目、人员、请购汇总出的快照明细。'),
-    (N'AuditLogs', N'操作日志表', N'记录项目新增、修改、删除、进度更新等留痕。');
+    (N'AuditLogs', N'操作日志表', N'记录项目新增、修改、删除、进度更新等留痕。'),
+    (N'OperationJobs', N'背景工作表', N'保存匯入、匯出與批量刪除工作的狀態、進度、結果及檔案位置。');
 
 DECLARE @ColumnDescriptions TABLE
 (
@@ -89,7 +90,18 @@ VALUES
     (N'AuditLogs', N'ProjectId', N'项目 ID，用于按项目查询留痕。'),
     (N'AuditLogs', N'ProjectNumber', N'项目工号快照。'),
     (N'AuditLogs', N'ChangeSummary', N'人可读变更摘要。'),
-    (N'AuditLogs', N'ChangeDetailsJson', N'字段级和请购明细级变更 JSON。');
+    (N'AuditLogs', N'ChangeDetailsJson', N'字段级和请购明细级变更 JSON。'),
+    (N'OperationJobs', N'Type', N'工作類型。'),
+    (N'OperationJobs', N'Status', N'排隊、執行中、成功、失敗或取消。'),
+    (N'OperationJobs', N'RequestedByUserId', N'建立工作者。'),
+    (N'OperationJobs', N'PayloadJson', N'工作輸入參數。'),
+    (N'OperationJobs', N'ProgressPercent', N'工作進度百分比。'),
+    (N'OperationJobs', N'StatusMessage', N'目前步驟說明。'),
+    (N'OperationJobs', N'ResultSummary', N'工作結果摘要。'),
+    (N'OperationJobs', N'ErrorDetails', N'失敗明細或例外內容。'),
+    (N'OperationJobs', N'InputRelativePath', N'匯入檔案相對路徑。'),
+    (N'OperationJobs', N'OutputRelativePath', N'輸出檔案相對路徑。'),
+    (N'OperationJobs', N'RowVersion', N'背景狀態更新的樂觀並發版本。');
 
 SELECT
     s.name AS SchemaName,

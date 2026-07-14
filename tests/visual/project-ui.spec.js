@@ -327,8 +327,32 @@ test("project collaboration timeline supports keyboard entry and concurrency fie
   expect(layout.liveTimelinePresent).toBeTruthy();
 });
 
+test("operation center exposes keyboard-safe live progress and result reporting", async ({ page }) => {
+  await page.goto("/Admin/DataExchange");
+  await Promise.all([
+    page.waitForURL(/\/Operations/),
+    page.getByRole("button", { name: "匯出目前資料" }).click()
+  ]);
+
+  const center = page.locator("[data-operation-center]");
+  const job = page.locator("[data-operation-job]").first();
+  await expect(center).toHaveAttribute("aria-live", "polite");
+  await expect(job).toBeVisible();
+  const progress = job.getByRole("progressbar");
+  await expect(progress).toHaveAttribute("aria-valuemin", "0");
+  await expect(progress).toHaveAttribute("aria-valuemax", "100");
+  await progress.focus();
+  const progressSemantics = await progress.evaluate((element) => ({
+    value: Number(element.getAttribute("aria-valuenow")),
+    contained: element.getBoundingClientRect().right <= window.innerWidth
+  }));
+  expect(progressSemantics.value).toBeGreaterThanOrEqual(0);
+  expect(progressSemantics.value).toBeLessThanOrEqual(100);
+  expect(progressSemantics.contained).toBeTruthy();
+});
+
 test("maintenance orders follow the grouped template and reflow hidden columns", async ({ page }) => {
-  await page.goto("/Admin/MaintenanceOrders?PageSize=20");
+  await page.goto("/Admin/MaintenanceOrders?PageSize=20&ViewPreset=full");
 
   const table = page.locator("#maintenance-orders-table");
   await expect(table).toBeVisible();

@@ -7,6 +7,9 @@ using ProjectManager.Web.Services.DataViews;
 using ProjectManager.Web.Pages.Shared;
 using Microsoft.AspNetCore.DataProtection;
 using ProjectManager.Web.Services.Workbench;
+using ProjectManager.Web.Services.Operations;
+using ProjectManager.Web.Middleware;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +58,32 @@ builder.Services.AddScoped<PlanningProjectService>();
 builder.Services.AddScoped<MaintenanceOrderService>();
 builder.Services.AddScoped<ProjectGanttService>();
 builder.Services.AddScoped<ProjectCollaborationService>();
+var appDataRoot = builder.Environment.IsEnvironment("Testing")
+    ? Path.Combine(Path.GetTempPath(), "ProjectManager.Tests", "app-data")
+    : Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+builder.Services.Configure<OperationStorageOptions>(options =>
+    options.RootPath = Path.Combine(appDataRoot, "operations"));
+builder.Services.Configure<OperationalMonitoringOptions>(options =>
+{
+    options.LogRootPath = Path.Combine(appDataRoot, "logs");
+    options.DataRootPath = appDataRoot;
+});
+builder.Services.AddSingleton<OperationWorkerHeartbeat>();
+builder.Services.AddSingleton<OperationFileStore>();
+builder.Services.AddScoped<OperationJobService>();
+builder.Services.AddScoped<IOperationJobHandler, FullExportOperationHandler>();
+builder.Services.AddScoped<IOperationJobHandler, FullImportOperationHandler>();
+builder.Services.AddScoped<IOperationJobHandler, ProjectBulkDeleteOperationHandler>();
+builder.Services.AddScoped<IOperationJobHandler, MaintenanceBulkDeleteOperationHandler>();
+builder.Services.AddScoped<OperationHandlerDispatcher>();
+builder.Services.AddSingleton<ExceptionLogStore>();
+builder.Services.AddScoped<OperationalHealthService>();
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseReadinessHealthCheck>("database", tags: ["ready"]);
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddHostedService<OperationJobWorker>();
+}
 builder.Services.AddScoped<UserLookupService>();
 builder.Services.AddScoped<SystemSettingsService>();
 builder.Services.AddScoped<ProjectArchiveService>();
@@ -78,6 +107,8 @@ else
     app.UseHsts();
 }
 
+app.UseMiddleware<ExceptionLogMiddleware>();
+
 app.UseHttpsRedirection();
 app.UseMiddleware<DisplayLanguageMiddleware>();
 
@@ -89,6 +120,14 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready")
+});
 
 await SeedData.EnsureSeededAsync(app.Services);
 

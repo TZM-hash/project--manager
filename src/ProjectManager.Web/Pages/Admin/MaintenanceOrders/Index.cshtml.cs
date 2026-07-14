@@ -10,6 +10,8 @@ using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
 using ProjectManager.Web.Services.DataViews;
 using System.Security.Claims;
+using System.Text.Json;
+using ProjectManager.Web.Services.Operations;
 
 namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 
@@ -17,7 +19,8 @@ namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 public sealed class IndexModel(
     MaintenanceOrderService service,
     ApplicationDbContext db,
-    SavedDataViewPageSupport savedDataViews) : PageModel
+    SavedDataViewPageSupport savedDataViews,
+    OperationJobService operationJobs) : PageModel
 {
     private const string DataViewPageKey = "maintenance-orders";
 
@@ -72,8 +75,8 @@ public sealed class IndexModel(
 
     public List<SelectListItem> MethodOptions { get; } =
     [
-        new("现场保養", MaintenanceMethod.OnSite.ToString()),
-        new("远程保養", MaintenanceMethod.Remote.ToString()),
+        new("現場保養", MaintenanceMethod.OnSite.ToString()),
+        new("遠端保養", MaintenanceMethod.Remote.ToString()),
         new("均有", MaintenanceMethod.Both.ToString())
     ];
 
@@ -191,10 +194,13 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
-        var attempted = ids.Distinct().Count();
-        var succeeded = await service.DeleteManyAsync(ids, cancellationToken);
-        TempData["SuccessMessage"] = $"已處理 {attempted} 筆：成功 {succeeded} 筆，失敗 {attempted - succeeded} 筆。";
-        return RedirectToPage("./Index", BuildRouteValuesWithPaging());
+        var job = await operationJobs.QueueAsync(
+            OperationJobType.MaintenanceBulkDelete,
+            CurrentUserId(),
+            JsonSerializer.Serialize(new BulkDeletePayload(ids.Distinct().ToArray())),
+            null,
+            cancellationToken);
+        return RedirectToPage("/Operations/Index", new { jobId = job.Id });
     }
 
     private MaintenanceOrderFilter CreateFilter()
@@ -236,10 +242,10 @@ public sealed class IndexModel(
 
         Metrics =
         [
-            new MetricInsight("保養訂單", TotalCount.ToString("N0"), "当前有效訂單"),
+            new MetricInsight("保養訂單", TotalCount.ToString("N0"), "目前有效訂單"),
             new MetricInsight("已完成", completedCount.ToString("N0"), "保養進度 100%"),
-            new MetricInsight("平均進度", $"{averageProgress:0.#}%", "整体保養狀態", "info"),
-            new MetricInsight("执行人数", executorCount.ToString("N0"), "已分配执行人", "success")
+            new MetricInsight("平均進度", $"{averageProgress:0.#}%", "整體保養狀態", "info"),
+            new MetricInsight("執行人數", executorCount.ToString("N0"), "已分配執行人", "success")
         ];
 
         var methodRows = await query
@@ -262,8 +268,8 @@ public sealed class IndexModel(
     {
         return method switch
         {
-            MaintenanceMethod.OnSite => "现场保養",
-            MaintenanceMethod.Remote => "远程保養",
+            MaintenanceMethod.OnSite => "現場保養",
+            MaintenanceMethod.Remote => "遠端保養",
             MaintenanceMethod.Both => "均有",
             _ => method.ToString()
         };
@@ -349,7 +355,7 @@ public sealed class IndexModel(
         if (!string.IsNullOrWhiteSpace(ExecutorUserId))
         {
             var userText = ExecutorOptions.FirstOrDefault(x => x.Value == ExecutorUserId)?.Text ?? ExecutorUserId;
-            items.Add(new FilterSummaryItem("执行人", userText));
+            items.Add(new FilterSummaryItem("執行人", userText));
         }
 
         if (MinProgressPercent is not null || MaxProgressPercent is not null)

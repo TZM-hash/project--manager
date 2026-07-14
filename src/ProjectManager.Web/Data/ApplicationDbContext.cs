@@ -48,6 +48,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<ProjectCollaborationRecord> ProjectCollaborationRecords => Set<ProjectCollaborationRecord>();
 
+    public DbSet<OperationJob> OperationJobs => Set<OperationJob>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -326,6 +328,35 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne(x => x.CreatedByUser)
                 .WithMany(x => x.CollaborationRecords)
                 .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<OperationJob>(entity =>
+        {
+            entity.HasIndex(x => new { x.Status, x.CreatedAt });
+            entity.HasIndex(x => new { x.RequestedByUserId, x.CreatedAt });
+            entity.Property(x => x.RequestedByUserId).HasMaxLength(450).IsRequired();
+            entity.Property(x => x.StatusMessage).HasMaxLength(500);
+            entity.Property(x => x.ResultSummary).HasMaxLength(2000);
+            entity.Property(x => x.InputRelativePath).HasMaxLength(500);
+            entity.Property(x => x.OutputRelativePath).HasMaxLength(500);
+            entity.Property(x => x.OutputFileName).HasMaxLength(260);
+            entity.Property(x => x.OutputContentType).HasMaxLength(160);
+            if (isSqlite)
+            {
+                entity.Property(x => x.RowVersion)
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasDefaultValueSql("randomblob(8)");
+            }
+            else
+            {
+                entity.Property(x => x.RowVersion).IsRowVersion();
+            }
+
+            entity.HasOne(x => x.RequestedByUser)
+                .WithMany(x => x.OperationJobs)
+                .HasForeignKey(x => x.RequestedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

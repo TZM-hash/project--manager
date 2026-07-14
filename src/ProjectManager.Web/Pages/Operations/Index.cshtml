@@ -1,0 +1,74 @@
+@page
+@model ProjectManager.Web.Pages.Operations.IndexModel
+@using ProjectManager.Web.Models
+@{
+    ViewData["Title"] = "工作進度中心";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">工作進度中心</h1>
+        <div class="page-subtitle">追蹤匯入、匯出與批量工作的進度、結果及下載檔案。</div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline-secondary" href="javascript:location.reload()">重新整理</a>
+    </div>
+</div>
+
+<div data-operation-center data-status-url="/Operations/Status" aria-live="polite" class="operation-live-region">
+    @if (Model.Jobs.Count == 0)
+    {
+        <div class="workbench-empty">
+            <strong>目前沒有背景工作</strong>
+            <span>從資料匯入匯出或列表批量操作建立工作後，可在此查看進度。</span>
+        </div>
+    }
+    else
+    {
+        <div class="operation-job-list">
+            @foreach (var job in Model.Jobs)
+            {
+                <article class="operation-job-card" data-operation-job data-job-id="@job.Id" data-job-status="@job.Status">
+                    <header>
+                        <div>
+                            <span class="operation-type">@ProjectManager.Web.Pages.Operations.IndexModel.TypeText(job.Type)</span>
+                            <strong>#@job.Id</strong>
+                        </div>
+                        <span class="status-badge status-semantic-@ProjectManager.Web.Pages.Operations.IndexModel.StatusClass(job.Status)" data-job-status-text>@ProjectManager.Web.Pages.Operations.IndexModel.StatusText(job.Status)</span>
+                    </header>
+                    <div class="operation-progress-row">
+                        <div class="operation-progress" role="progressbar" tabindex="0" aria-label="工作進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@job.ProgressPercent">
+                            <span data-job-progress-bar style="width:@job.ProgressPercent%"></span>
+                        </div>
+                        <strong data-job-progress-text>@job.ProgressPercent%</strong>
+                    </div>
+                    <p data-job-message>@(job.StatusMessage ?? "等待更新")</p>
+                    @if (!string.IsNullOrWhiteSpace(job.ResultSummary))
+                    {
+                        <div class="operation-result" data-job-result>@job.ResultSummary</div>
+                    }
+                    else
+                    {
+                        <div class="operation-result" data-job-result hidden></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(job.ErrorDetails))
+                    {
+                        <details class="operation-errors"><summary>查看錯誤報告</summary><pre>@job.ErrorDetails</pre></details>
+                    }
+                    <footer>
+                        <span>建立：@job.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                        <span>@(job.RequestedByUser?.DisplayName ?? job.RequestedByUser?.UserName ?? job.RequestedByUserId)</span>
+                        @if (job.Status == OperationJobStatus.Succeeded && !string.IsNullOrWhiteSpace(job.OutputRelativePath))
+                        {
+                            <a class="btn btn-sm btn-primary" data-job-download asp-page="./Download" asp-route-id="@job.Id">下載結果</a>
+                        }
+                        else
+                        {
+                            <a class="btn btn-sm btn-primary" data-job-download hidden>下載結果</a>
+                        }
+                    </footer>
+                </article>
+            }
+        </div>
+    }
+</div>

@@ -7,10 +7,10 @@ namespace ProjectManager.Web.Models;
 /// </summary>
 public sealed class ApplicationUser : IdentityUser
 {
-    /// <summary>頁面优先顯示的中文姓名或昵称。</summary>
+    /// <summary>頁面優先顯示的中文姓名或暱稱。</summary>
     public string DisplayName { get; set; } = string.Empty;
 
-    /// <summary>帳號是否啟用；停用帳號不会出现在业务選擇列表中。</summary>
+    /// <summary>帳號是否啟用；停用帳號不會出現在業務選擇列表中。</summary>
     public bool IsActive { get; set; } = true;
 
     /// <summary>帳號建立時間。</summary>
@@ -23,4 +23,6 @@ public sealed class ApplicationUser : IdentityUser
     public ICollection<SavedDataView> SavedDataViews { get; } = new List<SavedDataView>();
 
     public ICollection<ProjectCollaborationRecord> CollaborationRecords { get; } = new List<ProjectCollaborationRecord>();
+
+    public ICollection<OperationJob> OperationJobs { get; } = new List<OperationJob>();
 }

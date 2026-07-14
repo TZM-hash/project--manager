@@ -1,36 +1,37 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
-using ProjectManager.Web.Services;
+using ProjectManager.Web.Services.Operations;
 
 namespace ProjectManager.Web.Pages.Admin.DataExchange;
 
 [Authorize(Roles = RoleNames.Administrator)]
 public sealed class IndexModel(
-    DataExchangeService dataExchangeService,
+    OperationJobService jobs,
+    OperationFileStore fileStore,
     UserManager<ApplicationUser> userManager) : PageModel
 {
     [BindProperty]
     [Required(ErrorMessage = "請選擇要匯入的 Excel 檔案。")]
     public IFormFile? UploadFile { get; set; }
 
-    public DataImportResult? ImportResult { get; private set; }
-
     public string? ErrorMessage { get; private set; }
 
-    public IActionResult OnGet()
-    {
-        return Page();
-    }
+    public IActionResult OnGet() => Page();
 
-    public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> OnPostExportAsync(CancellationToken cancellationToken)
     {
-        var file = await dataExchangeService.ExportAllAsync(cancellationToken);
-        return File(file.Contents, file.ContentType, file.FileName);
+        var job = await jobs.QueueAsync(
+            OperationJobType.FullExport,
+            RequiredUserId(),
+            null,
+            null,
+            cancellationToken);
+        return RedirectToPage("/Operations/Index", new { jobId = job.Id });
     }
 
     public async Task<IActionResult> OnPostImportAsync(CancellationToken cancellationToken)
@@ -44,23 +45,21 @@ public sealed class IndexModel(
         var extension = Path.GetExtension(UploadFile.FileName);
         if (!string.Equals(extension, ".xlsx", StringComparison.OrdinalIgnoreCase))
         {
-            ErrorMessage = "当前仅支持 .xlsx 檔案。";
+            ErrorMessage = "目前僅支援 .xlsx 檔案。";
             return Page();
         }
 
-        try
-        {
-            await using var stream = UploadFile.OpenReadStream();
-            ImportResult = await dataExchangeService.ImportAllAsync(
-                stream,
-                userManager.GetUserId(User),
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"匯入失敗：{ex.Message}";
-        }
-
-        return Page();
+        await using var stream = UploadFile.OpenReadStream();
+        var stored = await fileStore.SaveAsync("input", UploadFile.FileName, stream, cancellationToken);
+        var job = await jobs.QueueAsync(
+            OperationJobType.FullImport,
+            RequiredUserId(),
+            null,
+            stored.RelativePath,
+            cancellationToken);
+        return RedirectToPage("/Operations/Index", new { jobId = job.Id });
     }
+
+    private string RequiredUserId() =>
+        userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
 }

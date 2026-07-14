@@ -8,7 +8,7 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">保養訂單總覽</h1>
-        <div class="page-subtitle">统一管理維保合約、执行範圍、進度与保養内容</div>
+        <div class="page-subtitle">統一管理維保合約、執行範圍、進度與保養內容</div>
     </div>
     <div class="page-actions">
         <a class="btn btn-primary" asp-page="./Create">新增</a>
@@ -29,7 +29,7 @@
 <div class="insight-grid">
     <section class="chart-card">
         <div class="chart-title">保養方式分布</div>
-        <div class="chart-subtitle">现场、远程或混合执行</div>
+        <div class="chart-subtitle">現場、遠端或混合執行</div>
         <div class="bar-list">
             @foreach (var slice in Model.MethodSlices)
             {
@@ -72,7 +72,7 @@
         <div class="filter-drawer-header">
             <div>
                 <div class="filter-drawer-title">進階篩選</div>
-                <div class="filter-drawer-subtitle">按保養方式、执行人和保養進度篩選訂單</div>
+                <div class="filter-drawer-subtitle">依保養方式、執行人和保養進度篩選訂單</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
@@ -84,7 +84,7 @@
             </div>
             <div class="col-md-3">
                 <select class="form-select" asp-for="ExecutorUserId" asp-items="Model.ExecutorOptions">
-                    <option value="">保養执行人</option>
+                    <option value="">保養執行人</option>
                 </select>
             </div>
             <div class="col-md-3"><input class="form-control" asp-for="MinProgressPercent" placeholder="最小進度 %" /></div>
@@ -101,7 +101,7 @@
 <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的保養訂單嗎？">
     <div class="bulk-toolbar-copy">
         <span class="bulk-toolbar-count" data-selected-count>0</span>
-        <span>个訂單已選擇</span>
+        <span>個訂單已選擇</span>
     </div>
     <div class="bulk-toolbar-actions">
         <input type="hidden" asp-for="Year" />
@@ -163,7 +163,7 @@
                 <th colspan="2" data-column-group="contractStart contractEnd">維保合約時間</th>
                 <th colspan="3" data-column-group="remoteScope softwareScope hardwareScope">維保範圍</th>
                 <th rowspan="2" data-column="progress" data-column-label="進度" data-column-order="11">進度</th>
-                <th rowspan="2" data-column="description" data-column-label="維保内容说明" data-column-order="12">維保内容说明</th>
+                <th rowspan="2" data-column="description" data-column-label="維保內容說明" data-column-order="12">維保內容說明</th>
                 <th colspan="4" data-column-group="method onSiteCount remoteCount handover">補充資訊</th>
                 <th colspan="2" data-column-group="updatedAt updatedBy">更新資訊</th>
                 <th rowspan="2" data-column="actions" data-column-label="操作" data-column-fixed class="text-end maintenance-actions-column">操作</th>
@@ -171,18 +171,18 @@
             <tr class="maintenance-subheader-row">
                 <th data-column="contractNumber" data-column-label="合約編號" data-column-order="2" data-column-fixed>合約編號</th>
                 <th data-column="customerName" data-column-label="客戶名稱" data-column-order="3" data-column-fixed>客戶名稱</th>
-                <th data-column="siteName" data-column-label="厂区/據點" data-column-order="4">厂区/據點</th>
+                <th data-column="siteName" data-column-label="廠區／據點" data-column-order="4">廠區／據點</th>
                 <th data-column="contractStart" data-column-label="開始日期" data-column-order="6">開始</th>
                 <th data-column="contractEnd" data-column-label="結束日期" data-column-order="7">結束</th>
-                <th data-column="remoteScope" data-column-label="远程維保" data-column-order="8">远程</th>
-                <th data-column="softwareScope" data-column-label="现场软件" data-column-order="9">现场软件</th>
-                <th data-column="hardwareScope" data-column-label="现场硬件" data-column-order="10">现场硬件</th>
+                <th data-column="remoteScope" data-column-label="遠端維保" data-column-order="8">遠端</th>
+                <th data-column="softwareScope" data-column-label="現場軟體" data-column-order="9">現場軟體</th>
+                <th data-column="hardwareScope" data-column-label="現場硬體" data-column-order="10">現場硬體</th>
                 <th data-column="method" data-column-label="保養方式" data-column-order="13">方式</th>
-                <th data-column="onSiteCount" data-column-label="现场次數" data-column-order="14">现场次數</th>
-                <th data-column="remoteCount" data-column-label="远程次數" data-column-order="15">远程次數</th>
-                <th data-column="handover" data-column-label="签收移交" data-column-order="16">签收移交</th>
+                <th data-column="onSiteCount" data-column-label="現場次數" data-column-order="14">現場次數</th>
+                <th data-column="remoteCount" data-column-label="遠端次數" data-column-order="15">遠端次數</th>
+                <th data-column="handover" data-column-label="簽收移交" data-column-order="16">簽收移交</th>
                 <th data-column="updatedAt" data-column-label="更新日期" data-column-order="17">更新日期</th>
-                <th data-column="updatedBy" data-column-label="更新人员" data-column-order="18">更新人员</th>
+                <th data-column="updatedBy" data-column-label="更新人員" data-column-order="18">更新人員</th>
             </tr>
         </thead>
         <tbody>

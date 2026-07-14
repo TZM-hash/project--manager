@@ -13,6 +13,8 @@ using ProjectType = ProjectManager.Web.Models.ProjectType;
 using ClosedXML.Excel;
 using System.IO;
 using ProjectManager.Web.Services.DataViews;
+using ProjectManager.Web.Services.Operations;
+using System.Text.Json;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
@@ -21,9 +23,9 @@ public sealed class IndexModel(
     ProjectQueryService projectQueryService,
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
-    AuditLogService auditLogService,
     ProjectArchiveService projectArchiveService,
-    SavedDataViewPageSupport savedDataViews) : PageModel
+    SavedDataViewPageSupport savedDataViews,
+    OperationJobService operationJobs) : PageModel
 {
     private const string DataViewPageKey = "admin-projects";
 
@@ -318,22 +320,14 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
-        var attempted = ids.Distinct().Count();
-        var succeeded = await DeleteProjectsAsync(ids, cancellationToken);
-        TempData["SuccessMessage"] = $"已處理 {attempted} 筆：成功 {succeeded} 筆，失敗 {attempted - succeeded} 筆。";
-        return RedirectToPage("./Index", new
-        {
-            Year,
-            ParentCaseNumber,
-            ProjectNumber,
-            ProjectName,
-            PersonnelUserId,
-            StatusId,
-            ProjectType,
-            OpenOnly,
-            PageNumber,
-            PageSize
-        });
+        var payload = new BulkDeletePayload(ids.Distinct().ToArray());
+        var job = await operationJobs.QueueAsync(
+            OperationJobType.ProjectBulkDelete,
+            userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。"),
+            JsonSerializer.Serialize(payload),
+            null,
+            cancellationToken);
+        return RedirectToPage("/Operations/Index", new { jobId = job.Id });
     }
 
     public async Task<IActionResult> OnPostArchiveAsync(int id, CancellationToken cancellationToken)
@@ -558,49 +552,6 @@ public sealed class IndexModel(
         }
 
         return query;
-    }
-
-    private async Task<int> DeleteProjectsAsync(int[] ids, CancellationToken cancellationToken)
-    {
-        if (ids.Length == 0)
-        {
-            return 0;
-        }
-
-        var idSet = ids.Distinct().ToArray();
-        var projects = await db.Projects
-            .Include(x => x.Assignments)
-            .Include(x => x.PurchaseRequests)
-            .Where(x => !x.IsDeleted && idSet.Contains(x.Id))
-            .ToListAsync(cancellationToken);
-        var currentUserId = userManager.GetUserId(User);
-        var now = DateTimeOffset.UtcNow;
-
-        foreach (var project in projects)
-        {
-            var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
-            project.IsDeleted = true;
-            project.UpdatedAt = now;
-            project.UpdatedByUserId = currentUserId;
-
-            foreach (var request in project.PurchaseRequests)
-            {
-                request.IsDeleted = true;
-                request.UpdatedAt = now;
-            }
-
-            await db.SaveChangesAsync(cancellationToken);
-            await auditLogService.LogProjectChangeAsync(
-                currentUserId,
-                "Delete",
-                project.Id,
-                project.ProjectNumber,
-                $"批量刪除專案 {project.ProjectNumber}",
-                ProjectAuditChangeBuilder.BuildDeleteChanges(before),
-                cancellationToken);
-        }
-
-        return projects.Count;
     }
 
     private Dictionary<string, string?> BuildRouteValues()

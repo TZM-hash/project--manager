@@ -31,6 +31,9 @@ if (document.querySelector("[data-saved-view-bar]")) {
 if (document.querySelector("[data-theme-option], [data-motion-option], [data-global-font-picker]")) {
   jobs.push(import("./pages/settings.js").then((module) => module.initSettings()));
 }
+if (document.querySelector("[data-operation-center]")) {
+  jobs.push(import("./pages/operation-center.js").then((module) => module.initOperationCenter()));
+}
 if (document.body.matches(".ui-effects-medium, .ui-effects-high, .motion-apple")) {
   jobs.push(import("./effects/ui-effects.js").then((module) => module.initUiEffects()));
 }

@@ -5,6 +5,40 @@ namespace ProjectManager.Tests.Web;
 public sealed class ProjectUiRegressionTests
 {
     [Fact]
+    public void Operation_center_exposes_persisted_progress_polling_and_authorized_downloads()
+    {
+        var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Operations", "Index.cshtml");
+        var script = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "pages", "operation-center.js");
+        var dataExchange = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "DataExchange", "Index.cshtml.cs");
+        var projects = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Index.cshtml.cs");
+        var maintenance = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml.cs");
+
+        page.Should().Contain("data-operation-center");
+        page.Should().Contain("role=\"progressbar\"");
+        page.Should().Contain("aria-live=\"polite\"");
+        script.Should().Contain("/Operations/Status");
+        script.Should().Contain("aria-valuenow");
+        dataExchange.Should().Contain("OperationJobType.FullExport");
+        dataExchange.Should().Contain("OperationJobType.FullImport");
+        projects.Should().Contain("OperationJobType.ProjectBulkDelete");
+        maintenance.Should().Contain("OperationJobType.MaintenanceBulkDelete");
+    }
+
+    [Fact]
+    public void Quality_gate_runs_release_tests_javascript_and_accessibility_discovery()
+    {
+        var script = ReadRepositoryFile("scripts", "quality-gate.ps1");
+
+        script.Should().Contain("$ErrorActionPreference = 'Stop'");
+        script.Should().Contain("UTF8Encoding");
+        script.Should().Contain("dotnet build");
+        script.Should().Contain("dotnet test");
+        script.Should().Contain("node --check");
+        script.Should().Contain("npx playwright test --list");
+        script.Should().Contain("RunPlaywright");
+    }
+
+    [Fact]
     public void Project_detail_exposes_collaboration_timeline_and_concurrency_reload_actions()
     {
         var collaboration = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectCollaborationPanel.cshtml");

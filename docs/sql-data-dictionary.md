@@ -21,6 +21,7 @@
 | `ProjectGanttPlans` | 專案甘特計畫表 | 保存整體日期、說明與聚合並發版本。 |
 | `ProjectGanttTasks` | 甘特工作表 | 保存里程碑、負責人、前置工作、計畫／實際日期與進度。 |
 | `ProjectCollaborationRecords` | 專案協作記錄表 | 保存專案時間線上的進度、風險、決議與待辦記錄。 |
+| `OperationJobs` | 背景工作表 | 保存匯入、匯出與批量刪除工作的狀態、進度、結果及檔案位置。 |
 
 ## Projects 项目主表
 
@@ -185,6 +186,29 @@
 | `UpdatedAt` | `datetimeoffset` | 否 | 最後更新時間。 |
 
 索引：`(UserId, PageKey, Name)` 唯一；`(UserId, PageKey, IsDefault)` 用於讀取預設檢視，預設唯一性由服務層交易保證。
+
+## OperationJobs 背景工作表
+
+| 欄位 | 類型 | 允許空 | 說明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主鍵。 |
+| `Type` | `int` | 否 | 工作類型：全量匯出、全量匯入、專案批量刪除或保養訂單批量刪除。 |
+| `Status` | `int` | 否 | 工作狀態：排隊、執行中、成功、失敗或取消。 |
+| `RequestedByUserId` | `nvarchar(450)` | 否 | 建立工作者，外鍵關聯 `AspNetUsers.Id`，刪除行為為 Restrict。 |
+| `PayloadJson` | `nvarchar(max)` | 是 | 工作輸入參數；批量操作保存目標識別資料。 |
+| `ProgressPercent` | `int` | 否 | 0 至 100 的工作進度。 |
+| `StatusMessage` | `nvarchar(500)` | 是 | 目前步驟的使用者可讀說明。 |
+| `ResultSummary` | `nvarchar(2000)` | 是 | 完成後的成功／失敗數量與結果摘要。 |
+| `ErrorDetails` | `nvarchar(max)` | 是 | 失敗明細或未處理例外內容。 |
+| `InputRelativePath` | `nvarchar(500)` | 是 | `App_Data/operations` 下的匯入檔案相對路徑。 |
+| `OutputRelativePath` | `nvarchar(500)` | 是 | `App_Data/operations` 下的輸出檔案相對路徑。 |
+| `OutputFileName` | `nvarchar(260)` | 是 | 下載時顯示的原始檔名。 |
+| `OutputContentType` | `nvarchar(160)` | 是 | 下載內容類型。 |
+| `CreatedAt` / `UpdatedAt` | `datetimeoffset` | 否 | 建立與最後更新時間。 |
+| `StartedAt` / `CompletedAt` | `datetimeoffset` | 是 | 開始與結束時間。 |
+| `RowVersion` | `rowversion` | 否 | 背景工作狀態更新的樂觀並發版本。 |
+
+索引：`(RequestedByUserId, CreatedAt)` 支援個人工作清單；`(Status, CreatedAt)` 支援背景 Worker 依狀態領取工作。
 
 - 项目删除和请购删除均为软删除，查询业务数据时需要过滤 `IsDeleted = 0`。
 - 月结明细是快照表，生成后不随项目后续修改自动变化。

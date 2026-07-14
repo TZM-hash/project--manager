@@ -1,0 +1,51 @@
+@page
+@model ProjectManager.Web.Pages.Admin.Operations.IndexModel
+@using ProjectManager.Web.Services.Operations
+@{
+    ViewData["Title"] = "運維監控";
+    var statuses = new[]
+    {
+        Model.Snapshot.Database,
+        Model.Snapshot.Backup,
+        Model.Snapshot.Disk,
+        Model.Snapshot.ExceptionLog,
+        Model.Snapshot.Worker
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">運維監控</h1>
+        <div class="page-subtitle">集中查看資料庫、備份、磁碟、例外日誌與背景工作服務狀態。</div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline-secondary" href="/health/live" target="_blank" rel="noopener">Live</a>
+        <a class="btn btn-outline-secondary" href="/health/ready" target="_blank" rel="noopener">Ready</a>
+        <a class="btn btn-primary" asp-page="/Operations/Index">工作進度中心</a>
+    </div>
+</div>
+
+<div class="operations-health-grid">
+    @foreach (var status in statuses)
+    {
+        <article class="operations-health-card operations-health-@ProjectManager.Web.Pages.Admin.Operations.IndexModel.LevelClass(status.Level)">
+            <header>
+                <h2>@status.Name</h2>
+                <span>@ProjectManager.Web.Pages.Admin.Operations.IndexModel.LevelText(status.Level)</span>
+            </header>
+            <p>@status.Detail</p>
+        </article>
+    }
+</div>
+
+<section class="detail-panel operations-guidance">
+    <h2 class="detail-panel-title">處理建議</h2>
+    <ul>
+        <li>資料庫備份顯示未知時，請確認應用程式帳號是否有讀取 `msdb.dbo.backupset` 的權限。</li>
+        <li>磁碟低於 15 GB 或 15% 時進入注意，低於 5 GB 或 5% 時視為異常。</li>
+        <li>例外日誌保存於 `App_Data/logs` UTF-8 JSONL 檔案；工作輸入／輸出保存於 `App_Data/operations`。</li>
+        <li>背景工作服務超過 5 分鐘沒有心跳時，請檢查服務程序與工作失敗明細。</li>
+    </ul>
+</section>
+
+<div class="text-muted small mt-3">檢查時間：@Model.Snapshot.CheckedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</div>

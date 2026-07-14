@@ -8,6 +8,30 @@ namespace ProjectManager.Tests.Data;
 public sealed class ApplicationDbContextTests
 {
     [Fact]
+    public async Task Operation_job_maps_status_owner_indexes_and_row_version()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+
+        var entity = db.Model.FindEntityType(typeof(OperationJob));
+        entity.Should().NotBeNull();
+        entity!.FindProperty(nameof(OperationJob.Status)).Should().NotBeNull();
+        entity.FindProperty(nameof(OperationJob.Type)).Should().NotBeNull();
+        var rowVersion = entity.FindProperty(nameof(OperationJob.RowVersion));
+        rowVersion!.IsConcurrencyToken.Should().BeTrue();
+        rowVersion.ValueGenerated.Should().Be(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate);
+        entity.GetIndexes().Should().Contain(index =>
+            index.Properties.Select(property => property.Name).SequenceEqual(
+                new[] { nameof(OperationJob.Status), nameof(OperationJob.CreatedAt) }));
+        entity.GetIndexes().Should().Contain(index =>
+            index.Properties.Select(property => property.Name).SequenceEqual(
+                new[] { nameof(OperationJob.RequestedByUserId), nameof(OperationJob.CreatedAt) }));
+        entity.GetForeignKeys().Should().Contain(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(ApplicationUser));
+    }
+
+    [Fact]
     public async Task Project_gantt_and_collaboration_models_define_concurrency_and_relationships()
     {
         var (db, connection) = await TestDbFactory.CreateAsync();
