@@ -68,6 +68,9 @@ builder.Services.Configure<OperationalMonitoringOptions>(options =>
     options.LogRootPath = Path.Combine(appDataRoot, "logs");
     options.DataRootPath = appDataRoot;
 });
+builder.Services.Configure<ProjectCollaborationAttachmentStorageOptions>(options =>
+    options.RootPath = Path.Combine(appDataRoot, "collaboration-attachments"));
+builder.Services.AddSingleton<ProjectCollaborationAttachmentStore>();
 builder.Services.AddSingleton<OperationWorkerHeartbeat>();
 builder.Services.AddSingleton<OperationFileStore>();
 builder.Services.AddScoped<OperationJobService>();

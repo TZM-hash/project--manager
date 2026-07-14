@@ -894,6 +894,34 @@
   flex: 1 1 26rem;
 }
 
+.collaboration-compose-options {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 14rem;
+}
+
+.collaboration-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  text-decoration: none;
+}
+
+.attachment-link small {
+  color: var(--app-muted);
+}
+
 .collaboration-timeline {
   position: relative;
   display: grid;

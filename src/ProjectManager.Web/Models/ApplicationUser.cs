@@ -25,4 +25,6 @@ public sealed class ApplicationUser : IdentityUser
     public ICollection<ProjectCollaborationRecord> CollaborationRecords { get; } = new List<ProjectCollaborationRecord>();
 
     public ICollection<OperationJob> OperationJobs { get; } = new List<OperationJob>();
+
+    public ICollection<ProjectCollaborationAttachment> CollaborationAttachments { get; } = new List<ProjectCollaborationAttachment>();
 }

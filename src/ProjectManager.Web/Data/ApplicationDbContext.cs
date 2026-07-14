@@ -48,6 +48,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<ProjectCollaborationRecord> ProjectCollaborationRecords => Set<ProjectCollaborationRecord>();
 
+    public DbSet<ProjectCollaborationAttachment> ProjectCollaborationAttachments => Set<ProjectCollaborationAttachment>();
+
     public DbSet<OperationJob> OperationJobs => Set<OperationJob>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -327,6 +329,23 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             entity.HasOne(x => x.CreatedByUser)
                 .WithMany(x => x.CollaborationRecords)
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ProjectCollaborationAttachment>(entity =>
+        {
+            entity.HasIndex(x => new { x.ProjectCollaborationRecordId, x.CreatedAt });
+            entity.Property(x => x.OriginalFileName).HasMaxLength(260).IsRequired();
+            entity.Property(x => x.RelativePath).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.ContentType).HasMaxLength(160).IsRequired();
+            entity.Property(x => x.CreatedByUserId).HasMaxLength(450).IsRequired();
+            entity.HasOne(x => x.Record)
+                .WithMany(x => x.Attachments)
+                .HasForeignKey(x => x.ProjectCollaborationRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.CreatedByUser)
+                .WithMany(x => x.CollaborationAttachments)
                 .HasForeignKey(x => x.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });

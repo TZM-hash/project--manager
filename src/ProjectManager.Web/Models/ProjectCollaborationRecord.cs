@@ -12,6 +12,10 @@ public sealed class ProjectCollaborationRecord
 
     public string Content { get; set; } = string.Empty;
 
+    public bool IsImportant { get; set; }
+
+    public ICollection<ProjectCollaborationAttachment> Attachments { get; } = new List<ProjectCollaborationAttachment>();
+
     public string CreatedByUserId { get; set; } = string.Empty;
 
     public ApplicationUser? CreatedByUser { get; set; }

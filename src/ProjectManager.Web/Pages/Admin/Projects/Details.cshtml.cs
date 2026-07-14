@@ -16,7 +16,8 @@ public sealed class DetailsModel(
     ProjectGanttService ganttService,
     SystemSettingsService systemSettingsService,
     AuditTrailQueryService auditTrailQueryService,
-    ProjectCollaborationService collaborationService) : PageModel
+    ProjectCollaborationService collaborationService,
+    ProjectCollaborationAttachmentStore attachmentStore) : PageModel
 {
     public Project Project { get; private set; } = new();
 
@@ -199,15 +200,48 @@ public sealed class DetailsModel(
             canViewAll,
             CollaborationInput.Category,
             CollaborationInput.Content,
-            CollaborationInput.RowVersion);
+            CollaborationInput.RowVersion,
+            CollaborationInput.IsImportant);
         var result = isUpdate
             ? await collaborationService.UpdateAsync(command, cancellationToken)
             : await collaborationService.AddAsync(command, cancellationToken);
+        if (result.Success && !isUpdate && CollaborationInput.Attachment is not null && result.Record is not null)
+        {
+            try
+            {
+                var upload = CollaborationInput.Attachment;
+                await using var uploadStream = upload.OpenReadStream();
+                var stored = await attachmentStore.SaveAsync(upload.FileName, upload.ContentType, upload.Length, uploadStream, cancellationToken);
+                await collaborationService.AddAttachmentAsync(id, result.Record.Id, userId, canViewAll, canViewAll,
+                    new ProjectCollaborationAttachment
+                    {
+                        OriginalFileName = stored.OriginalFileName,
+                        RelativePath = stored.RelativePath,
+                        ContentType = stored.ContentType,
+                        Length = stored.Length
+                    }, cancellationToken);
+            }
+            catch (InvalidOperationException exception)
+            {
+                CollaborationErrors = [exception.Message];
+                result = new CollaborationResult(false, CollaborationErrors, false, result.Record);
+            }
+        }
         return await CompleteCollaborationCommandAsync(
             id,
             result,
             isUpdate ? "協作記錄已更新。" : "協作記錄已新增。",
             cancellationToken);
+    }
+
+    public async Task<IActionResult> OnGetDownloadCollaborationAttachmentAsync(int id, int attachmentId, CancellationToken cancellationToken)
+    {
+        var attachment = await db.ProjectCollaborationAttachments.AsNoTracking()
+            .Include(x => x.Record)
+            .SingleOrDefaultAsync(x => x.Id == attachmentId && x.Record!.ProjectId == id, cancellationToken);
+        if (attachment is null) return NotFound();
+        try { return File(attachmentStore.OpenRead(attachment.RelativePath), attachment.ContentType, attachment.OriginalFileName); }
+        catch (FileNotFoundException) { return NotFound(); }
     }
 
     private async Task<IActionResult> CompleteCollaborationCommandAsync(

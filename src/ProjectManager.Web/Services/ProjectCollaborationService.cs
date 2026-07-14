@@ -23,6 +23,7 @@ public sealed class ProjectCollaborationService(ApplicationDbContext db)
         var query = db.ProjectCollaborationRecords
             .AsNoTracking()
             .Include(record => record.CreatedByUser)
+            .Include(record => record.Attachments)
             .Where(record => record.ProjectId == projectId);
         var totalCount = await query.CountAsync(cancellationToken);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
@@ -56,6 +57,7 @@ public sealed class ProjectCollaborationService(ApplicationDbContext db)
             ProjectId = command.ProjectId,
             Category = NormalizeCategory(command.Category),
             Content = NormalizeContent(command.Content),
+            IsImportant = command.IsImportant,
             CreatedByUserId = command.UserId,
             CreatedAt = now,
             UpdatedAt = now
@@ -100,6 +102,7 @@ public sealed class ProjectCollaborationService(ApplicationDbContext db)
 
         record.Category = NormalizeCategory(command.Category);
         record.Content = NormalizeContent(command.Content);
+        record.IsImportant = command.IsImportant;
         record.UpdatedAt = DateTimeOffset.UtcNow;
         try
         {
@@ -149,6 +152,28 @@ public sealed class ProjectCollaborationService(ApplicationDbContext db)
         {
             return Conflict();
         }
+    }
+
+    public async Task<CollaborationResult> AddAttachmentAsync(
+        int projectId,
+        int recordId,
+        string userId,
+        bool canViewAll,
+        bool canEditAll,
+        ProjectCollaborationAttachment attachment,
+        CancellationToken cancellationToken)
+    {
+        if (!await CanAccessProjectAsync(projectId, userId, canViewAll, cancellationToken))
+            return Failure("您沒有權限存取此專案的協作記錄。");
+
+        var record = await db.ProjectCollaborationRecords.SingleOrDefaultAsync(x => x.ProjectId == projectId && x.Id == recordId, cancellationToken);
+        if (record is null) return Failure("找不到協作記錄。");
+        if (!canEditAll && record.CreatedByUserId != userId) return Failure("您只能修改自己建立的協作記錄。");
+        attachment.ProjectCollaborationRecordId = recordId;
+        attachment.CreatedByUserId = userId;
+        db.ProjectCollaborationAttachments.Add(attachment);
+        await db.SaveChangesAsync(cancellationToken);
+        return new CollaborationResult(true, [], false, record);
     }
 
     private Task<bool> CanAccessProjectAsync(
@@ -225,7 +250,8 @@ public sealed record CollaborationCommand(
     bool CanEditAll,
     string? Category,
     string Content,
-    string? RowVersion);
+    string? RowVersion,
+    bool IsImportant = false);
 
 public sealed record CollaborationResult(
     bool Success,

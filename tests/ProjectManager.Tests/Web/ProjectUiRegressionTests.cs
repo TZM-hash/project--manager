@@ -51,6 +51,11 @@ public sealed class ProjectUiRegressionTests
         collaboration.Should().Contain("UpdateCollaboration");
         collaboration.Should().Contain("DeleteCollaboration");
         collaboration.Should().Contain("重新載入最新版本");
+        collaboration.Should().Contain("標記為重要記錄");
+        collaboration.Should().Contain("CollaborationInput.Attachment");
+        collaboration.Should().Contain("DownloadCollaborationAttachment");
+        collaboration.Should().Contain("操作稽核");
+        collaboration.Should().NotContain("@提醒");
         gantt.Should().Contain("GanttInput.RowVersion");
         gantt.Should().Contain("重新載入最新版本");
         projectForm.Should().Contain("Input.RowVersion");

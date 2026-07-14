@@ -4,7 +4,7 @@
     <div class="collaboration-head">
         <div>
             <h2 id="collaboration-title" class="detail-panel-title">協作記錄</h2>
-            <p>集中保留進度確認、風險、決議與待辦事項；最新記錄顯示在最前面。</p>
+            <p>這裡只顯示專案協作動態；系統異動請查看「操作稽核」，兩者分開保存。</p>
         </div>
         <span class="meta-pill">共 @Model.Page.TotalCount 筆</span>
     </div>
@@ -26,7 +26,7 @@
 
     @if (Model.CanEdit)
     {
-        <form method="post" asp-page-handler="AddCollaboration" asp-route-id="@Model.Project.Id" class="collaboration-compose">
+        <form method="post" enctype="multipart/form-data" asp-page-handler="AddCollaboration" asp-route-id="@Model.Project.Id" class="collaboration-compose">
             <div>
                 <label class="form-label" for="collaboration-category">類別</label>
                 <select id="collaboration-category" class="form-select" name="CollaborationInput.Category">
@@ -39,6 +39,14 @@
             <div class="collaboration-compose-content">
                 <label class="form-label" for="collaboration-content">新增協作內容</label>
                 <textarea id="collaboration-content" class="form-control" name="CollaborationInput.Content" rows="3" maxlength="4000" required>@Model.Input.Content</textarea>
+            </div>
+            <div class="collaboration-compose-options">
+                <label class="form-check">
+                    <input class="form-check-input" type="checkbox" name="CollaborationInput.IsImportant" value="true" />
+                    <span class="form-check-label">標記為重要記錄</span>
+                </label>
+                <label class="form-label" for="collaboration-attachment">附件（單檔上限 25 MB）</label>
+                <input id="collaboration-attachment" class="form-control" type="file" name="CollaborationInput.Attachment" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.docx,.doc,.pptx,.txt,.zip" />
             </div>
             <button class="btn btn-primary" type="submit">新增記錄</button>
         </form>
@@ -63,11 +71,23 @@
                         <header>
                             <div>
                                 <span class="collaboration-category">@record.Category</span>
+                                @if (record.IsImportant) { <span class="status-badge status-semantic-warning">重要記錄</span> }
                                 <strong>@(record.CreatedByUser?.DisplayName ?? record.CreatedByUser?.UserName ?? record.CreatedByUserId)</strong>
                             </div>
                             <time datetime="@record.CreatedAt.ToString("O")">@record.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
                         </header>
                         <div class="collaboration-content">@record.Content</div>
+                        @if (record.Attachments.Count > 0)
+                        {
+                            <div class="collaboration-attachments" aria-label="協作附件">
+                                @foreach (var attachment in record.Attachments)
+                                {
+                                    <a asp-page-handler="DownloadCollaborationAttachment" asp-route-id="@Model.Project.Id" asp-route-attachmentId="@attachment.Id" class="attachment-link">
+                                        <span aria-hidden="true">📎</span> @attachment.OriginalFileName <small>(@(attachment.Length / 1024d / 1024d < 1 ? $"{attachment.Length / 1024d:0.#} KB" : $"{attachment.Length / 1024d / 1024d:0.#} MB"))</small>
+                                    </a>
+                                }
+                            </div>
+                        }
                         @if (canManage)
                         {
                             <div class="collaboration-actions">
@@ -77,6 +97,7 @@
                                         <input type="hidden" name="CollaborationInput.RecordId" value="@record.Id" />
                                         <input type="hidden" name="CollaborationInput.RowVersion" value="@Convert.ToBase64String(record.RowVersion)" />
                                         <input class="form-control form-control-sm" name="CollaborationInput.Category" value="@record.Category" maxlength="50" />
+                                        <label class="form-check my-2"><input class="form-check-input" type="checkbox" name="CollaborationInput.IsImportant" value="true" checked="@(record.IsImportant ? "checked" : null)" /> <span class="form-check-label">重要記錄</span></label>
                                         <textarea class="form-control form-control-sm" name="CollaborationInput.Content" rows="3" maxlength="4000" required>@record.Content</textarea>
                                         <button class="btn btn-sm btn-primary" type="submit">儲存修改</button>
                                     </form>

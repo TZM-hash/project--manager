@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Services;
 
@@ -20,6 +21,10 @@ public sealed class ProjectCollaborationInputModel
     public string Category { get; set; } = "進度協作";
 
     public string Content { get; set; } = string.Empty;
+
+    public bool IsImportant { get; set; }
+
+    public IFormFile? Attachment { get; set; }
 
     public string? RowVersion { get; set; }
 }

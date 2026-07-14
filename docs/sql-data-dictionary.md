@@ -21,6 +21,7 @@
 | `ProjectGanttPlans` | 專案甘特計畫表 | 保存整體日期、說明與聚合並發版本。 |
 | `ProjectGanttTasks` | 甘特工作表 | 保存里程碑、負責人、前置工作、計畫／實際日期與進度。 |
 | `ProjectCollaborationRecords` | 專案協作記錄表 | 保存專案時間線上的進度、風險、決議與待辦記錄。 |
+| `ProjectCollaborationAttachments` | 協作附件表 | 保存協作記錄附件的原始名稱、類型、大小與安全儲存路徑。 |
 | `OperationJobs` | 背景工作表 | 保存匯入、匯出與批量刪除工作的狀態、進度、結果及檔案位置。 |
 
 ## Projects 项目主表
@@ -209,6 +210,21 @@
 | `RowVersion` | `rowversion` | 否 | 背景工作狀態更新的樂觀並發版本。 |
 
 索引：`(RequestedByUserId, CreatedAt)` 支援個人工作清單；`(Status, CreatedAt)` 支援背景 Worker 依狀態領取工作。
+
+## ProjectCollaborationAttachments 協作附件表
+
+| 欄位 | 類型 | 允許空 | 說明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主鍵。 |
+| `ProjectCollaborationRecordId` | `int` | 否 | 協作記錄外鍵；刪除記錄時級聯刪除資料列。 |
+| `OriginalFileName` | `nvarchar(260)` | 否 | 使用者上傳的檔名，僅用於顯示與下載。 |
+| `RelativePath` | `nvarchar(500)` | 否 | `App_Data/collaboration-attachments` 下的安全相對路徑。 |
+| `ContentType` | `nvarchar(160)` | 否 | 下載內容類型。 |
+| `Length` | `bigint` | 否 | 檔案大小，單檔上限 25 MB。 |
+| `CreatedByUserId` | `nvarchar(450)` | 否 | 上傳者，外鍵關聯 `AspNetUsers.Id`。 |
+| `CreatedAt` | `datetimeoffset` | 否 | 上傳時間。 |
+
+附件不寫入 `AuditLogs`；系統稽核與協作動態在專案詳情頁維持獨立展示。
 
 - 项目删除和请购删除均为软删除，查询业务数据时需要过滤 `IsDeleted = 0`。
 - 月结明细是快照表，生成后不随项目后续修改自动变化。

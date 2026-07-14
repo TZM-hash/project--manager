@@ -76,6 +76,38 @@ public sealed class ProjectCollaborationServiceTests
         db.ProjectCollaborationRecords.Single().Content.Should().Be("目前內容");
     }
 
+    [Fact]
+    public async Task Important_record_and_attachment_are_returned_in_collaboration_timeline()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var _ = connection;
+        await using var __ = db;
+        var project = await SeedAsync(db);
+        var service = new ProjectCollaborationService(db);
+        var added = await service.AddAsync(
+            new CollaborationCommand(project.Id, null, "staff-1", false, false, "決議", "重要決定", null, true),
+            CancellationToken.None);
+
+        var attachment = await service.AddAttachmentAsync(
+            project.Id,
+            added.Record!.Id,
+            "staff-1",
+            false,
+            false,
+            new ProjectCollaborationAttachment
+            {
+                OriginalFileName = "decision.pdf",
+                RelativePath = "decision.pdf",
+                ContentType = "application/pdf",
+                Length = 1024
+            },
+            CancellationToken.None);
+        var page = await service.GetPageAsync(project.Id, "staff-1", false, 1, 20, CancellationToken.None);
+
+        attachment.Success.Should().BeTrue();
+        page.Items.Should().ContainSingle(x => x.IsImportant && x.Attachments.Any(a => a.OriginalFileName == "decision.pdf"));
+    }
+
     private static async Task<Project> SeedAsync(ProjectManager.Web.Data.ApplicationDbContext db)
     {
         var staff = new ApplicationUser { Id = "staff-1", UserName = "staff", DisplayName = "專案人員" };
