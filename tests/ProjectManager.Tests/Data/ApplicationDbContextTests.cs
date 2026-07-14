@@ -8,6 +8,39 @@ namespace ProjectManager.Tests.Data;
 public sealed class ApplicationDbContextTests
 {
     [Fact]
+    public async Task Project_gantt_and_collaboration_models_define_concurrency_and_relationships()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+
+        foreach (var entityType in new[] { typeof(Project), typeof(ProjectGanttPlan), typeof(ProjectCollaborationRecord) })
+        {
+            var rowVersion = db.Model.FindEntityType(entityType)?.FindProperty("RowVersion");
+            rowVersion.Should().NotBeNull($"{entityType.Name} must protect concurrent edits");
+            rowVersion!.IsConcurrencyToken.Should().BeTrue();
+            rowVersion.ValueGenerated.Should().Be(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate);
+        }
+
+        var ganttTask = db.Model.FindEntityType(typeof(ProjectGanttTask));
+        ganttTask!.FindProperty(nameof(ProjectGanttTask.IsMilestone)).Should().NotBeNull();
+        ganttTask.FindProperty(nameof(ProjectGanttTask.OwnerUserId)).Should().NotBeNull();
+        ganttTask.FindProperty(nameof(ProjectGanttTask.PredecessorTaskId)).Should().NotBeNull();
+        ganttTask.FindProperty(nameof(ProjectGanttTask.ActualStartDate)).Should().NotBeNull();
+        ganttTask.FindProperty(nameof(ProjectGanttTask.ActualFinishDate)).Should().NotBeNull();
+
+        var collaboration = db.Model.FindEntityType(typeof(ProjectCollaborationRecord));
+        collaboration.Should().NotBeNull();
+        collaboration!.GetIndexes().Should().Contain(index =>
+            index.Properties.Select(property => property.Name).SequenceEqual(
+                new[] { nameof(ProjectCollaborationRecord.ProjectId), nameof(ProjectCollaborationRecord.CreatedAt) }));
+        collaboration.GetForeignKeys().Should().Contain(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(Project));
+        collaboration.GetForeignKeys().Should().Contain(foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(ApplicationUser));
+    }
+
+    [Fact]
     public async Task Saved_data_view_has_unique_user_page_name_key_and_cascades_with_user()
     {
         var (db, connection) = await TestDbFactory.CreateAsync();

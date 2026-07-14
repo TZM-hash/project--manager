@@ -17,6 +17,9 @@
     var expectedProgress = ProjectGanttService.CalculateExpectedProgress(tasks, weights, archiveDemand.Date);
     var actualProgress = ProjectGanttService.CalculateActualProgress(tasks, weights);
     var ownerText = string.Join("、", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
+    var ownerNames = Model.Project.Assignments.ToDictionary(
+        assignment => assignment.UserId,
+        assignment => assignment.User?.DisplayName ?? assignment.User?.UserName ?? assignment.UserId);
     var customerText = string.IsNullOrWhiteSpace(Model.Project.VendorName) ? ownerText : Model.Project.VendorName;
     var documentNumber = string.IsNullOrWhiteSpace(Model.Project.ParentCaseNumber)
         ? $"GANTT-{Model.Project.ProjectNumber}"
@@ -123,8 +126,17 @@
                         <tr>
                             <td class="gantt-print-index">@(task.SortOrder > 0 ? task.SortOrder : index + 1)</td>
                             <td class="gantt-print-task">
-                                <span>@task.Name</span>
+                                <span>@if (task.IsMilestone) { <b class="gantt-print-milestone">◆</b> }@task.Name</span>
                                 <small>@ProjectGanttService.GetProgressSummary(progressPoint)</small>
+                                <small>負責人：@(!string.IsNullOrWhiteSpace(task.OwnerUserId) && ownerNames.TryGetValue(task.OwnerUserId, out var taskOwner) ? taskOwner : "未指派")</small>
+                                @if (task.PredecessorTaskId is { } predecessorId)
+                                {
+                                    <small>前置工作：@(tasks.FirstOrDefault(item => item.Id == predecessorId)?.Name ?? "-")</small>
+                                }
+                                @if (task.ActualStartDate is not null || task.ActualFinishDate is not null)
+                                {
+                                    <small>實際：@(task.ActualStartDate?.ToString("yyyy-MM-dd") ?? "-") ～ @(task.ActualFinishDate?.ToString("yyyy-MM-dd") ?? "-")</small>
+                                }
                             </td>
                             @foreach (var month in months)
                             {

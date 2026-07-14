@@ -21,4 +21,6 @@ public sealed class ApplicationUser : IdentityUser
 
     /// <summary>使用者跨裝置儲存的資料工作台檢視。</summary>
     public ICollection<SavedDataView> SavedDataViews { get; } = new List<SavedDataView>();
+
+    public ICollection<ProjectCollaborationRecord> CollaborationRecords { get; } = new List<ProjectCollaborationRecord>();
 }

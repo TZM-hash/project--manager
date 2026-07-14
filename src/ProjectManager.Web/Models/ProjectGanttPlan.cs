@@ -22,5 +22,7 @@ public sealed class ProjectGanttPlan
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    public byte[] RowVersion { get; set; } = [];
+
     public ICollection<ProjectGanttTask> Tasks { get; } = new List<ProjectGanttTask>();
 }

@@ -212,4 +212,140 @@ public sealed class ProjectGanttServiceTests
 
         result.Should().Be(GanttTaskVisualState.AtRisk);
     }
+
+    [Fact]
+    public async Task SaveAsync_rejects_invalid_milestone_dates_and_dependency_cycles()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var _ = connection;
+        await using var __ = db;
+        var project = await SeedProjectAsync(db);
+        var service = new ProjectGanttService(db, new SystemSettingsService(db));
+        var input = new ProjectGanttInputModel
+        {
+            Tasks =
+            {
+                new ProjectGanttTaskInputModel
+                {
+                    Id = 11,
+                    Name = "里程碑",
+                    IsMilestone = true,
+                    PlannedStartDate = new DateOnly(2026, 7, 1),
+                    PlannedFinishDate = new DateOnly(2026, 7, 2),
+                    PredecessorTaskId = 12
+                },
+                new ProjectGanttTaskInputModel
+                {
+                    Id = 12,
+                    Name = "後續工作",
+                    PlannedStartDate = new DateOnly(2026, 7, 2),
+                    PlannedFinishDate = new DateOnly(2026, 7, 3),
+                    PredecessorTaskId = 11
+                }
+            }
+        };
+
+        var errors = await service.SaveAsync(project.Id, input, "user-1", CancellationToken.None);
+
+        errors.Should().Contain(error => error.Contains("里程碑"));
+        errors.Should().Contain(error => error.Contains("循環依賴"));
+    }
+
+    [Fact]
+    public async Task BuildInputAsync_roundtrips_owner_dependency_actual_dates_and_overdue_state()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var _ = connection;
+        await using var __ = db;
+        var project = await SeedProjectAsync(db);
+        var predecessor = new ProjectGanttTask
+        {
+            SortOrder = 1,
+            Name = "設計完成",
+            IsMilestone = true,
+            OwnerUserId = "user-1",
+            PlannedStartDate = new DateOnly(2026, 6, 1),
+            PlannedFinishDate = new DateOnly(2026, 6, 1),
+            ActualStartDate = new DateOnly(2026, 6, 2),
+            ActualFinishDate = new DateOnly(2026, 6, 2),
+            ProgressPercent = 100
+        };
+        var task = new ProjectGanttTask
+        {
+            SortOrder = 2,
+            Name = "現場施工",
+            OwnerUserId = "user-1",
+            PlannedStartDate = new DateOnly(2026, 6, 2),
+            PlannedFinishDate = new DateOnly(2026, 6, 30),
+            ProgressPercent = 80,
+            PredecessorTask = predecessor
+        };
+        project.GanttPlan = new ProjectGanttPlan
+        {
+            StartDate = new DateOnly(2026, 6, 1),
+            FinishDate = new DateOnly(2026, 6, 30),
+            Tasks = { predecessor, task }
+        };
+        await db.SaveChangesAsync();
+
+        var input = await new ProjectGanttService(db, new SystemSettingsService(db))
+            .BuildInputAsync(project.Id, CancellationToken.None);
+
+        input.RowVersion.Should().NotBeNullOrWhiteSpace();
+        input.Tasks[0].IsMilestone.Should().BeTrue();
+        input.Tasks[0].OwnerUserId.Should().Be("user-1");
+        input.Tasks[0].ActualFinishDate.Should().Be(new DateOnly(2026, 6, 2));
+        input.Tasks[1].PredecessorTaskId.Should().Be(input.Tasks[0].Id);
+        ProjectGanttService.IsTaskOverdue(input.Tasks[1], new DateOnly(2026, 7, 15)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SaveAsync_rejects_stale_plan_row_version()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var _ = connection;
+        await using var __ = db;
+        var project = await SeedProjectAsync(db);
+        project.GanttPlan = new ProjectGanttPlan
+        {
+            StartDate = new DateOnly(2026, 7, 1),
+            FinishDate = new DateOnly(2026, 7, 31),
+            Tasks =
+            {
+                new ProjectGanttTask
+                {
+                    SortOrder = 1,
+                    Name = "既有工作",
+                    PlannedStartDate = new DateOnly(2026, 7, 1),
+                    PlannedFinishDate = new DateOnly(2026, 7, 31)
+                }
+            }
+        };
+        await db.SaveChangesAsync();
+        var service = new ProjectGanttService(db, new SystemSettingsService(db));
+        var input = await service.BuildInputAsync(project.Id, CancellationToken.None);
+        input.RowVersion = Convert.ToBase64String(new byte[8]);
+        input.ProgressNote = "過期頁面內容";
+
+        var errors = await service.SaveAsync(project.Id, input, "user-1", CancellationToken.None);
+
+        errors.Should().ContainSingle().Which.Should().Contain("已被其他使用者更新");
+    }
+
+    private static async Task<Project> SeedProjectAsync(ProjectManager.Web.Data.ApplicationDbContext db)
+    {
+        var user = new ApplicationUser { Id = "user-1", UserName = "owner", DisplayName = "負責人" };
+        var project = new Project
+        {
+            Year = 2026,
+            ProjectNumber = $"G-{Guid.NewGuid():N}",
+            Name = "甘特測試專案",
+            Status = new ProjectStatus { Code = $"doing-{Guid.NewGuid():N}", Name = "執行中", SortOrder = 1 },
+            UpdatedByUser = user,
+            Assignments = { new ProjectAssignment { User = user, RoleInProject = "專案人員" } }
+        };
+        db.Projects.Add(project);
+        await db.SaveChangesAsync();
+        return project;
+    }
 }

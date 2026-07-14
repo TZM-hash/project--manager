@@ -16,6 +16,8 @@ public sealed class EditProgressModel(
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
+    public bool HasConcurrencyConflict { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
@@ -37,7 +39,8 @@ public sealed class EditProgressModel(
             ProjectNumber = project.ProjectNumber,
             ProjectName = project.Name,
             ProgressPercent = project.ProgressPercent,
-            ProgressDescription = project.ProgressDescription
+            ProgressDescription = project.ProgressDescription,
+            RowVersion = Convert.ToBase64String(project.RowVersion)
         };
 
         return Page();
@@ -58,11 +61,13 @@ public sealed class EditProgressModel(
                 userId,
                 CanEditAll: User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader),
                 Input.ProgressPercent,
-                Input.ProgressDescription),
+                Input.ProgressDescription,
+                Input.RowVersion),
             cancellationToken);
 
         if (!result.Success)
         {
+            HasConcurrencyConflict = result.IsConcurrencyConflict;
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error);
@@ -85,5 +90,7 @@ public sealed class EditProgressModel(
         public decimal ProgressPercent { get; set; }
 
         public string? ProgressDescription { get; set; }
+
+        public string RowVersion { get; set; } = string.Empty;
     }
 }

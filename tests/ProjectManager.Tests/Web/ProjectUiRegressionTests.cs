@@ -5,6 +5,25 @@ namespace ProjectManager.Tests.Web;
 public sealed class ProjectUiRegressionTests
 {
     [Fact]
+    public void Project_detail_exposes_collaboration_timeline_and_concurrency_reload_actions()
+    {
+        var collaboration = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectCollaborationPanel.cshtml");
+        var gantt = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
+        var projectForm = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "_ProjectForm.cshtml");
+        var progressForm = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "EditProgress.cshtml");
+
+        collaboration.Should().Contain("collaboration-timeline");
+        collaboration.Should().Contain("AddCollaboration");
+        collaboration.Should().Contain("UpdateCollaboration");
+        collaboration.Should().Contain("DeleteCollaboration");
+        collaboration.Should().Contain("重新載入最新版本");
+        gantt.Should().Contain("GanttInput.RowVersion");
+        gantt.Should().Contain("重新載入最新版本");
+        projectForm.Should().Contain("Input.RowVersion");
+        progressForm.Should().Contain("Input.RowVersion");
+    }
+
+    [Fact]
     public void Home_page_prioritizes_one_conclusion_one_action_and_four_work_queues()
     {
         var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Index.cshtml");

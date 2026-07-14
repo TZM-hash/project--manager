@@ -18,6 +18,9 @@
 | `MonthlySettlementItems` | 月结明细表 | 月结时从项目、人员、请购汇总出的快照明细。 |
 | `AuditLogs` | 操作日志表 | 记录项目新增、修改、删除、进度更新等留痕。 |
 | `SavedDataViews` | 個人資料檢視表 | 保存使用者在指定資料頁面的篩選、欄位、行距與預設檢視。 |
+| `ProjectGanttPlans` | 專案甘特計畫表 | 保存整體日期、說明與聚合並發版本。 |
+| `ProjectGanttTasks` | 甘特工作表 | 保存里程碑、負責人、前置工作、計畫／實際日期與進度。 |
+| `ProjectCollaborationRecords` | 專案協作記錄表 | 保存專案時間線上的進度、風險、決議與待辦記錄。 |
 
 ## Projects 项目主表
 
@@ -38,8 +41,27 @@
 | `UpdatedAt` | `datetimeoffset` | 否 | 最近更新时间。 |
 | `CreatedAt` | `datetimeoffset` | 否 | 创建时间。 |
 | `IsDeleted` | `bit` | 否 | 软删除标记。 |
+| `RowVersion` | `rowversion` | 否 | 樂觀並發權杖，避免後提交覆蓋先提交。 |
 
 关键索引：`IX_Projects_Year_ProjectNumber`，唯一索引，过滤条件为 `IsDeleted = 0`。
+
+## ProjectGanttPlans / ProjectGanttTasks 甘特資料
+
+`ProjectGanttPlans` 以 `ProjectId` 與專案一對一，`RowVersion` 保護整份甘特聚合。`ProjectGanttTasks` 增加 `IsMilestone`、`OwnerUserId`、`PredecessorTaskId`、`ActualStartDate`、`ActualFinishDate`；前置工作使用同表自我關聯且刪除行為為 Restrict。
+
+## ProjectCollaborationRecords 專案協作記錄表
+
+| 欄位 | 類型 | 允許空 | 說明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主鍵。 |
+| `ProjectId` | `int` | 否 | 所屬專案。 |
+| `Category` | `nvarchar(50)` | 否 | 進度協作、風險、決議、待辦等類別。 |
+| `Content` | `nvarchar(4000)` | 否 | 純文字協作內容。 |
+| `CreatedByUserId` | `nvarchar(450)` | 否 | 建立人。 |
+| `CreatedAt` / `UpdatedAt` | `datetimeoffset` | 否 | 建立與更新時間。 |
+| `RowVersion` | `rowversion` | 否 | 編輯／刪除並發權杖。 |
+
+關鍵索引：`ProjectId + CreatedAt`，用於專案詳情時間線查詢。
 
 ## ProjectAssignments 项目人员表
 

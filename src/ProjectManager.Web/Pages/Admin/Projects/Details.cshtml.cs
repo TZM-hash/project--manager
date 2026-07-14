@@ -15,7 +15,8 @@ public sealed class DetailsModel(
     ApplicationDbContext db,
     ProjectGanttService ganttService,
     SystemSettingsService systemSettingsService,
-    AuditTrailQueryService auditTrailQueryService) : PageModel
+    AuditTrailQueryService auditTrailQueryService,
+    ProjectCollaborationService collaborationService) : PageModel
 {
     public Project Project { get; private set; } = new();
 
@@ -32,6 +33,19 @@ public sealed class DetailsModel(
     public string? GanttMessage { get; set; }
 
     public IReadOnlyList<string> GanttErrors { get; private set; } = [];
+
+    public CollaborationPage Collaboration { get; private set; } = new(false, [], 0, 1, 20, 1);
+
+    [BindProperty]
+    public ProjectCollaborationInputModel CollaborationInput { get; set; } = new();
+
+    [TempData]
+    public string? CollaborationMessage { get; set; }
+
+    public IReadOnlyList<string> CollaborationErrors { get; private set; } = [];
+
+    [BindProperty(SupportsGet = true)]
+    public int CollaborationPage { get; set; } = 1;
 
     [BindProperty(SupportsGet = true)]
     public string? Tab { get; set; }
@@ -111,6 +125,18 @@ public sealed class DetailsModel(
                 cancellationToken);
         }
 
+        if (ActiveTab == "collaboration")
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+            Collaboration = await collaborationService.GetPageAsync(
+                id, userId, canViewAll, CollaborationPage, 20, cancellationToken);
+            if (!Collaboration.CanAccess)
+            {
+                return NotFound();
+            }
+        }
+
         return Page();
     }
 
@@ -141,6 +167,69 @@ public sealed class DetailsModel(
         return File(file.Contents, file.ContentType, file.FileName);
     }
 
+    public Task<IActionResult> OnPostAddCollaborationAsync(int id, CancellationToken cancellationToken) =>
+        SaveCollaborationAsync(id, isUpdate: false, cancellationToken);
+
+    public Task<IActionResult> OnPostUpdateCollaborationAsync(int id, CancellationToken cancellationToken) =>
+        SaveCollaborationAsync(id, isUpdate: true, cancellationToken);
+
+    public async Task<IActionResult> OnPostDeleteCollaborationAsync(
+        int id,
+        int recordId,
+        string rowVersion,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+        var result = await collaborationService.DeleteAsync(
+            new CollaborationCommand(id, recordId, userId, canViewAll, canViewAll, null, string.Empty, rowVersion),
+            cancellationToken);
+        return await CompleteCollaborationCommandAsync(id, result, "協作記錄已刪除。", cancellationToken);
+    }
+
+    private async Task<IActionResult> SaveCollaborationAsync(int id, bool isUpdate, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+        var command = new CollaborationCommand(
+            id,
+            CollaborationInput.RecordId,
+            userId,
+            canViewAll,
+            canViewAll,
+            CollaborationInput.Category,
+            CollaborationInput.Content,
+            CollaborationInput.RowVersion);
+        var result = isUpdate
+            ? await collaborationService.UpdateAsync(command, cancellationToken)
+            : await collaborationService.AddAsync(command, cancellationToken);
+        return await CompleteCollaborationCommandAsync(
+            id,
+            result,
+            isUpdate ? "協作記錄已更新。" : "協作記錄已新增。",
+            cancellationToken);
+    }
+
+    private async Task<IActionResult> CompleteCollaborationCommandAsync(
+        int id,
+        CollaborationResult result,
+        string successMessage,
+        CancellationToken cancellationToken)
+    {
+        if (result.Success)
+        {
+            CollaborationMessage = successMessage;
+            return RedirectToPage("./Details", new { id, Tab = "collaboration" });
+        }
+
+        CollaborationErrors = result.Errors;
+        var postedInput = CollaborationInput;
+        Tab = "collaboration";
+        var pageResult = await OnGetAsync(id, cancellationToken);
+        CollaborationInput = postedInput;
+        return pageResult;
+    }
+
     private string ResolveActiveTab()
     {
         if (!string.IsNullOrWhiteSpace(AuditKeyword) ||
@@ -152,7 +241,7 @@ public sealed class DetailsModel(
             return "audit";
         }
 
-        return Tab?.Trim().ToLowerInvariant() is "profile" or "purchases" or "gantt" or "audit"
+        return Tab?.Trim().ToLowerInvariant() is "profile" or "purchases" or "gantt" or "collaboration" or "audit"
             ? Tab.Trim().ToLowerInvariant()
             : "overview";
     }

@@ -121,12 +121,33 @@ public sealed class WorkbenchProjectService(
         project.ProgressDescription = RichTextSanitizer.Normalize(request.ProgressDescription);
         project.UpdatedByUserId = request.UserId;
         project.UpdatedAt = DateTimeOffset.UtcNow;
+        if (!string.IsNullOrWhiteSpace(request.RowVersion))
+        {
+            try
+            {
+                db.Entry(project).Property(x => x.RowVersion).OriginalValue = Convert.FromBase64String(request.RowVersion);
+            }
+            catch (FormatException)
+            {
+                return new UpdateProgressResult(false, ["資料版本無效，請重新載入頁面後再試。"], true);
+            }
+        }
         var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
         var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after)
             .Where(x => x.Label is "專案進度" or "進度說明")
             .ToList();
 
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new UpdateProgressResult(
+                false,
+                ["此專案已被其他使用者更新，您的內容尚未覆蓋新資料。請重新載入後再送出。"],
+                true);
+        }
         if (changes.Count > 0)
         {
             await auditLogService.LogProjectChangeAsync(
@@ -240,6 +261,10 @@ public sealed record UpdateProgressRequest(
     string UserId,
     bool CanEditAll,
     decimal ProgressPercent,
-    string? ProgressDescription);
+    string? ProgressDescription,
+    string? RowVersion = null);
 
-public sealed record UpdateProgressResult(bool Success, IReadOnlyList<string> Errors);
+public sealed record UpdateProgressResult(
+    bool Success,
+    IReadOnlyList<string> Errors,
+    bool IsConcurrencyConflict = false);

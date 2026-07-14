@@ -22,8 +22,8 @@ function initGanttEditors() {
           sort.value = number.toString();
         }
 
-        row.querySelectorAll("input").forEach((input) => {
-          input.name = input.name.replace(/GanttInput\.Tasks\[\d+\]/, `GanttInput.Tasks[${index}]`);
+        row.querySelectorAll("input, select, textarea").forEach((field) => {
+          field.name = field.name.replace(/GanttInput\.Tasks\[\d+\]/, `GanttInput.Tasks[${index}]`);
         });
       });
     };
@@ -49,11 +49,18 @@ function initGanttEditors() {
       }
 
       const row = template.cloneNode(true);
-      row.querySelectorAll("input").forEach((input) => {
-        input.value = "";
-        if (input.type === "hidden") {
+      row.querySelectorAll("input, textarea").forEach((input) => {
+        if (input.type === "checkbox") {
+          input.checked = false;
+        } else {
+          input.value = "";
+        }
+        if (input.type === "hidden" && input.name.endsWith(".Id")) {
           input.value = "0";
         }
+      });
+      row.querySelectorAll("select").forEach((select) => {
+        select.selectedIndex = 0;
       });
       rows.appendChild(row);
       bindRemove(row);

@@ -14,8 +14,12 @@ public sealed class GanttUiAssetTests
         partial.Should().Contain("gantt-visual-legend");
         partial.Should().Contain("gantt-bar-progress-label");
         partial.Should().Contain("GetTaskVisualState");
-        partial.Should().NotContain("gantt-task-milestone");
-        partial.Should().NotContain("gantt-legend-milestone");
+        partial.Should().Contain("gantt-task-milestone");
+        partial.Should().Contain("gantt-legend-milestone");
+        partial.Should().Contain("負責人");
+        partial.Should().Contain("前置工作");
+        partial.Should().Contain("實際開始");
+        partial.Should().Contain("逾期");
 
         css.Should().Contain("border: 2px solid #111827");
         css.Should().Contain(".gantt-task-state-completed");
@@ -45,15 +49,15 @@ public sealed class GanttUiAssetTests
     }
 
     [Fact]
-    public void Gantt_visual_redesign_does_not_change_print_view()
+    public void Gantt_print_view_includes_enhanced_task_metadata()
     {
         var printView = ReadRepositoryFile(
             "src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "GanttPrint.cshtml");
 
-        printView.Should().NotContain("gantt-visual-legend");
-        printView.Should().NotContain("gantt-task-state-badge");
-        printView.Should().NotContain("gantt-bar-progress-label");
-        printView.Should().NotContain("gantt-task-milestone");
+        printView.Should().Contain("gantt-print-milestone");
+        printView.Should().Contain("負責人");
+        printView.Should().Contain("前置工作");
+        printView.Should().Contain("實際：");
     }
 
     private static string ReadRepositoryFile(params string[] pathParts)

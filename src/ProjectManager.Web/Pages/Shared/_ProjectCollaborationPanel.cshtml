@@ -1,0 +1,111 @@
+@model ProjectManager.Web.Pages.Shared.ProjectCollaborationPanelModel
+
+<section class="detail-panel collaboration-panel" aria-labelledby="collaboration-title">
+    <div class="collaboration-head">
+        <div>
+            <h2 id="collaboration-title" class="detail-panel-title">協作記錄</h2>
+            <p>集中保留進度確認、風險、決議與待辦事項；最新記錄顯示在最前面。</p>
+        </div>
+        <span class="meta-pill">共 @Model.Page.TotalCount 筆</span>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success">@Model.Message</div>
+    }
+    @if (Model.Errors.Count > 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            @foreach (var error in Model.Errors) { <div>@error</div> }
+            @if (Model.Errors.Any(error => error.Contains("其他使用者更新", StringComparison.Ordinal)))
+            {
+                <a asp-route-id="@Model.Project.Id" asp-route-Tab="collaboration">重新載入最新版本</a>
+            }
+        </div>
+    }
+
+    @if (Model.CanEdit)
+    {
+        <form method="post" asp-page-handler="AddCollaboration" asp-route-id="@Model.Project.Id" class="collaboration-compose">
+            <div>
+                <label class="form-label" for="collaboration-category">類別</label>
+                <select id="collaboration-category" class="form-select" name="CollaborationInput.Category">
+                    @foreach (var category in new[] { "進度協作", "風險", "決議", "待辦", "客戶回覆" })
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+            <div class="collaboration-compose-content">
+                <label class="form-label" for="collaboration-content">新增協作內容</label>
+                <textarea id="collaboration-content" class="form-control" name="CollaborationInput.Content" rows="3" maxlength="4000" required>@Model.Input.Content</textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">新增記錄</button>
+        </form>
+    }
+
+    @if (Model.Page.Items.Count == 0)
+    {
+        <div class="workbench-empty collaboration-empty">
+            <strong>目前沒有協作記錄</strong>
+            <span>可新增第一筆進度確認、風險或決議，讓後續接手者掌握背景。</span>
+        </div>
+    }
+    else
+    {
+        <div class="collaboration-timeline">
+            @foreach (var record in Model.Page.Items)
+            {
+                var canManage = Model.CanEdit && (Model.CanEditAll || record.CreatedByUserId == Model.CurrentUserId);
+                <article class="collaboration-item">
+                    <div class="collaboration-marker" aria-hidden="true"></div>
+                    <div class="collaboration-card">
+                        <header>
+                            <div>
+                                <span class="collaboration-category">@record.Category</span>
+                                <strong>@(record.CreatedByUser?.DisplayName ?? record.CreatedByUser?.UserName ?? record.CreatedByUserId)</strong>
+                            </div>
+                            <time datetime="@record.CreatedAt.ToString("O")">@record.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</time>
+                        </header>
+                        <div class="collaboration-content">@record.Content</div>
+                        @if (canManage)
+                        {
+                            <div class="collaboration-actions">
+                                <details>
+                                    <summary class="btn btn-sm btn-outline-secondary">編輯</summary>
+                                    <form method="post" asp-page-handler="UpdateCollaboration" asp-route-id="@Model.Project.Id" class="collaboration-edit-form">
+                                        <input type="hidden" name="CollaborationInput.RecordId" value="@record.Id" />
+                                        <input type="hidden" name="CollaborationInput.RowVersion" value="@Convert.ToBase64String(record.RowVersion)" />
+                                        <input class="form-control form-control-sm" name="CollaborationInput.Category" value="@record.Category" maxlength="50" />
+                                        <textarea class="form-control form-control-sm" name="CollaborationInput.Content" rows="3" maxlength="4000" required>@record.Content</textarea>
+                                        <button class="btn btn-sm btn-primary" type="submit">儲存修改</button>
+                                    </form>
+                                </details>
+                                <form method="post" asp-page-handler="DeleteCollaboration" asp-route-id="@Model.Project.Id" onsubmit="return confirm('確定刪除這筆協作記錄嗎？');">
+                                    <input type="hidden" name="recordId" value="@record.Id" />
+                                    <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(record.RowVersion)" />
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">刪除</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+    @if (Model.Page.TotalPages > 1)
+    {
+        <nav class="collaboration-pagination" aria-label="協作記錄分頁">
+            @if (Model.Page.PageNumber > 1)
+            {
+                <a class="btn btn-sm btn-outline-secondary" asp-route-id="@Model.Project.Id" asp-route-Tab="collaboration" asp-route-CollaborationPage="@(Model.Page.PageNumber - 1)">上一頁</a>
+            }
+            <span>第 @Model.Page.PageNumber / @Model.Page.TotalPages 頁</span>
+            @if (Model.Page.PageNumber < Model.Page.TotalPages)
+            {
+                <a class="btn btn-sm btn-outline-secondary" asp-route-id="@Model.Project.Id" asp-route-Tab="collaboration" asp-route-CollaborationPage="@(Model.Page.PageNumber + 1)">下一頁</a>
+            }
+        </nav>
+    }
+</section>

@@ -74,6 +74,9 @@ public sealed class Project
     /// <summary>建立時間。</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>用於偵測同一專案被多人同時修改的資料庫版本。</summary>
+    public byte[] RowVersion { get; set; } = [];
+
     /// <summary>软刪除标记；列表和明細查詢默认过滤已刪除專案。</summary>
     public bool IsDeleted { get; set; }
 
@@ -86,4 +89,6 @@ public sealed class Project
     public ICollection<ProjectSkippedStatus> SkippedStatuses { get; } = new List<ProjectSkippedStatus>();
 
     public ProjectGanttPlan? GanttPlan { get; set; }
+
+    public ICollection<ProjectCollaborationRecord> CollaborationRecords { get; } = new List<ProjectCollaborationRecord>();
 }

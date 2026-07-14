@@ -17,6 +17,8 @@ public sealed class EditModel(
     AuditLogService auditLogService)
     : ProjectFormPageModel(db, userManager, maintenanceService)
 {
+    public bool HasConcurrencyConflict { get; private set; }
+
     [BindProperty(SupportsGet = true)]
     public string? ReturnTab { get; set; }
 
@@ -52,13 +54,27 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
+        if (!TryApplyConcurrencyToken(project))
+        {
+            Input.Id = id;
+            EnsureBlankPurchaseRows(2);
+            await LoadOptionsAsync(cancellationToken);
+            return Page();
+        }
         // 修改前先取快照，后面 EF 跟踪实体会被表单值覆盖，不能再从实体读旧值。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         ApplyProjectValues(project, validation.Project, now);
         SyncAssignments(project);
         SyncPurchaseRequests(project, now);
 
-        await Db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return await RenderConcurrencyConflictAsync(id, cancellationToken);
+        }
         // 儲存后再生成新快照，欄位级和请购级差異都由统一 builder 計算。
         var after = ProjectAuditChangeBuilder.CreateSnapshot(project);
         var changes = ProjectAuditChangeBuilder.BuildUpdateChanges(before, after);
@@ -86,6 +102,13 @@ public sealed class EditModel(
         }
 
         var now = DateTimeOffset.UtcNow;
+        if (!TryApplyConcurrencyToken(project))
+        {
+            Input = CreateInput(project);
+            EnsureBlankPurchaseRows(2);
+            await LoadOptionsAsync(cancellationToken);
+            return Page();
+        }
         // 刪除日誌需要保留刪除前的工号、名稱、金額等上下文。
         var before = ProjectAuditChangeBuilder.CreateSnapshot(project);
         project.IsDeleted = true;
@@ -98,7 +121,14 @@ public sealed class EditModel(
             request.UpdatedAt = now;
         }
 
-        await Db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return await RenderConcurrencyConflictAsync(id, cancellationToken);
+        }
         await auditLogService.LogProjectChangeAsync(
             UserManager.GetUserId(User),
             "Delete",
@@ -126,5 +156,30 @@ public sealed class EditModel(
         }
 
         return await query.SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private bool TryApplyConcurrencyToken(Project project)
+    {
+        try
+        {
+            Db.Entry(project).Property(x => x.RowVersion).OriginalValue = Convert.FromBase64String(Input.RowVersion);
+            return true;
+        }
+        catch (FormatException)
+        {
+            HasConcurrencyConflict = true;
+            ModelState.AddModelError(string.Empty, "資料版本無效，請重新載入頁面後再試。");
+            return false;
+        }
+    }
+
+    private async Task<IActionResult> RenderConcurrencyConflictAsync(int id, CancellationToken cancellationToken)
+    {
+        HasConcurrencyConflict = true;
+        ModelState.AddModelError(string.Empty, "此專案已被其他使用者更新，您的內容尚未覆蓋新資料。請重新載入後再送出。");
+        Input.Id = id;
+        EnsureBlankPurchaseRows(2);
+        await LoadOptionsAsync(cancellationToken);
+        return Page();
     }
 }

@@ -54,6 +54,7 @@ builder.Services.AddScoped<DataExchangeService>();
 builder.Services.AddScoped<PlanningProjectService>();
 builder.Services.AddScoped<MaintenanceOrderService>();
 builder.Services.AddScoped<ProjectGanttService>();
+builder.Services.AddScoped<ProjectCollaborationService>();
 builder.Services.AddScoped<UserLookupService>();
 builder.Services.AddScoped<SystemSettingsService>();
 builder.Services.AddScoped<ProjectArchiveService>();

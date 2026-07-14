@@ -259,6 +259,13 @@ test("project detail gantt loads on demand without desktop overflow", async ({ p
   ]);
   await expect(page.locator(".gantt-panel")).toBeVisible();
   await expect(page.locator(".gantt-progress-line")).toHaveCount(1);
+  await expect(page.locator(".gantt-legend-milestone")).toBeVisible();
+  const ganttTable = page.locator(".gantt-edit-table");
+  await expect(ganttTable.locator("thead th", { hasText: "里程碑" })).toBeVisible();
+  await expect(ganttTable.locator("thead th", { hasText: "負責人" })).toBeVisible();
+  await expect(ganttTable.locator("thead th", { hasText: "前置工作" })).toBeVisible();
+  await expect(ganttTable.locator("thead th", { hasText: "實際開始" })).toBeVisible();
+  await expect(page.locator('input[name="GanttInput.RowVersion"]')).toHaveCount(1);
 
   const ganttGeometry = await page.evaluate(() => {
     const overlay = document.querySelector(".gantt-chart-overlay");
@@ -295,6 +302,29 @@ test("project detail gantt loads on demand without desktop overflow", async ({ p
   expect(ganttGeometry.progressLabels.every((label) => label.followsFillEnd)).toBeTruthy();
   await captureElement(page, ".gantt-chart-wrap", "project-detail-gantt-chart");
   await capture(page, "project-detail-gantt");
+});
+
+test("project collaboration timeline supports keyboard entry and concurrency fields", async ({ page }) => {
+  await page.goto("/Admin/Projects?PageSize=10");
+  await page.locator('.data-table tbody tr a[href*="/Details"]').first().click();
+
+  await Promise.all([
+    page.waitForURL(/Tab=collaboration/),
+    page.locator('[data-detail-tab-target="collaboration"]').click()
+  ]);
+  await expect(page.locator(".collaboration-panel")).toBeVisible();
+  const content = page.locator("#collaboration-content");
+  await content.focus();
+  await expect(content).toBeFocused();
+  await content.fill("Playwright 協作記錄測試");
+  await expect(page.getByRole("button", { name: "新增記錄" })).toBeVisible();
+
+  const layout = await page.evaluate(() => ({
+    noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+    liveTimelinePresent: document.querySelector(".collaboration-timeline") !== null || document.querySelector(".collaboration-empty") !== null
+  }));
+  expect(layout.noPageOverflow).toBeTruthy();
+  expect(layout.liveTimelinePresent).toBeTruthy();
 });
 
 test("maintenance orders follow the grouped template and reflow hidden columns", async ({ page }) => {

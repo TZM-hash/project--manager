@@ -141,6 +141,34 @@ public sealed class WorkbenchProjectServiceTests
         db.Projects.Single(x => x.Id == seed.OtherProjectId).ProgressPercent.Should().Be(10);
     }
 
+    [Fact]
+    public async Task UpdateProgressAsync_rejects_stale_row_version_without_overwriting_newer_data()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var seed = await SeedWorkbenchProjectsAsync(db);
+        var service = new WorkbenchProjectService(db, new AuditLogService(db));
+
+        var result = await service.UpdateProgressAsync(
+            new UpdateProgressRequest(
+                seed.AssignedProjectId,
+                seed.StaffUserId,
+                CanEditAll: false,
+                ProgressPercent: 99,
+                ProgressDescription: "過期畫面送出的內容",
+                RowVersion: Convert.ToBase64String(new byte[8])),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.IsConcurrencyConflict.Should().BeTrue();
+        result.Errors.Should().ContainSingle().Which.Should().Contain("已被其他使用者更新");
+
+        db.ChangeTracker.Clear();
+        var project = db.Projects.Single(x => x.Id == seed.AssignedProjectId);
+        project.ProgressPercent.Should().Be(30);
+    }
+
     private static async Task<SeedIds> SeedWorkbenchProjectsAsync(ProjectManager.Web.Data.ApplicationDbContext db)
     {
         var staff = new ApplicationUser

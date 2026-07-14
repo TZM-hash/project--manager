@@ -19,4 +19,20 @@ public sealed class ProjectGanttTask
     public decimal ProgressPercent { get; set; }
 
     public string? ProgressDescription { get; set; }
+
+    public bool IsMilestone { get; set; }
+
+    public string? OwnerUserId { get; set; }
+
+    public ApplicationUser? OwnerUser { get; set; }
+
+    public int? PredecessorTaskId { get; set; }
+
+    public ProjectGanttTask? PredecessorTask { get; set; }
+
+    public ICollection<ProjectGanttTask> DependentTasks { get; } = new List<ProjectGanttTask>();
+
+    public DateOnly? ActualStartDate { get; set; }
+
+    public DateOnly? ActualFinishDate { get; set; }
 }

@@ -46,9 +46,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<SavedDataView> SavedDataViews => Set<SavedDataView>();
 
+    public DbSet<ProjectCollaborationRecord> ProjectCollaborationRecords => Set<ProjectCollaborationRecord>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        var isSqlite = Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
 
         builder.Entity<Project>(entity =>
         {
@@ -68,6 +71,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.ProjectAmount).HasPrecision(18, 2);
             entity.Property(x => x.ProgressPercent).HasPrecision(5, 2);
             entity.Property(x => x.CollectionPercent).HasPrecision(5, 2);
+            if (isSqlite)
+            {
+                entity.Property(x => x.RowVersion)
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasDefaultValueSql("randomblob(8)");
+            }
+            else
+            {
+                entity.Property(x => x.RowVersion).IsRowVersion();
+            }
 
             entity.HasOne(x => x.Status)
                 .WithMany()
@@ -242,6 +256,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasIndex(x => x.ProjectId).IsUnique();
             entity.Property(x => x.ProgressNote).HasMaxLength(2000);
+            if (isSqlite)
+            {
+                entity.Property(x => x.RowVersion)
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasDefaultValueSql("randomblob(8)");
+            }
+            else
+            {
+                entity.Property(x => x.RowVersion).IsRowVersion();
+            }
 
             entity.HasOne(x => x.Project)
                 .WithOne(x => x.GanttPlan)
@@ -259,10 +284,49 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
             entity.Property(x => x.ProgressPercent).HasPrecision(5, 2);
             entity.Property(x => x.ProgressDescription).HasMaxLength(1000);
+            entity.Property(x => x.OwnerUserId).HasMaxLength(450);
 
             entity.HasOne(x => x.ProjectGanttPlan)
                 .WithMany(x => x.Tasks)
                 .HasForeignKey(x => x.ProjectGanttPlanId);
+
+            entity.HasOne(x => x.OwnerUser)
+                .WithMany()
+                .HasForeignKey(x => x.OwnerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.PredecessorTask)
+                .WithMany(x => x.DependentTasks)
+                .HasForeignKey(x => x.PredecessorTaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ProjectCollaborationRecord>(entity =>
+        {
+            entity.HasIndex(x => new { x.ProjectId, x.CreatedAt });
+            entity.Property(x => x.Category).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Content).HasMaxLength(4000).IsRequired();
+            entity.Property(x => x.CreatedByUserId).HasMaxLength(450).IsRequired();
+            if (isSqlite)
+            {
+                entity.Property(x => x.RowVersion)
+                    .IsConcurrencyToken()
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasDefaultValueSql("randomblob(8)");
+            }
+            else
+            {
+                entity.Property(x => x.RowVersion).IsRowVersion();
+            }
+
+            entity.HasOne(x => x.Project)
+                .WithMany(x => x.CollaborationRecords)
+                .HasForeignKey(x => x.ProjectId);
+
+            entity.HasOne(x => x.CreatedByUser)
+                .WithMany(x => x.CollaborationRecords)
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<ProjectSkippedStatus>(entity =>

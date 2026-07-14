@@ -471,7 +471,18 @@
 
 .gantt-panel {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   gap: 0.85rem;
+}
+
+.gantt-form,
+.gantt-panel .data-table-wrap,
+.gantt-panel .gantt-chart-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .gantt-panel-head,
@@ -803,6 +814,193 @@
   color: var(--status-color, var(--app-text-soft));
   background: var(--status-background, #f1f5f9);
   box-shadow: inset 3px 0 0 var(--status-custom-background, var(--app-border));
+}
+
+.gantt-legend-milestone,
+.gantt-task-milestone {
+  display: inline-block;
+  width: 0.78rem;
+  height: 0.78rem;
+  border: 2px solid #7c3aed;
+  background: #ede9fe;
+  transform: rotate(45deg);
+}
+
+.gantt-task-milestone {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  margin-left: -0.39rem;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.gantt-task-meta {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.12rem;
+  color: var(--app-muted);
+  font-size: 0.66rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt-overdue-badge {
+  display: inline-flex;
+  margin-left: 0.3rem;
+  padding: 0.12rem 0.38rem;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.gantt-edit-table {
+  min-width: 1380px;
+}
+
+.gantt-print-milestone {
+  color: #6d28d9;
+}
+
+.collaboration-head,
+.collaboration-compose,
+.collaboration-card header,
+.collaboration-actions,
+.collaboration-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.collaboration-head p {
+  margin: 0.2rem 0 0;
+  color: var(--app-muted);
+  font-size: 0.82rem;
+}
+
+.collaboration-compose {
+  align-items: end;
+  margin: 0.85rem 0 1rem;
+  padding: 0.85rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: #f8fafc;
+}
+
+.collaboration-compose-content {
+  flex: 1 1 26rem;
+}
+
+.collaboration-timeline {
+  position: relative;
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1rem;
+}
+
+.collaboration-timeline::before {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.28rem;
+  width: 2px;
+  background: #dbe7f5;
+  content: "";
+}
+
+.collaboration-item {
+  position: relative;
+}
+
+.collaboration-marker {
+  position: absolute;
+  top: 1rem;
+  left: -1rem;
+  z-index: 1;
+  width: 0.62rem;
+  height: 0.62rem;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--app-primary);
+  box-shadow: 0 0 0 3px var(--app-primary-soft);
+}
+
+.collaboration-card {
+  padding: 0.85rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: #fff;
+}
+
+.collaboration-card header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.collaboration-card time {
+  color: var(--app-muted);
+  font-size: 0.74rem;
+}
+
+.collaboration-category {
+  padding: 0.16rem 0.45rem;
+  border-radius: 999px;
+  background: var(--app-primary-soft);
+  color: var(--app-primary-hover);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.collaboration-content {
+  margin-top: 0.6rem;
+  color: var(--app-text-soft);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.collaboration-actions {
+  justify-content: flex-end;
+  margin-top: 0.65rem;
+}
+
+.collaboration-actions details {
+  position: relative;
+}
+
+.collaboration-actions summary {
+  list-style: none;
+}
+
+.collaboration-edit-form {
+  display: grid;
+  gap: 0.5rem;
+  width: min(30rem, 70vw);
+  margin-top: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-sm);
+  background: #f8fafc;
+}
+
+.collaboration-pagination {
+  justify-content: center;
+  margin-top: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .collaboration-compose,
+  .collaboration-card header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collaboration-compose .btn {
+    width: 100%;
+  }
 }
 
 /* 個人工作台：單一主結論、四個工作佇列與緊湊快捷入口 */

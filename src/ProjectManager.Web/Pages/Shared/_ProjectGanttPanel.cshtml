@@ -8,12 +8,16 @@
     }
 
     var archiveDemand = ProjectGanttService.BuildArchiveDemandInfo(Model.Project, Model.ArchiveDate);
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    var ownerNames = Model.Project.Assignments.ToDictionary(
+        assignment => assignment.UserId,
+        assignment => assignment.User?.DisplayName ?? assignment.User?.UserName ?? assignment.UserId);
     var months = ProjectGanttService.BuildMonths(input, archiveDemand.Date);
     var archiveLinePosition = ProjectGanttService.GetTimelinePositionPercent(archiveDemand.Date, months);
     var scaleText = ProjectGanttService.GetTimelineScaleText(months);
     var taskRows = input.Tasks
         .Select((task, index) => (Task: task, Index: index))
-        .Where(x => !string.IsNullOrWhiteSpace(x.Task.Name) || x.Task.PlannedStartDate is not null || x.Task.PlannedFinishDate is not null || x.Task.ProgressPercent > 0 || !string.IsNullOrWhiteSpace(x.Task.ProgressDescription))
+        .Where(x => !string.IsNullOrWhiteSpace(x.Task.Name) || x.Task.PlannedStartDate is not null || x.Task.PlannedFinishDate is not null || x.Task.ActualStartDate is not null || x.Task.ActualFinishDate is not null || x.Task.ProgressPercent > 0 || x.Task.IsMilestone || !string.IsNullOrWhiteSpace(x.Task.OwnerUserId) || !string.IsNullOrWhiteSpace(x.Task.ProgressDescription))
         .ToList();
     var progressPoints = ProjectGanttService.BuildProgressLinePoints(
         taskRows.Select(x => x.Task).ToList(),
@@ -45,6 +49,10 @@
             {
                 <div>@error</div>
             }
+            @if (Model.Errors.Any(error => error.Contains("其他使用者更新", StringComparison.Ordinal)))
+            {
+                <a asp-route-id="@Model.Project.Id" asp-route-Tab="gantt">重新載入最新版本</a>
+            }
         </div>
     }
 
@@ -60,6 +68,7 @@
     </div>
 
     <form method="post" asp-page-handler="SaveGantt" asp-route-id="@Model.Project.Id" class="gantt-form">
+        <input type="hidden" name="GanttInput.RowVersion" value="@input.RowVersion" />
         <div class="gantt-plan-grid">
             <div>
                 <label class="form-label">整體開始日</label>
@@ -80,6 +89,7 @@
                 <span><i class="gantt-legend-bar"><b></b></i>實色：已完成</span>
                 <span><i class="gantt-legend-bar gantt-legend-bar-pale"><b></b></i>淡色：未完成</span>
                 <span><i class="gantt-legend-redline"></i>檔案日期</span>
+                <span><i class="gantt-legend-milestone"></i>里程碑</span>
             </div>
             <div class="gantt-status-legend">
                 <span class="gantt-task-state-completed"><i></i>已完成</span>
@@ -119,13 +129,27 @@
                     var progressText = $"{bar.ProgressPercent:0.##}%";
                     var progressPosition = bar.LeftPercent + (bar.WidthPercent * Math.Clamp(bar.ProgressPercent, 0m, 100m) / 100m);
                     var progressTooltip = ProjectGanttService.GetProgressSummary(point);
+                    var ownerName = !string.IsNullOrWhiteSpace(row.Task.OwnerUserId) && ownerNames.TryGetValue(row.Task.OwnerUserId, out var displayName) ? displayName : "未指派";
+                    var predecessorName = row.Task.PredecessorTaskId is { } predecessorId
+                        ? input.Tasks.FirstOrDefault(task => task.Id == predecessorId)?.Name
+                        : null;
+                    var overdue = ProjectGanttService.IsTaskOverdue(row.Task, today);
                     <div class="gantt-chart-row">
                         <div class="gantt-chart-label">
                             <span class="gantt-task-name" data-language-preserve translate="no">@row.Task.Name</span>
+                            <small class="gantt-task-meta">負責人：@ownerName@if (!string.IsNullOrWhiteSpace(predecessorName)) { <text> · 前置工作：@predecessorName</text> }</small>
                             <span class="gantt-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
+                            @if (overdue)
+                            {
+                                <span class="gantt-overdue-badge">逾期</span>
+                            }
                         </div>
                         <div class="gantt-chart-track">
-                            @if (bar.WidthPercent > 0)
+                            @if (row.Task.IsMilestone && bar.WidthPercent >= 0)
+                            {
+                                <span class="gantt-task-milestone" style="left:@bar.LeftPercent.ToString("0.##")%;" title="里程碑：@row.Task.Name" aria-label="里程碑：@row.Task.Name"></span>
+                            }
+                            else if (bar.WidthPercent > 0)
                             {
                                 <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@progressTooltip" title="@progressTooltip">
                                     <i style="width:@bar.ProgressPercent.ToString("0.##")%"></i>
@@ -178,7 +202,7 @@
             <div class="chart-title">細分工作內容</div>
             @if (Model.CanEdit)
             {
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-gantt-add-row>新增一项</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-gantt-add-row>新增一項</button>
             }
         </div>
 
@@ -188,8 +212,13 @@
                     <tr>
                         <th>序號</th>
                         <th>細分工作內容</th>
+                        <th>里程碑</th>
+                        <th>負責人</th>
+                        <th>前置工作</th>
                         <th>預計開始日</th>
                         <th>預計完成日</th>
+                        <th>實際開始</th>
+                        <th>實際完成</th>
                         <th>目前進度 %</th>
                         <th>進度說明</th>
                         <th>操作</th>
@@ -205,8 +234,45 @@
                             <span data-gantt-index>@(i + 1)</span>
                         </td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].Name" value="@input.Tasks[i].Name" @(Model.CanEdit ? null : "readonly") /></td>
+                        <td class="text-center"><input class="form-check-input" name="GanttInput.Tasks[@i].IsMilestone" type="checkbox" value="true" @(input.Tasks[i].IsMilestone ? "checked" : null) @(Model.CanEdit ? null : "disabled") /><input type="hidden" name="GanttInput.Tasks[@i].IsMilestone" value="false" /></td>
+                        <td>
+                            <select class="form-select form-select-sm" name="GanttInput.Tasks[@i].OwnerUserId" @(Model.CanEdit ? null : "disabled")>
+                                <option value="">未指派</option>
+                                @foreach (var assignment in Model.Project.Assignments)
+                                {
+                                    var selected = assignment.UserId == input.Tasks[i].OwnerUserId;
+                                    if (selected)
+                                    {
+                                        <option value="@assignment.UserId" selected>@(assignment.User?.DisplayName ?? assignment.User?.UserName ?? assignment.UserId)</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@assignment.UserId">@(assignment.User?.DisplayName ?? assignment.User?.UserName ?? assignment.UserId)</option>
+                                    }
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm" name="GanttInput.Tasks[@i].PredecessorTaskId" @(Model.CanEdit ? null : "disabled")>
+                                <option value="">無</option>
+                                @foreach (var candidate in input.Tasks.Where(task => task.Id > 0 && task.Id != input.Tasks[i].Id))
+                                {
+                                    var selected = candidate.Id == input.Tasks[i].PredecessorTaskId;
+                                    if (selected)
+                                    {
+                                        <option value="@candidate.Id" selected>@candidate.Name</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@candidate.Id">@candidate.Name</option>
+                                    }
+                                }
+                            </select>
+                        </td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].PlannedStartDate" type="date" value="@input.Tasks[i].PlannedStartDate?.ToString("yyyy-MM-dd")" @(Model.CanEdit ? null : "readonly") /></td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].PlannedFinishDate" type="date" value="@input.Tasks[i].PlannedFinishDate?.ToString("yyyy-MM-dd")" @(Model.CanEdit ? null : "readonly") /></td>
+                        <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ActualStartDate" type="date" value="@input.Tasks[i].ActualStartDate?.ToString("yyyy-MM-dd")" @(Model.CanEdit ? null : "readonly") /></td>
+                        <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ActualFinishDate" type="date" value="@input.Tasks[i].ActualFinishDate?.ToString("yyyy-MM-dd")" @(Model.CanEdit ? null : "readonly") /></td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ProgressPercent" value="@input.Tasks[i].ProgressPercent" @(Model.CanEdit ? null : "readonly") /></td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ProgressDescription" value="@input.Tasks[i].ProgressDescription" @(Model.CanEdit ? null : "readonly") /></td>
                         <td>

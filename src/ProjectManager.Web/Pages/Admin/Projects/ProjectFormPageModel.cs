@@ -168,6 +168,7 @@ public abstract class ProjectFormPageModel(
         return new ProjectInputModel
         {
             Id = project.Id,
+            RowVersion = Convert.ToBase64String(project.RowVersion),
             Year = project.Year,
             ParentCaseNumber = project.ParentCaseNumber,
             ProjectNumber = project.ProjectNumber,
@@ -395,6 +396,8 @@ public sealed record FormValidationResult(
 public sealed class ProjectInputModel
 {
     public int Id { get; set; }
+
+    public string RowVersion { get; set; } = string.Empty;
 
     public int Year { get; set; } = DateTime.Today.Year;
 

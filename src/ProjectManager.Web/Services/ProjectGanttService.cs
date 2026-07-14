@@ -26,6 +26,10 @@ public sealed class ProjectGanttService(
             .AsNoTracking()
             .Include(x => x.GanttPlan)
             .ThenInclude(x => x!.Tasks)
+            .ThenInclude(x => x.OwnerUser)
+            .Include(x => x.GanttPlan)
+            .ThenInclude(x => x!.Tasks)
+            .ThenInclude(x => x.PredecessorTask)
             .SingleOrDefaultAsync(x => !x.IsDeleted && x.Id == projectId, cancellationToken);
 
         if (project is null)
@@ -48,11 +52,19 @@ public sealed class ProjectGanttService(
             return errors;
         }
 
-        var projectExists = await db.Projects
-            .AnyAsync(x => !x.IsDeleted && x.Id == projectId, cancellationToken);
-        if (!projectExists)
+        var project = await db.Projects
+            .AsNoTracking()
+            .Include(x => x.Assignments)
+            .SingleOrDefaultAsync(x => !x.IsDeleted && x.Id == projectId, cancellationToken);
+        if (project is null)
         {
             return ["Project was not found."];
+        }
+
+        var assignedUserIds = project.Assignments.Select(x => x.UserId).ToHashSet(StringComparer.Ordinal);
+        if (input.Tasks.Any(task => !string.IsNullOrWhiteSpace(task.OwnerUserId) && !assignedUserIds.Contains(task.OwnerUserId)))
+        {
+            return ["甘特工作負責人必須是此專案的已分配人員。"];
         }
 
         var plan = await db.ProjectGanttPlans
@@ -69,6 +81,17 @@ public sealed class ProjectGanttService(
             };
             db.ProjectGanttPlans.Add(plan);
         }
+        else if (!string.IsNullOrWhiteSpace(input.RowVersion))
+        {
+            try
+            {
+                db.Entry(plan).Property(x => x.RowVersion).OriginalValue = Convert.FromBase64String(input.RowVersion);
+            }
+            catch (FormatException)
+            {
+                return ["甘特資料版本無效，請重新載入頁面後再試。"];
+            }
+        }
 
         plan.StartDate = input.StartDate;
         plan.FinishDate = input.FinishDate;
@@ -76,23 +99,62 @@ public sealed class ProjectGanttService(
         plan.UpdatedByUserId = currentUserId;
         plan.UpdatedAt = now;
 
-        db.ProjectGanttTasks.RemoveRange(plan.Tasks);
-        var sortOrder = 1;
-        foreach (var row in input.Tasks.Where(HasTaskData))
+        var submittedRows = input.Tasks.Where(HasTaskData).ToList();
+        var submittedIds = submittedRows.Where(x => x.Id > 0).Select(x => x.Id).ToHashSet();
+        foreach (var removed in plan.Tasks.Where(task => !submittedIds.Contains(task.Id)).ToList())
         {
-            plan.Tasks.Add(new ProjectGanttTask
-            {
-                SortOrder = sortOrder++,
-                Name = RequiredOrDefault(row.Name, $"工作 {sortOrder - 1}"),
-                PlannedStartDate = row.PlannedStartDate,
-                PlannedFinishDate = row.PlannedFinishDate,
-                ProgressPercent = ClampPercent(row.ProgressPercent),
-                ProgressDescription = EmptyToNull(row.ProgressDescription)
-            });
+            removed.PredecessorTaskId = null;
+            db.ProjectGanttTasks.Remove(removed);
         }
 
-        await db.SaveChangesAsync(cancellationToken);
-        return [];
+        var existingById = plan.Tasks.Where(task => submittedIds.Contains(task.Id)).ToDictionary(task => task.Id);
+        var savedByInputId = new Dictionary<int, ProjectGanttTask>();
+        var sortOrder = 1;
+        foreach (var row in submittedRows)
+        {
+            var task = row.Id > 0 && existingById.TryGetValue(row.Id, out var existing)
+                ? existing
+                : new ProjectGanttTask();
+            if (task.Id == 0 && task.ProjectGanttPlan is null)
+            {
+                plan.Tasks.Add(task);
+            }
+
+            task.SortOrder = sortOrder++;
+            task.Name = RequiredOrDefault(row.Name, $"工作 {sortOrder - 1}");
+            task.PlannedStartDate = row.PlannedStartDate;
+            task.PlannedFinishDate = row.PlannedFinishDate;
+            task.ActualStartDate = row.ActualStartDate;
+            task.ActualFinishDate = row.ActualFinishDate;
+            task.ProgressPercent = ClampPercent(row.ProgressPercent);
+            task.ProgressDescription = EmptyToNull(row.ProgressDescription);
+            task.IsMilestone = row.IsMilestone;
+            task.OwnerUserId = EmptyToNull(row.OwnerUserId);
+            task.PredecessorTaskId = null;
+            if (row.Id > 0)
+            {
+                savedByInputId[row.Id] = task;
+            }
+        }
+
+        foreach (var row in submittedRows.Where(row => row.PredecessorTaskId is > 0))
+        {
+            var task = row.Id > 0 && savedByInputId.TryGetValue(row.Id, out var savedTask) ? savedTask : null;
+            if (task is not null && savedByInputId.TryGetValue(row.PredecessorTaskId!.Value, out var predecessor))
+            {
+                task.PredecessorTask = predecessor;
+            }
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+            return [];
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return ["甘特資料已被其他使用者更新，您的內容尚未覆蓋新資料。請重新載入後再送出。"];
+        }
     }
 
     public async Task<ExportFile> ExportAsync(int projectId, CancellationToken cancellationToken)
@@ -105,6 +167,10 @@ public sealed class ProjectGanttService(
             .Include(x => x.UpdatedByUser)
             .Include(x => x.GanttPlan)
             .ThenInclude(x => x!.Tasks)
+            .ThenInclude(x => x.OwnerUser)
+            .Include(x => x.GanttPlan)
+            .ThenInclude(x => x!.Tasks)
+            .ThenInclude(x => x.PredecessorTask)
             .SingleOrDefaultAsync(x => !x.IsDeleted && x.Id == projectId, cancellationToken);
 
         if (project is null)
@@ -489,9 +555,57 @@ public sealed class ProjectGanttService(
             {
                 errors.Add($"第 {index} 項細分工作的目前進度必須在 0 到 100 之間。");
             }
+
+            if (task.IsMilestone && task.PlannedStartDate != task.PlannedFinishDate)
+            {
+                errors.Add($"第 {index} 項里程碑的預計開始日與完成日必須相同。");
+            }
+
+            if (task.IsMilestone && task.ActualStartDate != task.ActualFinishDate)
+            {
+                errors.Add($"第 {index} 項里程碑的實際開始日與完成日必須相同。");
+            }
+
+            if (task.ActualStartDate is not null && task.ActualFinishDate is not null && task.ActualFinishDate < task.ActualStartDate)
+            {
+                errors.Add($"第 {index} 項細分工作的實際完成日不能早於實際開始日。");
+            }
+
+            if (task.Id > 0 && task.PredecessorTaskId == task.Id)
+            {
+                errors.Add($"第 {index} 項細分工作不能以前置工作指向自己。");
+            }
+        }
+
+        if (HasDependencyCycle(input.Tasks))
+        {
+            errors.Add("甘特工作存在循環依賴，請調整前置工作。");
         }
 
         return errors;
+    }
+
+    private static bool HasDependencyCycle(IReadOnlyList<ProjectGanttTaskInputModel> tasks)
+    {
+        var predecessors = tasks
+            .Where(task => task.Id > 0 && task.PredecessorTaskId is > 0)
+            .ToDictionary(task => task.Id, task => task.PredecessorTaskId!.Value);
+        foreach (var taskId in predecessors.Keys)
+        {
+            var visited = new HashSet<int>();
+            var current = taskId;
+            while (predecessors.TryGetValue(current, out var predecessor))
+            {
+                if (!visited.Add(current) || predecessor == taskId)
+                {
+                    return true;
+                }
+
+                current = predecessor;
+            }
+        }
+
+        return false;
     }
 
     private static void WriteGanttWorksheet(
@@ -675,7 +789,7 @@ public sealed class ProjectGanttService(
                 2,
                 row,
                 3,
-                $"{task.Name ?? string.Empty}\n{GetProgressSummary(progressPoints[i])}");
+                BuildTaskExportLabel(task, progressPoints[i]));
             sheet.Cell(row, ratioColumn).Value = weights[i] / 100m;
             sheet.Cell(row, ratioColumn).Style.NumberFormat.Format = "0%";
             sheet.Cell(row, actualColumn).Value = task.ProgressPercent / 100m;
@@ -727,6 +841,29 @@ public sealed class ProjectGanttService(
         {
             sheet.Cell(row, monthStartColumn + index).Style.Fill.BackgroundColor = XLColor.FromHtml("#22c55e");
         }
+    }
+
+    private static string BuildTaskExportLabel(ProjectGanttTaskInputModel task, GanttProgressPoint progressPoint)
+    {
+        var lines = new List<string>
+        {
+            $"{(task.IsMilestone ? "◆ " : string.Empty)}{task.Name ?? string.Empty}",
+            GetProgressSummary(progressPoint)
+        };
+        if (!string.IsNullOrWhiteSpace(task.OwnerDisplayName))
+        {
+            lines.Add($"負責人：{task.OwnerDisplayName}");
+        }
+        if (!string.IsNullOrWhiteSpace(task.PredecessorName))
+        {
+            lines.Add($"前置工作：{task.PredecessorName}");
+        }
+        if (task.ActualStartDate is not null || task.ActualFinishDate is not null)
+        {
+            lines.Add($"實際：{task.ActualStartDate?.ToString("yyyy-MM-dd") ?? "-"} ～ {task.ActualFinishDate?.ToString("yyyy-MM-dd") ?? "-"}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static void PaintArchiveProgressLine(
@@ -842,7 +979,14 @@ public sealed class ProjectGanttService(
                 PlannedStartDate = x.PlannedStartDate,
                 PlannedFinishDate = x.PlannedFinishDate,
                 ProgressPercent = x.ProgressPercent,
-                ProgressDescription = x.ProgressDescription
+                ProgressDescription = x.ProgressDescription,
+                IsMilestone = x.IsMilestone,
+                OwnerUserId = x.OwnerUserId,
+                OwnerDisplayName = x.OwnerUser?.DisplayName ?? x.OwnerUser?.UserName,
+                PredecessorTaskId = x.PredecessorTaskId,
+                PredecessorName = x.PredecessorTask?.Name,
+                ActualStartDate = x.ActualStartDate,
+                ActualFinishDate = x.ActualFinishDate
             })
             .ToList() ?? [];
 
@@ -856,9 +1000,16 @@ public sealed class ProjectGanttService(
             StartDate = plan?.StartDate ?? tasks.Min(x => x.PlannedStartDate),
             FinishDate = plan?.FinishDate ?? tasks.Max(x => x.PlannedFinishDate),
             ProgressNote = plan?.ProgressNote,
+            RowVersion = plan is null ? string.Empty : Convert.ToBase64String(plan.RowVersion),
             Tasks = tasks
         };
     }
+
+    public static bool IsTaskOverdue(ProjectGanttTaskInputModel task, DateOnly today) =>
+        task.ProgressPercent < 100 &&
+        task.PlannedFinishDate is { } finish &&
+        finish < today &&
+        task.ActualFinishDate is null;
 
     private static List<ProjectGanttTaskInputModel> BuildDefaultTasks(Project project)
     {
@@ -1137,6 +1288,8 @@ public sealed class ProjectGanttService(
 
 public sealed class ProjectGanttInputModel
 {
+    public string RowVersion { get; set; } = string.Empty;
+
     public DateOnly? StartDate { get; set; }
 
     public DateOnly? FinishDate { get; set; }
@@ -1161,6 +1314,20 @@ public sealed class ProjectGanttTaskInputModel
     public decimal ProgressPercent { get; set; }
 
     public string? ProgressDescription { get; set; }
+
+    public bool IsMilestone { get; set; }
+
+    public string? OwnerUserId { get; set; }
+
+    public int? PredecessorTaskId { get; set; }
+
+    public DateOnly? ActualStartDate { get; set; }
+
+    public DateOnly? ActualFinishDate { get; set; }
+
+    public string? OwnerDisplayName { get; set; }
+
+    public string? PredecessorName { get; set; }
 }
 
 public enum GanttTimeUnit

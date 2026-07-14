@@ -24,6 +24,7 @@
         <a class="detail-tab @(Model.ActiveTab == "profile" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="profile" data-detail-tab-target="profile" role="tab" aria-selected="@(Model.ActiveTab == "profile")">專案資料</a>
         <a class="detail-tab @(Model.ActiveTab == "purchases" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="purchases" data-detail-tab-target="purchases" role="tab" aria-selected="@(Model.ActiveTab == "purchases")">請購記錄</a>
         <a class="detail-tab @(Model.ActiveTab == "gantt" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="gantt" data-detail-tab-target="gantt" role="tab" aria-selected="@(Model.ActiveTab == "gantt")">甘特圖</a>
+        <a class="detail-tab @(Model.ActiveTab == "collaboration" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="collaboration" data-detail-tab-target="collaboration" role="tab" aria-selected="@(Model.ActiveTab == "collaboration")">協作記錄</a>
         <a class="detail-tab @(Model.ActiveTab == "audit" ? "is-active" : null)" asp-route-id="@Model.Project.Id" asp-route-Tab="audit" data-detail-tab-target="audit" role="tab" aria-selected="@(Model.ActiveTab == "audit")">操作記錄</a>
     </div>
 
@@ -134,5 +135,12 @@
         <h2 class="detail-panel-title">操作記錄</h2>
         <partial name="_AuditTrail" model="Model.AuditTrail" />
     </section>
+    }
+
+    @if (Model.ActiveTab == "collaboration")
+    {
+    <div class="detail-tab-panel" data-detail-tab-panel="collaboration">
+        <partial name="_ProjectCollaborationPanel" model="new ProjectManager.Web.Pages.Shared.ProjectCollaborationPanelModel(Model.Project, Model.Collaboration, Model.CollaborationInput, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty, true, User.IsInRole(ProjectManager.Web.Security.RoleNames.Administrator) || User.IsInRole(ProjectManager.Web.Security.RoleNames.Leader), Model.CollaborationMessage, Model.CollaborationErrors)" />
+    </div>
     }
 </div>
