@@ -26,7 +26,8 @@ VALUES
     (N'PurchaseRequests', N'请购记录表', N'项目下的内购/外购记录、金额、付款比例、实付金额。'),
     (N'MonthlySettlementBatches', N'月结批次表', N'每次生成月结报表的批次头。'),
     (N'MonthlySettlementItems', N'月结明细表', N'月结时从项目、人员、请购汇总出的快照明细。'),
-    (N'AuditLogs', N'操作日志表', N'记录项目新增、修改、删除、进度更新等留痕。');
+    (N'AuditLogs', N'操作日志表', N'记录项目新增、修改、删除、进度更新等留痕。'),
+    (N'SavedDataViews', N'個人資料檢視表', N'保存使用者在資料頁面的篩選、欄位、行距與預設檢視。');
 
 DECLARE @ColumnDescriptions TABLE
 (
@@ -89,7 +90,16 @@ VALUES
     (N'AuditLogs', N'ProjectId', N'项目 ID，用于按项目查询留痕。'),
     (N'AuditLogs', N'ProjectNumber', N'项目工号快照。'),
     (N'AuditLogs', N'ChangeSummary', N'人可读变更摘要。'),
-    (N'AuditLogs', N'ChangeDetailsJson', N'字段级和请购明细级变更 JSON。');
+    (N'AuditLogs', N'ChangeDetailsJson', N'字段级和请购明细级变更 JSON。'),
+    (N'SavedDataViews', N'UserId', N'個人檢視擁有者，刪除使用者時級聯刪除。'),
+    (N'SavedDataViews', N'PageKey', N'資料頁面白名單鍵。'),
+    (N'SavedDataViews', N'Name', N'使用者自訂檢視名稱。'),
+    (N'SavedDataViews', N'FilterJson', N'白名單過濾後的篩選 JSON。'),
+    (N'SavedDataViews', N'ColumnJson', N'白名單正規化後的可見欄位 JSON。'),
+    (N'SavedDataViews', N'RowDensity', N'行距：1 緊湊、2 一般、3 寬鬆。'),
+    (N'SavedDataViews', N'IsDefault', N'是否為該使用者在頁面的預設檢視。'),
+    (N'SavedDataViews', N'CreatedAt', N'建立時間。'),
+    (N'SavedDataViews', N'UpdatedAt', N'最後更新時間。');
 
 SELECT
     s.name AS SchemaName,

@@ -172,7 +172,16 @@ public sealed class ExcelReportService(
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#f3f4f6");
         sheet.SheetView.FreezeRows(1);
-        sheet.Columns(1, headerCount).AdjustToContents();
+        try
+        {
+            sheet.Columns(1, headerCount).AdjustToContents();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Some locked-down Windows deployments cannot enumerate the per-user font folder.
+            // Keep exports available with a readable deterministic width in that environment.
+            sheet.Columns(1, headerCount).Width = 18;
+        }
     }
 
     private static void SetMonthCell(IXLCell cell, DateOnly? value)

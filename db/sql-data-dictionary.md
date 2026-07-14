@@ -17,6 +17,7 @@
 | `MonthlySettlementBatches` | 月结批次表 | 每次生成月结报表的批次头。 |
 | `MonthlySettlementItems` | 月结明细表 | 月结时从项目、人员、请购汇总出的快照明细。 |
 | `AuditLogs` | 操作日志表 | 记录项目新增、修改、删除、进度更新等留痕。 |
+| `SavedDataViews` | 個人資料檢視表 | 保存使用者在指定資料頁面的篩選、欄位、行距與預設檢視。 |
 
 ## Projects 项目主表
 
@@ -145,6 +146,23 @@
 | `CreatedAt` | `datetimeoffset` | 否 | 操作时间。 |
 
 ## 维护注意事项
+
+## SavedDataViews 個人資料檢視表
+
+| 欄位 | 類型 | 允許空 | 說明 |
+| --- | --- | --- | --- |
+| `Id` | `int` | 否 | 主鍵。 |
+| `UserId` | `nvarchar(450)` | 否 | 擁有者，外鍵關聯 `AspNetUsers.Id`；使用者刪除時級聯刪除。 |
+| `PageKey` | `nvarchar(80)` | 否 | 白名單頁面鍵。 |
+| `Name` | `nvarchar(80)` | 否 | 個人檢視名稱。 |
+| `FilterJson` | `nvarchar(8000)` | 否 | 經頁面白名單過濾後的篩選 JSON。 |
+| `ColumnJson` | `nvarchar(8000)` | 否 | 經欄位白名單正規化後的可見欄位順序。 |
+| `RowDensity` | `int` | 否 | `1` 緊湊、`2` 一般、`3` 寬鬆。 |
+| `IsDefault` | `bit` | 否 | 是否為使用者在該頁面的預設檢視。 |
+| `CreatedAt` | `datetimeoffset` | 否 | 建立時間。 |
+| `UpdatedAt` | `datetimeoffset` | 否 | 最後更新時間。 |
+
+索引：`(UserId, PageKey, Name)` 唯一；`(UserId, PageKey, IsDefault)` 用於讀取預設檢視，預設唯一性由服務層交易保證。
 
 - 项目删除和请购删除均为软删除，查询业务数据时需要过滤 `IsDeleted = 0`。
 - 月结明细是快照表，生成后不随项目后续修改自动变化。

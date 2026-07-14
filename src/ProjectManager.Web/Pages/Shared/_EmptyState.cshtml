@@ -1,0 +1,23 @@
+@model ProjectManager.Web.Pages.Shared.EmptyStateViewModel
+
+<section class="empty-state" aria-live="polite">
+    <span class="empty-state-icon" data-empty-icon="@Model.Icon" aria-hidden="true"></span>
+    <h2 class="empty-state-title">@Model.Title</h2>
+    <p class="empty-state-description">@Model.Description</p>
+    @if ((!string.IsNullOrWhiteSpace(Model.PrimaryActionText) && !string.IsNullOrWhiteSpace(Model.PrimaryActionPage))
+        || (!string.IsNullOrWhiteSpace(Model.ClearActionText) && !string.IsNullOrWhiteSpace(Model.ClearActionPage)))
+    {
+        <div class="empty-state-actions">
+            @if (!string.IsNullOrWhiteSpace(Model.PrimaryActionText) && !string.IsNullOrWhiteSpace(Model.PrimaryActionPage))
+            {
+                <a class="btn btn-primary" asp-page="@Model.PrimaryActionPage"
+                   asp-all-route-data="Model.PrimaryActionRouteValues">@Model.PrimaryActionText</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.ClearActionText) && !string.IsNullOrWhiteSpace(Model.ClearActionPage))
+            {
+                <a class="btn btn-outline-secondary" asp-page="@Model.ClearActionPage"
+                   asp-all-route-data="Model.ClearActionRouteValues">@Model.ClearActionText</a>
+            }
+        </div>
+    }
+</section>

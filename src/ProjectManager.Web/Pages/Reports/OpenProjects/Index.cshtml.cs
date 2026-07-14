@@ -9,6 +9,7 @@ using ProjectManager.Web.Models;
 using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
+using ProjectManager.Web.Services.DataViews;
 
 namespace ProjectManager.Web.Pages.Reports.OpenProjects;
 
@@ -17,8 +18,11 @@ public sealed class IndexModel(
     ProjectQueryService projectQueryService,
     ExcelReportService excelReportService,
     ApplicationDbContext db,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserManager<ApplicationUser> userManager,
+    SavedDataViewPageSupport savedDataViews) : PageModel
 {
+    private const string DataViewPageKey = "open-project-report";
+
     [BindProperty(SupportsGet = true)]
     public int? Year { get; set; }
 
@@ -45,6 +49,17 @@ public sealed class IndexModel(
 
     [BindProperty(SupportsGet = true)]
     public int PageSize { get; set; } = PageSizeOptions.DefaultPageSize;
+
+    [BindProperty(SupportsGet = true)]
+    public string? ViewPreset { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int? SavedViewId { get; set; }
+
+    [BindProperty]
+    public SaveDataViewInput Input { get; set; } = new();
+
+    public SavedDataViewBarViewModel SavedViewBar { get; private set; } = null!;
 
     public IReadOnlyList<Project> Projects { get; private set; } = [];
 
@@ -79,6 +94,7 @@ public sealed class IndexModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        await ResolveSavedViewAsync(cancellationToken);
         await LoadOptionsAsync(cancellationToken);
         var page = await projectQueryService.GetProjectsPageAsync(
             CreateFilter(),
@@ -91,6 +107,37 @@ public sealed class IndexModel(
         PageSize = page.PageSize;
         TotalPages = page.TotalPages;
         await LoadInsightsAsync(cancellationToken);
+    }
+
+    public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        try
+        {
+            var saved = await savedDataViews.SaveAsync(userId, DataViewPageKey, Input, cancellationToken);
+            TempData["SuccessMessage"] = $"已儲存個人檢視「{saved.Name}」。";
+        }
+        catch (ArgumentException exception)
+        {
+            TempData["ErrorMessage"] = exception.Message;
+        }
+        return RedirectToLocal(Input.ReturnUrl);
+    }
+
+    public async Task<IActionResult> OnPostDeleteViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        var deleted = await savedDataViews.DeleteAsync(userId, id, cancellationToken);
+        TempData[deleted ? "SuccessMessage" : "ErrorMessage"] = deleted ? "個人檢視已刪除。" : "找不到可刪除的個人檢視。";
+        return RedirectToLocal(returnUrl);
+    }
+
+    public async Task<IActionResult> OnPostSetDefaultViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        var updated = await savedDataViews.SetDefaultAsync(userId, id, cancellationToken);
+        TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated ? "預設檢視已更新。" : "找不到可設定的個人檢視。";
+        return RedirectToLocal(returnUrl);
     }
 
     public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
@@ -140,6 +187,59 @@ public sealed class IndexModel(
 
         UserOptions.Insert(0, new SelectListItem("全部", ""));
     }
+
+    private async Task ResolveSavedViewAsync(CancellationToken cancellationToken)
+    {
+        var explicitFilters = new Dictionary<string, string?>
+        {
+            ["Year"] = Year?.ToString(),
+            ["ParentCaseNumber"] = ParentCaseNumber,
+            ["ProjectNumber"] = ProjectNumber,
+            ["Name"] = ProjectName,
+            ["PersonnelUserId"] = PersonnelUserId,
+            ["StatusId"] = StatusId?.ToString(),
+            ["AnalysisType"] = AnalysisType
+        };
+        var filterKeys = new[] { "Year", "ParentCaseNumber", "ProjectNumber", "ProjectName", "Name", "PersonnelUserId", "StatusId", "AnalysisType" };
+        var hasExplicitFilters = filterKeys.Any(key => Request.Query.ContainsKey(key));
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        var resolved = await savedDataViews.ResolveAsync(
+            userId,
+            DataViewPageKey,
+            ViewPreset,
+            SavedViewId,
+            explicitFilters,
+            hasExplicitFilters,
+            $"{Request.Path}{Request.QueryString}",
+            cancellationToken);
+        SavedViewBar = resolved.Bar;
+        if (!hasExplicitFilters)
+        {
+            ApplySavedFilters(resolved.Filters);
+        }
+    }
+
+    private void ApplySavedFilters(IReadOnlyDictionary<string, string?> filters)
+    {
+        Year = ParseInt(filters, "Year");
+        ParentCaseNumber = Value(filters, "ParentCaseNumber");
+        ProjectNumber = Value(filters, "ProjectNumber");
+        ProjectName = Value(filters, "Name");
+        PersonnelUserId = Value(filters, "PersonnelUserId");
+        StatusId = ParseInt(filters, "StatusId");
+        AnalysisType = Value(filters, "AnalysisType");
+    }
+
+    private IActionResult RedirectToLocal(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToPage();
+
+    private static string? Value(IReadOnlyDictionary<string, string?> values, string key) =>
+        values.TryGetValue(key, out var value) ? value : null;
+
+    private static int? ParseInt(IReadOnlyDictionary<string, string?> values, string key) =>
+        int.TryParse(Value(values, key), out var value) ? value : null;
 
     private async Task LoadInsightsAsync(CancellationToken cancellationToken)
     {
@@ -275,6 +375,8 @@ public sealed class IndexModel(
             [nameof(PersonnelUserId)] = PersonnelUserId,
             [nameof(StatusId)] = StatusId?.ToString(),
             [nameof(AnalysisType)] = NormalizeAnalysisType(AnalysisType)
+            , [nameof(ViewPreset)] = ViewPreset
+            , [nameof(SavedViewId)] = SavedViewId?.ToString()
         };
     }
 

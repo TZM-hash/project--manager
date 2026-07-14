@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using ProjectManager.Web.Extensions
 @model ProjectManager.Web.Pages.Admin.MaintenanceOrders.IndexModel
 @{
@@ -43,7 +43,7 @@
     </section>
     <section class="chart-card">
         <div class="chart-title">保養進度分布</div>
-        <div class="chart-subtitle">按当前維保進度分群組</div>
+        <div class="chart-subtitle">按目前維保進度分群組</div>
         <div class="bar-list">
             @foreach (var slice in Model.ProgressSlices)
             {
@@ -57,7 +57,7 @@
     </section>
 </div>
 
-<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer data-saved-view-filters>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
             <input class="form-control" asp-for="CustomerName" placeholder="搜尋客戶名稱" />
@@ -96,8 +96,9 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
+<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
 
-<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定刪除選中的保養訂單吗？">
+<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的保養訂單嗎？">
     <div class="bulk-toolbar-copy">
         <span class="bulk-toolbar-count" data-selected-count>0</span>
         <span>个訂單已選擇</span>
@@ -111,7 +112,7 @@
         <input type="hidden" asp-for="MaxProgressPercent" />
         <input type="hidden" asp-for="PageNumber" />
         <input type="hidden" asp-for="PageSize" />
-        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
+        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection data-processing-label="正在刪除…">批量刪除</button>
     </div>
 </form>
 
@@ -120,6 +121,15 @@
         <div class="maintenance-table-caption">
             <strong>維保合約明細</strong>
             <span>共 @Model.TotalCount 筆</span>
+        </div>
+        <div class="d-flex gap-2">
+        <div class="dropdown" data-row-spacing>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-row-spacing-toggle>行間距</button>
+            <div class="dropdown-menu dropdown-menu-end p-2">
+                <button type="button" class="dropdown-item" data-row-spacing-option="compact">緊湊</button>
+                <button type="button" class="dropdown-item" data-row-spacing-option="normal">預設</button>
+                <button type="button" class="dropdown-item" data-row-spacing-option="spacious">寬鬆</button>
+            </div>
         </div>
         <div class="dropdown" data-column-manager>
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-column-manager-toggle>
@@ -137,13 +147,17 @@
                 <div data-column-manager-list></div>
             </div>
         </div>
+        </div>
     </div>
     <div class="data-table-wrap">
-        <table id="maintenance-orders-table" class="table table-sm align-middle data-table maintenance-order-table" data-column-manager-table>
+        <table id="maintenance-orders-table" class="table table-sm align-middle data-table maintenance-order-table"
+               data-column-manager-table
+               data-initial-visible-columns='@System.Text.Json.JsonSerializer.Serialize(Model.SavedViewBar.VisibleColumns)'
+               data-initial-row-density="@Model.SavedViewBar.RowDensity">
         <thead>
             <tr class="maintenance-group-row">
                 <th class="checkbox-cell" rowspan="2"><input class="form-check-input" type="checkbox" data-bulk-check-all aria-label="選擇全部保養訂單" /></th>
-                <th rowspan="2" data-column="item" data-column-label="項次" data-column-order="1">項次</th>
+                <th rowspan="2" data-column="item" data-column-label="項次" data-column-order="1" data-column-fixed>項次</th>
                 <th colspan="3" data-column-group="contractNumber customerName siteName">客戶與合約</th>
                 <th rowspan="2" data-column="executor" data-column-label="經辦" data-column-order="5">經辦</th>
                 <th colspan="2" data-column-group="contractStart contractEnd">維保合約時間</th>
@@ -152,11 +166,11 @@
                 <th rowspan="2" data-column="description" data-column-label="維保内容说明" data-column-order="12">維保内容说明</th>
                 <th colspan="4" data-column-group="method onSiteCount remoteCount handover">補充資訊</th>
                 <th colspan="2" data-column-group="updatedAt updatedBy">更新資訊</th>
-                <th rowspan="2" class="text-end maintenance-actions-column">操作</th>
+                <th rowspan="2" data-column="actions" data-column-label="操作" data-column-fixed class="text-end maintenance-actions-column">操作</th>
             </tr>
             <tr class="maintenance-subheader-row">
-                <th data-column="contractNumber" data-column-label="合約編號" data-column-order="2">合約編號</th>
-                <th data-column="customerName" data-column-label="客戶名稱" data-column-order="3">客戶名稱</th>
+                <th data-column="contractNumber" data-column-label="合約編號" data-column-order="2" data-column-fixed>合約編號</th>
+                <th data-column="customerName" data-column-label="客戶名稱" data-column-order="3" data-column-fixed>客戶名稱</th>
                 <th data-column="siteName" data-column-label="厂区/據點" data-column-order="4">厂区/據點</th>
                 <th data-column="contractStart" data-column-label="開始日期" data-column-order="6">開始</th>
                 <th data-column="contractEnd" data-column-label="結束日期" data-column-order="7">結束</th>
@@ -190,16 +204,16 @@
                 <td data-column="softwareScope">@order.OnSiteSoftwareFrequency</td>
                 <td data-column="hardwareScope">@order.OnSiteHardwareFrequency</td>
                 <td data-column="progress" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(order.ProgressPercent, compact: false)" /></td>
-                <td data-column="description" class="maintenance-description-cell">@order.MaintenanceDescription</td>
+                <td data-column="description" class="maintenance-description-cell"><span class="table-text-clamp" data-full-text="@order.MaintenanceDescription">@order.MaintenanceDescription</span></td>
                 <td data-column="method">@order.MaintenanceMethod.GetDisplayName()</td>
                 <td data-column="onSiteCount" class="numeric">@order.OnSiteAnnualCount</td>
                 <td data-column="remoteCount" class="numeric">@order.RemoteAnnualCount</td>
                 <td data-column="handover" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(order.HandoverPercent)" /></td>
                 <td data-column="updatedAt" class="text-nowrap">@order.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 <td data-column="updatedBy">@(order.UpdatedByUser?.DisplayName ?? order.UpdatedByUser?.UserName ?? order.UpdatedByUserId)</td>
-                <td class="text-end text-nowrap maintenance-actions-column">
+                <td data-column="actions" class="text-end text-nowrap maintenance-actions-column">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@order.Id">編輯</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-Year="@Model.Year" asp-route-CustomerName="@Model.CustomerName" asp-route-Method="@Model.Method" asp-route-ExecutorUserId="@Model.ExecutorUserId" asp-route-MinProgressPercent="@Model.MinProgressPercent" asp-route-MaxProgressPercent="@Model.MaxProgressPercent" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定刪除该訂單吗？');">
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-Year="@Model.Year" asp-route-CustomerName="@Model.CustomerName" asp-route-Method="@Model.Method" asp-route-ExecutorUserId="@Model.ExecutorUserId" asp-route-MinProgressPercent="@Model.MinProgressPercent" asp-route-MaxProgressPercent="@Model.MaxProgressPercent" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該訂單嗎？');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
                     </form>
                 </td>
@@ -209,7 +223,14 @@
         {
             <tr>
                 <td colspan="20">
-                    <div class="empty-state">暂无保養訂單</div>
+                    <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                        "目前沒有保養訂單",
+                        "可以新增第一筆保養訂單，或清除篩選後重新查看。",
+                        "inbox",
+                        "新增保養訂單",
+                        "/Admin/MaintenanceOrders/Create",
+                        ClearActionText: "清除篩選",
+                        ClearActionPage: "/Admin/MaintenanceOrders/Index")' />
                 </td>
             </tr>
         }

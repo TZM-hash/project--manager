@@ -795,6 +795,14 @@ public sealed class DataExchangeService(
 
 public sealed class DataImportResult
 {
+    public int TotalProcessed =>
+        UsersCreated + UsersUpdated +
+        StatusesCreated + StatusesUpdated +
+        ProjectsCreated + ProjectsUpdated +
+        PurchasesCreated + PurchasesUpdated +
+        PlanningCreated + PlanningUpdated +
+        MaintenanceCreated + MaintenanceUpdated;
+
     public int UsersCreated { get; set; }
 
     public int UsersUpdated { get; set; }
@@ -827,6 +835,7 @@ public sealed class DataImportResult
     }
 
     public string Summary =>
+        $"共成功處理 {TotalProcessed} 筆，錯誤 {Errors.Count} 筆；" +
         $"使用者 新增 {UsersCreated} / 更新 {UsersUpdated}；" +
         $"狀態 新增 {StatusesCreated} / 更新 {StatusesUpdated}；" +
         $"專案 新增 {ProjectsCreated} / 更新 {ProjectsUpdated}；" +

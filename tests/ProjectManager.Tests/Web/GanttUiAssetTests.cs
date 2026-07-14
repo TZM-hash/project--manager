@@ -9,8 +9,7 @@ public sealed class GanttUiAssetTests
     {
         var partial = ReadRepositoryFile(
             "src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
-        var css = ReadRepositoryFile(
-            "src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
 
         partial.Should().Contain("gantt-visual-legend");
         partial.Should().Contain("gantt-bar-progress-label");

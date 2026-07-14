@@ -1,0 +1,68 @@
+@model ProjectManager.Web.Pages.Shared.SavedDataViewBarViewModel
+@using System.Text.Json
+
+<section class="saved-view-bar data-work-surface"
+         data-saved-view-bar
+         data-current-filters='@JsonSerializer.Serialize(Model.CurrentFilters)'
+         aria-label="資料檢視工具列">
+    <div class="saved-view-presets" role="group" aria-label="系統預設檢視">
+        <span class="saved-view-label">系統預設檢視</span>
+        @foreach (var preset in Model.SystemPresets)
+        {
+            <a class="btn btn-sm @(Model.SelectedPresetKey == preset.Key ? "btn-primary" : "btn-outline-secondary")"
+               asp-route-ViewPreset="@preset.Key"
+               asp-route-SavedViewId="">
+                @preset.Name
+            </a>
+        }
+    </div>
+
+    <form method="get" class="saved-view-personal-picker" data-saved-view-picker>
+        <label class="saved-view-label" for="saved-view-personal">個人檢視</label>
+        <select id="saved-view-personal" class="form-select form-select-sm" name="SavedViewId" aria-label="選擇個人檢視">
+            <option value="">選擇個人檢視</option>
+            @foreach (var view in Model.PersonalViews)
+            {
+                if (view.Id == Model.SelectedViewId)
+                {
+                    <option value="@view.Id" selected>@view.Name@(view.IsDefault ? "（預設）" : string.Empty)</option>
+                }
+                else
+                {
+                    <option value="@view.Id">@view.Name@(view.IsDefault ? "（預設）" : string.Empty)</option>
+                }
+            }
+        </select>
+    </form>
+
+    <form method="post" asp-page-handler="SaveView" class="saved-view-save" data-saved-view-save>
+        <label class="visually-hidden" for="saved-view-name-@Model.PageKey">檢視名稱</label>
+        <input id="saved-view-name-@Model.PageKey" class="form-control form-control-sm" name="Input.Name"
+               value="@Model.SelectedPersonalView?.Name" placeholder="輸入檢視名稱" maxlength="80" required />
+        <input type="hidden" name="Input.FilterJson" value="{}" data-saved-view-filter-json />
+        <input type="hidden" name="Input.ColumnJson" value='@JsonSerializer.Serialize(Model.VisibleColumns)' data-saved-view-column-json />
+        <input type="hidden" name="Input.RowDensity" value="@Model.RowDensity" data-saved-view-density />
+        <input type="hidden" name="Input.ReturnUrl" value="@Model.ReturnUrl" />
+        <label class="form-check saved-view-default-check">
+            <input class="form-check-input" type="checkbox" name="Input.IsDefault" value="true" checked="@(Model.SelectedPersonalView?.IsDefault == true)" />
+            <span class="form-check-label">設為預設</span>
+        </label>
+        <button class="btn btn-sm btn-primary" type="submit" data-processing-label="正在儲存…">儲存目前檢視</button>
+    </form>
+
+    @if (Model.SelectedPersonalView is not null)
+    {
+        <div class="saved-view-actions">
+            <form method="post" asp-page-handler="SetDefaultView">
+                <input type="hidden" name="id" value="@Model.SelectedPersonalView.Id" />
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <button class="btn btn-sm btn-outline-secondary" type="submit" data-processing-label="正在設定…">設為預設</button>
+            </form>
+            <form method="post" asp-page-handler="DeleteView" data-confirm-message="確定刪除這個個人檢視嗎？">
+                <input type="hidden" name="id" value="@Model.SelectedPersonalView.Id" />
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+                <button class="btn btn-sm btn-outline-danger" type="submit" data-processing-label="正在刪除…">刪除檢視</button>
+            </form>
+        </div>
+    }
+</section>

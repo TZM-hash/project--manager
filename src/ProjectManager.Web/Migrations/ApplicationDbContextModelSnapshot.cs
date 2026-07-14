@@ -1048,6 +1048,61 @@ namespace ProjectManager.Web.Migrations
                     b.ToTable("PurchaseRequests");
                 });
 
+            modelBuilder.Entity("ProjectManager.Web.Models.SavedDataView", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ColumnJson")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("FilterJson")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("PageKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("RowDensity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "PageKey", "IsDefault");
+
+                    b.HasIndex("UserId", "PageKey", "Name")
+                        .IsUnique();
+
+                    b.ToTable("SavedDataViews");
+                });
+
             modelBuilder.Entity("ProjectManager.Web.Models.SystemSetting", b =>
                 {
                     b.Property<int>("Id")
@@ -1423,6 +1478,17 @@ namespace ProjectManager.Web.Migrations
                     b.Navigation("VendorContact");
                 });
 
+            modelBuilder.Entity("ProjectManager.Web.Models.SavedDataView", b =>
+                {
+                    b.HasOne("ProjectManager.Web.Models.ApplicationUser", "User")
+                        .WithMany("SavedDataViews")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProjectManager.Web.Models.VendorContact", b =>
                 {
                     b.HasOne("ProjectManager.Web.Models.Vendor", "Vendor")
@@ -1432,6 +1498,11 @@ namespace ProjectManager.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Vendor");
+                });
+
+            modelBuilder.Entity("ProjectManager.Web.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("SavedDataViews");
                 });
 
             modelBuilder.Entity("ProjectManager.Web.Models.MonthlySettlementBatch", b =>

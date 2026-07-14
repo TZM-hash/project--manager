@@ -48,7 +48,7 @@
         <div class="col-md-6">
             <label asp-for="Input.CurrentRecord" class="form-label form-label-sm">本期記錄</label>
             <div class="rich-text-field planning-note-editor" data-rich-text>
-                <div class="rich-text-toolbar" aria-label="本期記錄颜色">
+                <div class="rich-text-toolbar" aria-label="本期記錄顏色">
                     @foreach (var color in RichTextSanitizer.ColorOptions)
                     {
                         <button type="button" class="rich-text-color" data-rich-text-color="@color.Value" style="--rich-text-color:@color.Value" title="@color.Label"></button>

@@ -10,7 +10,7 @@
         <div class="page-subtitle">管理員可通過 Excel 批量维护使用者、狀態、專案、请购、規劃中專案和保養訂單。</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Index" asp-page-handler="Export">匯出当前資料</a>
+        <a class="btn btn-primary" asp-page="./Index" asp-page-handler="Export" data-processing-link data-processing-label="正在準備匯出…">匯出目前資料</a>
     </div>
 </div>
 
@@ -51,7 +51,7 @@
             <span>PlanningProjects</span>
             <span>MaintenanceOrders</span>
         </div>
-        <a class="btn btn-outline-secondary mt-3" asp-page="./Index" asp-page-handler="Export">下載 Excel</a>
+        <a class="btn btn-outline-secondary mt-3" asp-page="./Index" asp-page-handler="Export" data-processing-link data-processing-label="正在準備匯出…">下載 Excel</a>
     </section>
 
     <section class="module-card data-exchange-card">
@@ -63,7 +63,7 @@
                 <input class="form-control" asp-for="UploadFile" type="file" accept=".xlsx" />
                 <span class="text-danger" asp-validation-for="UploadFile"></span>
             </div>
-            <button class="btn btn-primary" type="submit">開始匯入</button>
+            <button class="btn btn-primary" type="submit" data-processing-label="正在匯入…">開始匯入</button>
         </form>
     </section>
 </div>
@@ -82,7 +82,7 @@
             <tbody>
                 <tr><td>Users</td><td>UserName</td><td>新增使用者默认密碼取 InitialPassword；为空时使用 ChangeMe123!</td></tr>
                 <tr><td>ProjectStatuses</td><td>Code</td><td>專案狀態编码保持唯一。</td></tr>
-                <tr><td>Projects</td><td>Year + ProjectNumber</td><td>ProgressDescriptionHtml 可保留颜色标记。</td></tr>
+                <tr><td>Projects</td><td>Year + ProjectNumber</td><td>ProgressDescriptionHtml 可保留顏色標記。</td></tr>
                 <tr><td>PurchaseRequests</td><td>Year + ProjectNumber + RequestNumber</td><td>必须先存在对应專案。</td></tr>
                 <tr><td>PlanningProjects</td><td>Name</td><td>負責人可用使用者名稱、顯示名或信箱匹配。</td></tr>
                 <tr><td>MaintenanceOrders</td><td>Year + CustomerName</td><td>执行人可用使用者名稱、顯示名或信箱匹配。</td></tr>

@@ -12,7 +12,7 @@
     <div class="d-flex gap-2">
         <a class="btn btn-outline-secondary" asp-page="./Index">返回總覽</a>
         <a class="btn btn-outline-secondary" asp-page="./Index" asp-route-ActiveTab="engineering">返回實施中</a>
-        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Input.Id" onsubmit="return confirm('确定刪除这个專案吗？');">
+        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Input.Id" onsubmit="return confirm('確定刪除這個專案嗎？');">
             <button type="submit" class="btn btn-outline-danger">刪除專案</button>
         </form>
     </div>

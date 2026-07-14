@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -29,8 +30,9 @@ public sealed class OpenProjectReportSmokeTests
         await factory.SeedProjectsAsync();
 
         var response = await client.GetAsync("/Reports/OpenProjects");
+        var html = await response.Content.ReadAsStringAsync();
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, html);
     }
 
     [Fact]
@@ -71,8 +73,9 @@ public sealed class OpenProjectReportSmokeTests
         await factory.SeedProjectsAsync();
 
         var response = await client.GetAsync("/Reports/OpenProjects?handler=Export");
+        var html = await response.Content.ReadAsStringAsync();
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, html);
         response.Content.Headers.ContentType!.MediaType.Should()
             .Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
@@ -150,6 +153,8 @@ public sealed class OpenProjectReportSmokeTests
             builder.UseEnvironment("Testing");
             builder.ConfigureServices(services =>
             {
+                services.AddLogging(logging => logging.ClearProviders());
+                services.AddDataProtection().UseEphemeralDataProtectionProvider();
                 if (connection.State != System.Data.ConnectionState.Open)
                 {
                     connection.Open();

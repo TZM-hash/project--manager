@@ -1,27 +1,36 @@
-﻿@model IReadOnlyList<ProjectManager.Web.Models.Project>
+@model IReadOnlyList<ProjectManager.Web.Models.Project>
 @using ProjectManager.Web.Models
+@using System.Text.Json
+@{
+    var visibleColumns = (IReadOnlyList<string>?)ViewData["VisibleColumns"] ?? [];
+    var rowDensity = ViewData["RowDensity"]?.ToString() ?? "Normal";
+    var allColumnCount = 17;
+}
 
 <div class="data-table-wrap">
-    <table class="table table-sm table-striped align-middle data-table">
+    <table class="table table-sm table-striped align-middle data-table open-project-report-table"
+           data-column-manager-table
+           data-initial-visible-columns='@JsonSerializer.Serialize(visibleColumns)'
+           data-initial-row-density="@rowDensity">
         <thead>
             <tr>
-                <th>年</th>
-                <th>母案案號</th>
-                <th>專案工號</th>
-                <th>專案名稱</th>
-                <th>專案人員</th>
-                <th class="numeric">進度</th>
-                <th class="numeric">專案金額</th>
-                <th class="numeric">收款比例</th>
-                <th>狀態</th>
-                <th>推进判断</th>
-                <th>結案日期</th>
-                <th class="numeric">请购金額</th>
-                <th>子案對接人員</th>
-                <th class="numeric">實際已付款</th>
-                <th>進度說明</th>
-                <th>更新人员</th>
-                <th>最后更新時間</th>
+                <th data-column="year" data-column-label="年度" style="@(visibleColumns.Contains("year") ? null : "display:none")">年度</th>
+                <th data-column="parentCaseNumber" data-column-label="母案案號" style="@(visibleColumns.Contains("parentCaseNumber") ? null : "display:none")">母案案號</th>
+                <th data-column="projectNumber" data-column-label="專案工號" data-column-fixed>專案工號</th>
+                <th data-column="name" data-column-label="專案名稱" data-column-fixed>專案名稱</th>
+                <th data-column="assignments" data-column-label="專案人員" style="@(visibleColumns.Contains("assignments") ? null : "display:none")">專案人員</th>
+                <th data-column="progress" data-column-label="進度" class="numeric" style="@(visibleColumns.Contains("progress") ? null : "display:none")">進度</th>
+                <th data-column="projectAmount" data-column-label="專案金額" class="numeric" style="@(visibleColumns.Contains("projectAmount") ? null : "display:none")">專案金額</th>
+                <th data-column="collectionPercent" data-column-label="收款比例" class="numeric" style="@(visibleColumns.Contains("collectionPercent") ? null : "display:none")">收款比例</th>
+                <th data-column="status" data-column-label="狀態" style="@(visibleColumns.Contains("status") ? null : "display:none")">狀態</th>
+                <th data-column="risk" data-column-label="推進判斷" style="@(visibleColumns.Contains("risk") ? null : "display:none")">推進判斷</th>
+                <th data-column="closedYearMonth" data-column-label="結案日期" style="@(visibleColumns.Contains("closedYearMonth") ? null : "display:none")">結案日期</th>
+                <th data-column="purchaseAmount" data-column-label="請購金額" class="numeric" style="@(visibleColumns.Contains("purchaseAmount") ? null : "display:none")">請購金額</th>
+                <th data-column="subCaseContacts" data-column-label="子案對接人員" style="@(visibleColumns.Contains("subCaseContacts") ? null : "display:none")">子案對接人員</th>
+                <th data-column="actualPaid" data-column-label="實際已付款" class="numeric" style="@(visibleColumns.Contains("actualPaid") ? null : "display:none")">實際已付款</th>
+                <th data-column="progressDescription" data-column-label="進度說明" style="@(visibleColumns.Contains("progressDescription") ? null : "display:none")">進度說明</th>
+                <th data-column="updatedBy" data-column-label="更新人員" style="@(visibleColumns.Contains("updatedBy") ? null : "display:none")">更新人員</th>
+                <th data-column="updatedAt" data-column-label="最後更新時間" style="@(visibleColumns.Contains("updatedAt") ? null : "display:none")">最後更新時間</th>
             </tr>
         </thead>
         <tbody>
@@ -29,30 +38,37 @@
         {
             var purchaseRequests = project.PurchaseRequests.Where(x => !x.IsDeleted).ToList();
             <tr>
-                <td>@project.Year</td>
-                <td>@project.ParentCaseNumber</td>
-                <td>@project.ProjectNumber</td>
-                <td>@project.Name</td>
-                <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
-                <td class="numeric">@project.ProjectAmount.ToString("N2")</td>
-                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
-                <td><partial name="_StatusBadge" model="project.Status" /></td>
-                <td><partial name="_ProgressRiskBadge" model="project" /></td>
-                <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
-                <td class="numeric">@purchaseRequests.Sum(x => x.PurchaseAmount).ToString("N2")</td>
-                <td>@string.Join("；", purchaseRequests.Select(x => x.SubCaseContact?.DisplayName ?? x.SubCaseContact?.UserName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())</td>
-                <td class="numeric">@purchaseRequests.Sum(x => x.ActualPaidAmount).ToString("N2")</td>
-                <td>@project.ProgressDescription</td>
-                <td>@(project.UpdatedByUser?.DisplayName ?? project.UpdatedByUser?.UserName)</td>
-                <td>@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                <td data-column="year" style="@(visibleColumns.Contains("year") ? null : "display:none")">@project.Year</td>
+                <td data-column="parentCaseNumber" style="@(visibleColumns.Contains("parentCaseNumber") ? null : "display:none")">@project.ParentCaseNumber</td>
+                <td data-column="projectNumber" class="text-nowrap"><strong>@project.ProjectNumber</strong></td>
+                <td data-column="name" data-language-preserve>@project.Name</td>
+                <td data-column="assignments" style="@(visibleColumns.Contains("assignments") ? null : "display:none")">@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
+                <td data-column="progress" class="numeric" style="@(visibleColumns.Contains("progress") ? null : "display:none")"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
+                <td data-column="projectAmount" class="numeric" style="@(visibleColumns.Contains("projectAmount") ? null : "display:none")">@project.ProjectAmount.ToString("N2")</td>
+                <td data-column="collectionPercent" class="numeric" style="@(visibleColumns.Contains("collectionPercent") ? null : "display:none")"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
+                <td data-column="status" style="@(visibleColumns.Contains("status") ? null : "display:none")"><partial name="_StatusBadge" model="project.Status" /></td>
+                <td data-column="risk" style="@(visibleColumns.Contains("risk") ? null : "display:none")"><partial name="_ProgressRiskBadge" model="project" /></td>
+                <td data-column="closedYearMonth" style="@(visibleColumns.Contains("closedYearMonth") ? null : "display:none")">@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
+                <td data-column="purchaseAmount" class="numeric" style="@(visibleColumns.Contains("purchaseAmount") ? null : "display:none")">@purchaseRequests.Sum(x => x.PurchaseAmount).ToString("N2")</td>
+                <td data-column="subCaseContacts" style="@(visibleColumns.Contains("subCaseContacts") ? null : "display:none")">@string.Join("；", purchaseRequests.Select(x => x.SubCaseContact?.DisplayName ?? x.SubCaseContact?.UserName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())</td>
+                <td data-column="actualPaid" class="numeric" style="@(visibleColumns.Contains("actualPaid") ? null : "display:none")">@purchaseRequests.Sum(x => x.ActualPaidAmount).ToString("N2")</td>
+                <td data-column="progressDescription" style="@(visibleColumns.Contains("progressDescription") ? null : "display:none")">
+                    <span class="table-text-clamp" data-full-text="@project.ProgressDescription">@(string.IsNullOrWhiteSpace(project.ProgressDescription) ? "—" : project.ProgressDescription)</span>
+                </td>
+                <td data-column="updatedBy" style="@(visibleColumns.Contains("updatedBy") ? null : "display:none")">@(project.UpdatedByUser?.DisplayName ?? project.UpdatedByUser?.UserName)</td>
+                <td data-column="updatedAt" class="text-nowrap" style="@(visibleColumns.Contains("updatedAt") ? null : "display:none")">@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
             </tr>
         }
         @if (!Model.Any())
         {
             <tr>
-                <td colspan="17">
-                    <div class="empty-state">暂无符合筆件的未結案專案</div>
+                <td colspan="@allColumnCount">
+                    <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                        "沒有符合條件的未結案專案",
+                        "請調整目前篩選條件，或清除篩選後查看全部未結案專案。",
+                        "search",
+                        ClearActionText: "清除篩選",
+                        ClearActionPage: "/Reports/OpenProjects/Index")' />
                 </td>
             </tr>
         }

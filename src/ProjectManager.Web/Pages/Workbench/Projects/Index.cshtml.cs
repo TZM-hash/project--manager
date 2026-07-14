@@ -10,6 +10,7 @@ using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
 using ProjectType = ProjectManager.Web.Models.ProjectType;
+using ProjectManager.Web.Services.DataViews;
 
 namespace ProjectManager.Web.Pages.Workbench.Projects;
 
@@ -17,8 +18,11 @@ namespace ProjectManager.Web.Pages.Workbench.Projects;
 public sealed class IndexModel(
     WorkbenchProjectService workbenchProjectService,
     UserManager<ApplicationUser> userManager,
-    ApplicationDbContext db) : PageModel
+    ApplicationDbContext db,
+    SavedDataViewPageSupport savedDataViews) : PageModel
 {
+    private const string DataViewPageKey = "workbench-projects";
+
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
@@ -48,6 +52,17 @@ public sealed class IndexModel(
 
     [BindProperty(SupportsGet = true)]
     public bool OpenOnly { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? ViewPreset { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int? SavedViewId { get; set; }
+
+    [BindProperty]
+    public SaveDataViewInput Input { get; set; } = new();
+
+    public SavedDataViewBarViewModel SavedViewBar { get; private set; } = null!;
 
     public IReadOnlyList<Project> Projects { get; private set; } = [];
 
@@ -92,8 +107,9 @@ public sealed class IndexModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        await LoadOptionsAsync(cancellationToken);
         CurrentUserId = userManager.GetUserId(User) ?? string.Empty;
+        await ResolveSavedViewAsync(cancellationToken);
+        await LoadOptionsAsync(cancellationToken);
         CanEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
 
         if (PersonnelUserId == null)
@@ -116,6 +132,86 @@ public sealed class IndexModel(
         TotalProjectAmount = Projects.Sum(x => x.ProjectAmount);
         await LoadInsightsAsync(CurrentUserId, false, cancellationToken);
     }
+
+    public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        try
+        {
+            var saved = await savedDataViews.SaveAsync(userId, DataViewPageKey, Input, cancellationToken);
+            TempData["SuccessMessage"] = $"已儲存個人檢視「{saved.Name}」。";
+        }
+        catch (ArgumentException exception)
+        {
+            TempData["ErrorMessage"] = exception.Message;
+        }
+        return RedirectToLocal(Input.ReturnUrl);
+    }
+
+    public async Task<IActionResult> OnPostDeleteViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        var deleted = await savedDataViews.DeleteAsync(userId, id, cancellationToken);
+        TempData[deleted ? "SuccessMessage" : "ErrorMessage"] = deleted ? "個人檢視已刪除。" : "找不到可刪除的個人檢視。";
+        return RedirectToLocal(returnUrl);
+    }
+
+    public async Task<IActionResult> OnPostSetDefaultViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
+    {
+        var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
+        var updated = await savedDataViews.SetDefaultAsync(userId, id, cancellationToken);
+        TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated ? "預設檢視已更新。" : "找不到可設定的個人檢視。";
+        return RedirectToLocal(returnUrl);
+    }
+
+    private async Task ResolveSavedViewAsync(CancellationToken cancellationToken)
+    {
+        var explicitFilters = new Dictionary<string, string?>
+        {
+            ["Year"] = Year?.ToString(),
+            ["ParentCaseNumber"] = ParentCaseNumber,
+            ["ProjectNumber"] = ProjectNumber,
+            ["Name"] = ProjectName,
+            ["PersonnelUserId"] = PersonnelUserId,
+            ["StatusId"] = StatusId?.ToString(),
+            ["ProjectType"] = ProjectType.HasValue ? ((int)ProjectType.Value).ToString() : null,
+            ["OpenOnly"] = OpenOnly.ToString()
+        };
+        var filterKeys = new[] { "Year", "ParentCaseNumber", "ProjectNumber", "ProjectName", "Name", "PersonnelUserId", "StatusId", "ProjectType", "OpenOnly" };
+        var hasExplicitFilters = filterKeys.Any(key => Request.Query.ContainsKey(key));
+        var resolved = await savedDataViews.ResolveAsync(
+            CurrentUserId,
+            DataViewPageKey,
+            ViewPreset,
+            SavedViewId,
+            explicitFilters,
+            hasExplicitFilters,
+            $"{Request.Path}{Request.QueryString}",
+            cancellationToken);
+        SavedViewBar = resolved.Bar;
+        if (!hasExplicitFilters)
+        {
+            Year = ParseInt(resolved.Filters, "Year");
+            ParentCaseNumber = Value(resolved.Filters, "ParentCaseNumber");
+            ProjectNumber = Value(resolved.Filters, "ProjectNumber");
+            ProjectName = Value(resolved.Filters, "Name");
+            PersonnelUserId = Value(resolved.Filters, "PersonnelUserId");
+            StatusId = ParseInt(resolved.Filters, "StatusId");
+            ProjectType = Enum.TryParse<ProjectType>(Value(resolved.Filters, "ProjectType"), out var projectType) ? projectType : null;
+            OpenOnly = bool.TryParse(Value(resolved.Filters, "OpenOnly"), out var openOnly) && openOnly;
+        }
+    }
+
+    private IActionResult RedirectToLocal(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToPage();
+
+    private static string? Value(IReadOnlyDictionary<string, string?> values, string key) =>
+        values.TryGetValue(key, out var value) ? value : null;
+
+    private static int? ParseInt(IReadOnlyDictionary<string, string?> values, string key) =>
+        int.TryParse(Value(values, key), out var value) ? value : null;
 
     private ProjectFilter CreateFilter()
     {
@@ -255,7 +351,9 @@ public sealed class IndexModel(
             [nameof(PersonnelUserId)] = PersonnelUserId,
             [nameof(StatusId)] = StatusId?.ToString(),
             [nameof(ProjectType)] = ProjectType.HasValue ? ((int)ProjectType.Value).ToString() : null,
-            [nameof(OpenOnly)] = OpenOnly.ToString()
+            [nameof(OpenOnly)] = OpenOnly.ToString(),
+            [nameof(ViewPreset)] = ViewPreset,
+            [nameof(SavedViewId)] = SavedViewId?.ToString()
         };
     }
 

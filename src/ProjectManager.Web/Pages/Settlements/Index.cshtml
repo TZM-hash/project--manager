@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model ProjectManager.Web.Pages.Settlements.IndexModel
 @{
     ViewData["Title"] = "月結";
@@ -86,7 +86,7 @@
 
 @if (Model.IsAdministrator)
 {
-    <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定刪除選中的月結批次吗？">
+    <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的月結批次嗎？">
         <div class="bulk-toolbar-copy">
             <span class="bulk-toolbar-count" data-selected-count>0</span>
             <span>个批次已選擇</span>
@@ -143,7 +143,7 @@
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@batch.Id">列印</a>
                     @if (Model.IsAdministrator)
                     {
-                        <form method="post" asp-page-handler="Delete" asp-route-id="@batch.Id" asp-route-Year="@Model.Year" asp-route-Month="@Model.Month" asp-route-BatchNumber="@Model.BatchNumber" asp-route-CreatedByUserId="@Model.CreatedByUserId" asp-route-Notes="@Model.Notes" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定刪除该月結批次吗？');">
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@batch.Id" asp-route-Year="@Model.Year" asp-route-Month="@Model.Month" asp-route-BatchNumber="@Model.BatchNumber" asp-route-CreatedByUserId="@Model.CreatedByUserId" asp-route-Notes="@Model.Notes" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該月結批次嗎？');">
                             <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
                         </form>
                     }
@@ -154,7 +154,14 @@
         {
             <tr>
                 <td colspan="@(Model.IsAdministrator ? 9 : 8)">
-                    <div class="empty-state">暂无月結批次</div>
+                    <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                        "目前沒有月結批次",
+                        "可以建立新的月結批次，或清除篩選後查看其他月份。",
+                        "inbox",
+                        "新增月結批次",
+                        "/Settlements/Create",
+                        ClearActionText: "清除篩選",
+                        ClearActionPage: "/Settlements/Index")' />
                 </td>
             </tr>
         }

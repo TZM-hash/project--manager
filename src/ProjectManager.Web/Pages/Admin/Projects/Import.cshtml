@@ -29,7 +29,7 @@
             <span class="text-danger" asp-validation-for="UploadFile"></span>
         </div>
         <div class="col-md-4">
-            <button class="btn btn-primary" type="submit">開始匯入</button>
+            <button class="btn btn-primary" type="submit" data-processing-label="正在匯入…">開始匯入</button>
         </div>
     </div>
 </form>
@@ -37,7 +37,7 @@
 @if (Model.CreatedCount > 0 || Model.UpdatedCount > 0)
 {
     <div class="alert alert-success">
-        匯入完成：新增 @Model.CreatedCount 筆，更新 @Model.UpdatedCount 筆。
+        匯入完成：共 @Model.TotalRowCount 筆，新增 @Model.CreatedCount 筆，更新 @Model.UpdatedCount 筆，跳過 @Model.SkippedCount 筆，錯誤／提醒 @Model.RowErrors.Count 筆。
     </div>
 }
 
@@ -70,7 +70,7 @@
                 <tr><td>工程名稱</td><td>必填。</td></tr>
                 <tr><td>經辦</td><td>專案人員，支援帳號、中文姓名、信箱或系統 ID，簡繁體常見姓名可識別。</td></tr>
                 <tr><td>專案類型</td><td>工程 / 保養，預設為工程。</td></tr>
-                <tr><td>狀態說明</td><td>對應專案狀態名稱，需與系统狀態設定一致；未填寫或未匹配時使用預設狀態。</td></tr>
+                <tr><td>狀態說明</td><td>對應專案狀態名稱，需與系統狀態設定一致；未填寫或未匹配時使用預設狀態。</td></tr>
                 <tr><td>受訂金額（含稅）</td><td>匯入為專案金額。</td></tr>
             </tbody>
         </table>

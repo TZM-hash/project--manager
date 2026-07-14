@@ -8,6 +8,27 @@ namespace ProjectManager.Tests.Data;
 public sealed class ApplicationDbContextTests
 {
     [Fact]
+    public async Task Saved_data_view_has_unique_user_page_name_key_and_cascades_with_user()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+
+        var entity = db.Model.FindEntityType(typeof(SavedDataView));
+        entity.Should().NotBeNull();
+        entity!.GetIndexes()
+            .Single(x => x.IsUnique)
+            .Properties.Select(x => x.Name)
+            .Should().Equal(
+                nameof(SavedDataView.UserId),
+                nameof(SavedDataView.PageKey),
+                nameof(SavedDataView.Name));
+
+        var foreignKey = entity.GetForeignKeys().Single(x => x.PrincipalEntityType.ClrType == typeof(ApplicationUser));
+        foreignKey.DeleteBehavior.Should().Be(DeleteBehavior.Cascade);
+    }
+
+    [Fact]
     public async Task Can_persist_project_with_status_assignment_and_purchase_request()
     {
         var (db, connection) = await TestDbFactory.CreateAsync();

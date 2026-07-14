@@ -97,7 +97,7 @@
     </section>
 </div>
 
-<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="确定刪除選中的狀態吗？">
+<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的狀態嗎？">
     <div class="bulk-toolbar-copy">
         <span class="bulk-toolbar-count" data-selected-count>0</span>
         <span>个狀態已選擇</span>
@@ -150,7 +150,7 @@
                 <td class="numeric">@status.ProjectCount</td>
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@status.Id">編輯</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" asp-route-Keyword="@Model.Keyword" asp-route-IsActive="@Model.IsActive" asp-route-IsClosed="@Model.IsClosed" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('确定刪除这个狀態吗？');">
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@status.Id" asp-route-Keyword="@Model.Keyword" asp-route-IsActive="@Model.IsActive" asp-route-IsClosed="@Model.IsClosed" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除這個狀態嗎？');">
                         <button class="btn btn-sm btn-outline-danger" type="submit" disabled="@(!canDelete)">刪除</button>
                     </form>
                 </td>

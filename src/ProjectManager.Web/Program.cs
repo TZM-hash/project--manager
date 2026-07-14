@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Services;
+using ProjectManager.Web.Services.DataViews;
+using ProjectManager.Web.Pages.Shared;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +36,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddRazorPages();
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Logging.ClearProviders();
+    builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+}
 builder.Services.AddScoped<ProjectQueryService>();
 builder.Services.AddScoped<ProjectMaintenanceService>();
 builder.Services.AddScoped<StatusMaintenanceService>();
@@ -48,6 +56,9 @@ builder.Services.AddScoped<ProjectGanttService>();
 builder.Services.AddScoped<UserLookupService>();
 builder.Services.AddScoped<SystemSettingsService>();
 builder.Services.AddScoped<ProjectArchiveService>();
+builder.Services.AddSingleton<DataViewRegistry>();
+builder.Services.AddScoped<SavedDataViewService>();
+builder.Services.AddScoped<SavedDataViewPageSupport>();
 builder.Services.AddSingleton<OpenCcConverterService>();
 builder.Services.AddSingleton<HtmlLanguageConverter>();
 builder.Services.AddSingleton(TimeProvider.System);

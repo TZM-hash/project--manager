@@ -8,8 +8,8 @@ public sealed class UiEffectsAssetTests
     [Fact]
     public void Apple_motion_style_has_low_medium_and_high_effect_profiles()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
-        var js = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var js = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         css.Should().Contain("body.motion-apple.ui-effects-low");
         css.Should().Contain("body.motion-apple.ui-effects-medium");
@@ -22,8 +22,8 @@ public sealed class UiEffectsAssetTests
     [Fact]
     public void Clear_glass_theme_includes_translucent_surfaces_and_live_preview()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
-        var js = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var js = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         css.Should().Contain("body.theme-clear-glass");
         css.Should().Contain("backdrop-filter: blur(24px) saturate(170%)");
@@ -35,8 +35,8 @@ public sealed class UiEffectsAssetTests
     [Fact]
     public void Low_and_medium_levels_are_shifted_down_from_the_previous_profiles()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
-        var js = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var js = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         css.Should().Contain("body.ui-effects-low .app-bg-fx .app-bg-orb-3");
         css.Should().Contain("body.ui-effects-medium .tilt-card");
@@ -46,8 +46,8 @@ public sealed class UiEffectsAssetTests
     [Fact]
     public void High_level_includes_page_transition_and_click_feedback_effects()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
-        var js = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var js = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         css.Should().Contain("body.ui-effects-high .page-transition-overlay");
         css.Should().Contain("height: 3px");
@@ -63,7 +63,7 @@ public sealed class UiEffectsAssetTests
     [Fact]
     public void Global_font_options_use_local_cross_platform_fallback_stacks()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
         var layout = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_Layout.cshtml");
 
         css.Should().Contain("body.font-system-default");
@@ -81,8 +81,8 @@ public sealed class UiEffectsAssetTests
     public void Global_font_setting_uses_single_dropdown_with_live_preview()
     {
         var settings = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Settings", "Index.cshtml");
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
-        var js = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var js = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         settings.Should().Contain("data-global-font-select");
         settings.Should().Contain("data-global-font-preview");

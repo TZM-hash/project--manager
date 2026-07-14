@@ -44,6 +44,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<ProjectArchive> ProjectArchives => Set<ProjectArchive>();
 
+    public DbSet<SavedDataView> SavedDataViews => Set<SavedDataView>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -328,6 +330,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(x => x.ArchivedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<SavedDataView>(entity =>
+        {
+            entity.HasIndex(x => new { x.UserId, x.PageKey, x.Name }).IsUnique();
+            entity.HasIndex(x => new { x.UserId, x.PageKey, x.IsDefault });
+            entity.Property(x => x.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(x => x.PageKey).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.Name).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.FilterJson).HasMaxLength(8000).IsRequired();
+            entity.Property(x => x.ColumnJson).HasMaxLength(8000).IsRequired();
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.SavedDataViews)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

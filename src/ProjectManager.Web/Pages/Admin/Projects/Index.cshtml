@@ -13,12 +13,12 @@
     <div class="page-actions">
         <button type="button" class="btn btn-outline-secondary" onclick="openReport()">報表列印</button>
         <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量匯入</a>
-        <a class="btn btn-outline-success" asp-page="./Index" asp-route-handler="ExportExcel">專案Excel下載</a>
+        <a class="btn btn-outline-success" asp-page="./Index" asp-route-handler="ExportExcel" data-processing-link data-processing-label="正在準備匯出…">專案 Excel 下載</a>
         <a class="btn btn-primary" asp-page="./Create">新增專案</a>
     </div>
 </div>
 
-<form method="get" class="filter-panel advanced-filter-panel data-work-surface" data-filter-drawer>
+<form method="get" class="filter-panel advanced-filter-panel data-work-surface" data-filter-drawer data-saved-view-filters>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
             <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" aria-label="搜尋專案名稱" />
@@ -33,7 +33,7 @@
         <div class="filter-drawer-header">
             <div>
                 <div class="filter-drawer-title">進階篩選</div>
-                <div class="filter-drawer-subtitle">按年度、母案、人员、狀態和结案範圍精确定位專案</div>
+                <div class="filter-drawer-subtitle">按年度、母案、人員、狀態和結案範圍精確定位專案</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
@@ -67,6 +67,7 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
+<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
 
 <details class="project-analysis-panel data-work-surface">
     <summary class="project-analysis-summary">檢視統計分析</summary>
@@ -236,7 +237,7 @@
                             }
                         </td>
                         <td data-column="progress" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
-                        <td data-column="progressDesc">@Html.Raw(project.ProgressDescription?.Replace("\n", "<br/>") ?? "-")</td>
+                        <td data-column="progressDesc"><span class="table-text-clamp" data-full-text="@project.ProgressDescription">@(string.IsNullOrWhiteSpace(project.ProgressDescription) ? "—" : project.ProgressDescription)</span></td>
                         <td data-column="projectType">@project.ProjectType.GetDisplayName()</td>
                         <td data-column="actions" class="text-end text-nowrap">
                             <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id" asp-route-returnTab="engineering">編輯</a>
@@ -249,7 +250,12 @@
                 {
                     <tr>
                         <td colspan="12">
-                            <div class="empty-state">暫無實施中工程類專案</div>
+                            <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                                "目前沒有實施中工程專案",
+                                "新增工程專案或調整目前篩選條件後，資料會顯示在這裡。",
+                                "inbox",
+                                "新增專案",
+                                "/Admin/Projects/Create")' />
                         </td>
                     </tr>
                 }
@@ -310,7 +316,7 @@ else if (Model.ActiveTab == "pending-closure")
                         <td data-column="projectNumber">@project.ProjectNumber</td>
                         <td data-column="projectName">@project.Name</td>
                         <td data-column="assignee">@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-                        <td data-column="progressDesc">@Html.Raw(project.ProgressDescription?.Replace("\n", "<br/>") ?? "-")</td>
+                        <td data-column="progressDesc"><span class="table-text-clamp" data-full-text="@project.ProgressDescription">@(string.IsNullOrWhiteSpace(project.ProgressDescription) ? "—" : project.ProgressDescription)</span></td>
                         <td data-column="collectionPercent" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
                         <td data-column="progress" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
                         <td data-column="risk"><partial name="_ProgressRiskBadge" model="project" /></td>
@@ -324,7 +330,10 @@ else if (Model.ActiveTab == "pending-closure")
                 {
                     <tr>
                         <td colspan="10">
-                            <div class="empty-state">暫無待結案專案</div>
+                            <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                                "目前沒有待結案專案",
+                                "符合待結案條件的專案會集中顯示在這裡。",
+                                "inbox")' />
                         </td>
                     </tr>
                 }
@@ -401,7 +410,10 @@ else if (Model.ActiveTab == "waiting-collection")
                 {
                     <tr>
                         <td colspan="11">
-                            <div class="empty-state">暫無待收款專案</div>
+                            <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                                "目前沒有待收款專案",
+                                "需要追蹤收款的專案會集中顯示在這裡。",
+                                "inbox")' />
                         </td>
                     </tr>
                 }
@@ -428,7 +440,7 @@ else
         <input type="hidden" asp-for="OpenOnly" />
         <input type="hidden" asp-for="PageNumber" />
         <input type="hidden" asp-for="PageSize" />
-        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
+        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection data-processing-label="正在刪除…">批量刪除</button>
     </div>
 </form>
 
@@ -478,23 +490,25 @@ else
                     </div>
                 </div>
             </div>
-            <table class="table table-sm table-striped align-middle data-table has-sticky-actions" data-column-manager-table>
+            <table class="table table-sm table-striped align-middle data-table has-sticky-actions"
+                   data-column-manager-table
+                   data-initial-visible-columns='@System.Text.Json.JsonSerializer.Serialize(Model.SavedViewBar.VisibleColumns)'
+                   data-initial-row-density="@Model.SavedViewBar.RowDensity">
                 <thead>
                     <tr>
-                        <th class="checkbox-cell" data-column="checkbox"><input class="form-check-input" type="checkbox" data-bulk-check-all aria-label="選擇全部專案" /></th>
-                        <th data-column="item">項次</th>
-                        <th data-column="projectNumber">工程編號</th>
-                        <th data-column="name" style="min-width: 180px;">專案名稱</th>
-                        <th data-column="assignments">經辦</th>
-                        <th data-column="projectType">專案類型</th>
-                        <th data-column="status">狀態</th>
-                        <th data-column="amount" class="numeric">受訂金額（含稅）</th>
-                        <th data-column="progress" class="numeric">進度</th>
-                        <th data-column="collection" class="numeric">收款比例</th>
-                        <th data-column="closedDate">結案日期</th>
-                        <th data-column="risk">推進判斷</th>
-                        <th data-column="actions" class="text-end">操作</th>
-                        <th data-column="parentCase" style="min-width: 120px;">母案案號</th>
+                        <th class="checkbox-cell" data-column="checkbox" data-column-label="選取" data-column-fixed><input class="form-check-input" type="checkbox" data-bulk-check-all aria-label="選擇全部專案" /></th>
+                        <th data-column="item" data-column-label="項次" data-column-fixed>項次</th>
+                        <th data-column="projectNumber" data-column-label="專案工號" data-column-fixed>專案工號</th>
+                        <th data-column="name" data-column-label="專案名稱" data-column-fixed style="min-width: 180px;">專案名稱</th>
+                        <th data-column="assignments" data-column-label="專案人員">專案人員</th>
+                        <th data-column="projectType" data-column-label="專案類型">專案類型</th>
+                        <th data-column="status" data-column-label="狀態">狀態</th>
+                        <th data-column="projectAmount" data-column-label="專案金額" class="numeric">專案金額（含稅）</th>
+                        <th data-column="progress" data-column-label="進度" class="numeric">進度</th>
+                        <th data-column="collection" data-column-label="收款比例" class="numeric">收款比例</th>
+                        <th data-column="updatedAt" data-column-label="最後更新時間">最後更新時間</th>
+                        <th data-column="actions" data-column-label="操作" data-column-fixed class="text-end">操作</th>
+                        <th data-column="parentCaseNumber" data-column-label="母案案號" style="min-width: 120px;">母案案號</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -509,20 +523,10 @@ else
                             <td data-column="assignments">@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
                             <td data-column="projectType">@project.ProjectType.GetDisplayName()</td>
                             <td data-column="status"><partial name="_StatusBadge" model="project.Status" /></td>
-                            <td data-column="amount" class="numeric">@project.ProjectAmount.ToString("N0")</td>
+                            <td data-column="projectAmount" class="numeric">@project.ProjectAmount.ToString("N0")</td>
                             <td data-column="progress" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
                             <td data-column="collection" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
-                            <td data-column="closedDate">
-                                @if (project.ClosedYearMonth.HasValue)
-                                {
-                                    <span>@project.ClosedYearMonth.Value.ToString("yyyy-MM")</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
-                            <td data-column="risk"><partial name="_ProgressRiskBadge" model="project" /></td>
+                            <td data-column="updatedAt" class="text-nowrap">@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                             <td data-column="actions" class="text-end text-nowrap">
                                 <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">明細</a>
                                 <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
@@ -536,23 +540,30 @@ else
                                     <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="刪除專案 @project.ProjectNumber">刪除</button>
                                 </form>
                             </td>
-                            <td data-column="parentCase">@project.ParentCaseNumber</td>
+                            <td data-column="parentCaseNumber">@project.ParentCaseNumber</td>
                         </tr>
                     }
                     @if (!Model.Projects.Any())
                     {
                         <tr>
-                            <td colspan="14">
-                                <div class="empty-state">暫無符合條件的專案</div>
+                            <td colspan="13">
+                                <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                                    "沒有符合條件的專案",
+                                    "請調整目前篩選條件，或建立新的專案資料。",
+                                    "search",
+                                    "新增專案",
+                                    "/Admin/Projects/Create",
+                                    ClearActionText: "清除篩選",
+                                    ClearActionPage: "/Admin/Projects/Index")' />
                             </td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr class="table-secondary">
-                        <td colspan="7" class="text-end"><strong>當前計受訂金額（含稅）</strong></td>
+                        <td colspan="7" class="text-end"><strong>目前合計專案金額（含稅）</strong></td>
                         <td class="numeric"><strong>@Model.Projects.Sum(x => x.ProjectAmount).ToString("N0")</strong></td>
-                        <td colspan="6"></td>
+                        <td colspan="5"></td>
                     </tr>
                 </tfoot>
             </table>

@@ -1,10 +1,14 @@
 @model ProjectManager.Web.Models.ProjectStatus?
+@using ProjectManager.Web.Services
 @{
     var textColor = Model?.Style?.TextColor ?? "#1f2937";
     var backgroundColor = Model?.Style?.BackgroundColor ?? "#e5e7eb";
     var fontWeight = Model?.Style?.IsBold == true ? "700" : "500";
+    var semanticState = ProjectVisualStateResolver.ResolveStatus(Model?.Code, Model?.IsClosed == true);
 }
 
-<span class="status-badge" style="color:@textColor;background-color:@backgroundColor;font-weight:@fontWeight" data-language-preserve translate="no">
+<span class="status-badge status-semantic-@semanticState.CssKey"
+      style="--status-custom-text:@textColor;--status-custom-background:@backgroundColor;font-weight:@fontWeight"
+      title="@semanticState.Description" data-language-preserve translate="no">
     @(Model?.Name ?? "-")
 </span>

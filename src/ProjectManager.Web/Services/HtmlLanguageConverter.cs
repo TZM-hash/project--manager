@@ -7,7 +7,7 @@ namespace ProjectManager.Web.Services;
 public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
 {
     private static readonly Regex TranslatableAttributePattern = new(
-        @"(?<prefix>\s(?:placeholder|title|aria-label|alt|data-confirm-message)\s*=\s*(?<quote>[""']))(?<value>.*?)(?:\k<quote>)",
+        @"(?<prefix>\s(?:placeholder|title|aria-label|alt|data-confirm-message|data-nav-label)\s*=\s*(?<quote>[""']))(?<value>.*?)(?:\k<quote>)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly HashSet<string> SkippedContentTags = new(

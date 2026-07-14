@@ -18,4 +18,7 @@ public sealed class ApplicationUser : IdentityUser
 
     /// <summary>是否为弱管理帳號；弱管理帳號不强制要求密碼和信箱。</summary>
     public bool IsWeakManaged { get; set; }
+
+    /// <summary>使用者跨裝置儲存的資料工作台檢視。</summary>
+    public ICollection<SavedDataView> SavedDataViews { get; } = new List<SavedDataView>();
 }

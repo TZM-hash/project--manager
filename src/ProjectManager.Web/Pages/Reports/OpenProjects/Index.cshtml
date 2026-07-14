@@ -12,11 +12,11 @@
     <div class="page-actions">
         <a class="btn btn-outline-secondary" asp-page="./Statistics" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">統計</a>
         <a class="btn btn-outline-secondary" asp-page="./Print" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">列印</a>
-        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType">匯出 Excel</a>
+        <a class="btn btn-primary" asp-page-handler="Export" asp-route-Year="@Model.Year" asp-route-ParentCaseNumber="@Model.ParentCaseNumber" asp-route-ProjectNumber="@Model.ProjectNumber" asp-route-ProjectName="@Model.ProjectName" asp-route-PersonnelUserId="@Model.PersonnelUserId" asp-route-StatusId="@Model.StatusId" asp-route-AnalysisType="@Model.AnalysisType" data-processing-link data-processing-label="正在準備匯出…">匯出 Excel</a>
     </div>
 </div>
 
-<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer data-saved-view-filters>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
             <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" />
@@ -62,6 +62,7 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
+<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
 
 <div class="metric-grid dashboard-grid">
     @foreach (var metric in Model.Metrics)
@@ -78,7 +79,7 @@
     <div class="chart-card-header">
         <div>
             <div class="chart-title">報表分析视图</div>
-            <div class="chart-subtitle">从当前篩選結果中提取需要优先跟进的專案线索</div>
+            <div class="chart-subtitle">從目前篩選結果中提取需要優先跟進的專案線索</div>
         </div>
     </div>
     <div class="metric-grid report-analysis-grid">
@@ -107,7 +108,7 @@
 <div class="insight-grid">
     <section class="chart-card">
         <div class="chart-title">未結案狀態分布</div>
-        <div class="chart-subtitle">按当前篩選筆件統計</div>
+        <div class="chart-subtitle">按目前篩選筆件統計</div>
         <div class="bar-list">
             @foreach (var slice in Model.StatusSlices)
             {
@@ -121,7 +122,7 @@
     </section>
     <section class="chart-card">
         <div class="chart-title">進度区间</div>
-        <div class="chart-subtitle">识别未結案專案推进狀態</div>
+        <div class="chart-subtitle">識別未結案專案推進狀態</div>
         <div class="bar-list">
             @foreach (var slice in Model.ProgressSlices)
             {
@@ -136,6 +137,26 @@
 </div>
 
 <div class="data-list-card">
+    <div class="d-flex justify-content-end gap-2 p-2">
+        <div class="dropdown" data-column-manager>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-column-manager-toggle>列管理</button>
+            <div class="dropdown-menu dropdown-menu-end p-3 column-manager-menu">
+                <div data-column-manager-list></div>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-column-manager-all>全選</button>
+                <button type="button" class="dropdown-item" data-column-manager-none>保留必要欄位</button>
+            </div>
+        </div>
+        <div class="dropdown" data-row-spacing>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-row-spacing-toggle>行間距</button>
+            <div class="dropdown-menu dropdown-menu-end p-2">
+                <button type="button" class="dropdown-item" data-row-spacing-option="compact">緊湊</button>
+                <button type="button" class="dropdown-item" data-row-spacing-option="normal">預設</button>
+                <button type="button" class="dropdown-item" data-row-spacing-option="spacious">寬鬆</button>
+            </div>
+        </div>
+    </div>
+    @{ ViewData["VisibleColumns"] = Model.SavedViewBar.VisibleColumns; ViewData["RowDensity"] = Model.SavedViewBar.RowDensity.ToString(); }
     <partial name="_OpenProjectsTable" model="Model.Projects" />
     <partial name="_Pagination" model="Model.Pagination" />
 </div>

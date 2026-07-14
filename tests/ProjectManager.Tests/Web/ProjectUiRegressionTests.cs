@@ -5,6 +5,80 @@ namespace ProjectManager.Tests.Web;
 public sealed class ProjectUiRegressionTests
 {
     [Fact]
+    public void Saved_view_bar_exposes_presets_personal_actions_and_accessible_hooks()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_SavedDataViewBar.cshtml");
+        var script = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "components", "saved-views.js");
+        var site = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+
+        partial.Should().Contain("data-saved-view-bar");
+        partial.Should().Contain("系統預設檢視");
+        partial.Should().Contain("個人檢視");
+        partial.Should().Contain("asp-page-handler=\"SaveView\"");
+        partial.Should().Contain("asp-page-handler=\"DeleteView\"");
+        partial.Should().Contain("asp-page-handler=\"SetDefaultView\"");
+        partial.Should().Contain("aria-label=\"選擇個人檢視\"");
+        script.Should().Contain("data-current-filters");
+        script.Should().Contain("data-processing-label");
+        site.Should().Contain("[data-saved-view-bar]");
+        site.Should().Contain("saved-views.js");
+    }
+
+    [Fact]
+    public void Supported_data_pages_render_server_backed_saved_views()
+    {
+        var reportPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Reports", "OpenProjects", "Index.cshtml");
+        var reportTable = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Reports", "OpenProjects", "_OpenProjectsTable.cshtml");
+        var pages = new[]
+        {
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Index.cshtml"),
+            reportPage + reportTable,
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Index.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml")
+        };
+
+        pages.Should().OnlyContain(page => page.Contains("partial name=\"_SavedDataViewBar\"", StringComparison.Ordinal));
+        pages.Should().OnlyContain(page => page.Contains("data-initial-visible-columns", StringComparison.Ordinal));
+        pages.Should().OnlyContain(page => page.Contains("data-initial-row-density", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Open_project_report_declares_the_approved_default_columns_and_presets()
+    {
+        var registry = ReadRepositoryFile("src", "ProjectManager.Web", "Services", "DataViews", "DataViewRegistry.cs");
+        var table = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Reports", "OpenProjects", "_OpenProjectsTable.cshtml");
+
+        registry.Should().Contain("Preset(\"risk\"");
+        registry.Should().Contain("Preset(\"progress\"");
+        registry.Should().Contain("Preset(\"finance\"");
+        registry.Should().Contain("Preset(\"full\"");
+        table.Should().Contain("data-column=\"projectNumber\"");
+        table.Should().Contain("data-column=\"name\"");
+        table.Should().Contain("data-column=\"assignments\"");
+        table.Should().Contain("data-column=\"collectionPercent\"");
+        table.Should().Contain("data-column=\"risk\"");
+        table.Should().Contain("table-text-clamp");
+    }
+
+    [Fact]
+    public void Long_running_forms_and_exports_expose_processing_feedback()
+    {
+        var feedback = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "core", "feedback.js");
+        var projectPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Index.cshtml");
+        var maintenancePage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml");
+        var importPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Import.cshtml");
+        var exchangePage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "DataExchange", "Index.cshtml");
+
+        feedback.Should().Contain("aria-busy");
+        feedback.Should().Contain("data-processing-label");
+        feedback.Should().Contain("pageshow");
+        projectPage.Should().Contain("正在刪除…");
+        maintenancePage.Should().Contain("正在刪除…");
+        importPage.Should().Contain("正在匯入…");
+        exchangePage.Should().Contain("正在準備匯出…");
+    }
+
+    [Fact]
     public void Legacy_project_type_migration_backfills_zero_values_to_engineering()
     {
         var migrationsDirectory = RepositoryPath("src", "ProjectManager.Web", "Migrations");
@@ -19,7 +93,7 @@ public sealed class ProjectUiRegressionTests
     [Fact]
     public void Desktop_shell_keeps_wide_tables_inside_the_content_viewport()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
 
         css.Should().Contain("min-width: 0;");
         css.Should().Contain("max-width: calc(100vw - var(--sidebar-width));");
@@ -31,11 +105,45 @@ public sealed class ProjectUiRegressionTests
     [Fact]
     public void Navigation_script_marks_the_current_module_and_opens_its_group()
     {
-        var js = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var js = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         js.Should().Contain("initActiveNavigation");
         js.Should().Contain("aria-current");
         js.Should().Contain("nav-group-open");
+    }
+
+    [Fact]
+    public void Sidebar_navigation_has_business_report_and_system_sections_with_accessible_tooltips()
+    {
+        var layout = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_Layout.cshtml");
+        var navigation = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_SidebarNavigation.cshtml");
+        var script = FrontendAssetStructureTests.ReadJavaScriptModules();
+
+        navigation.Should().Contain("業務工作");
+        navigation.Should().Contain("報表分析");
+        navigation.Should().Contain("系統管理");
+        navigation.Should().Contain("data-nav-label");
+        layout.Should().Contain("data-sidebar-toggle");
+        layout.Should().Contain("aria-expanded=\"true\"");
+        script.Should().Contain("aria-expanded");
+        script.Should().Contain("Escape");
+    }
+
+    [Fact]
+    public void Primary_data_pages_use_the_shared_actionable_empty_state()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_EmptyState.cshtml");
+        var projectPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Index.cshtml");
+        var reportTable = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Reports", "OpenProjects", "_OpenProjectsTable.cshtml");
+        var maintenancePage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml");
+
+        partial.Should().Contain("Model.Title");
+        partial.Should().Contain("Model.Description");
+        partial.Should().Contain("PrimaryActionText");
+        partial.Should().Contain("ClearActionText");
+        projectPage.Should().Contain("partial name=\"_EmptyState\"");
+        reportTable.Should().Contain("partial name=\"_EmptyState\"");
+        maintenancePage.Should().Contain("partial name=\"_EmptyState\"");
     }
 
     [Fact]
@@ -64,7 +172,7 @@ public sealed class ProjectUiRegressionTests
     [Fact]
     public void Clear_glass_theme_uses_opaque_surfaces_for_dense_work_areas()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
 
         css.Should().Contain("body.theme-clear-glass .data-work-surface");
         css.Should().Contain("background: rgba(255, 255, 255, 0.86);");
@@ -72,9 +180,22 @@ public sealed class ProjectUiRegressionTests
     }
 
     [Fact]
+    public void Dense_data_surfaces_use_restrained_elevation_and_are_not_tilt_targets()
+    {
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var script = FrontendAssetStructureTests.ReadJavaScriptModules();
+
+        css.Should().Contain("--app-shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.045);");
+        css.Should().Contain(".data-work-surface,\n.data-list-card,\n.data-table-wrap");
+        css.Should().Contain("box-shadow: 0 1px 3px rgba(15, 23, 42, 0.055);");
+        script.Should().NotContain("hoverSelector = [\n    \".data-table-wrap\"");
+        script.Should().NotContain("hoverSelector = [\n    \".data-list-card\"");
+    }
+
+    [Fact]
     public void Project_table_preserves_readable_widths_for_identity_and_people_columns()
     {
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
 
         css.Should().Contain(".data-table [data-column=\"projectNumber\"]");
         css.Should().Contain(".data-table [data-column=\"assignments\"]");
@@ -116,7 +237,7 @@ public sealed class ProjectUiRegressionTests
     {
         var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
         var print = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "GanttPrint.cshtml");
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
 
         partial.Should().Contain("gantt-progress-marker");
         partial.Should().Contain("GetProgressSummary");
@@ -131,8 +252,8 @@ public sealed class ProjectUiRegressionTests
     {
         var index = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml");
         var create = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Create.cshtml");
-        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
-        var script = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+        var script = FrontendAssetStructureTests.ReadJavaScriptModules();
 
         index.Should().Contain("maintenance-order-table");
         index.Should().Contain("data-column-group=\"remoteScope softwareScope hardwareScope\"");

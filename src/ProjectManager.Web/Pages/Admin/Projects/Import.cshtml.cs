@@ -35,6 +35,10 @@ public sealed class ImportModel(
 
     public int UpdatedCount { get; private set; }
 
+    public int TotalRowCount { get; private set; }
+
+    public int SkippedCount => Math.Max(0, TotalRowCount - CreatedCount - UpdatedCount);
+
     public List<string> RowErrors { get; } = [];
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
@@ -78,6 +82,7 @@ public sealed class ImportModel(
         using var workbook = new XLWorkbook(stream);
         var worksheet = workbook.Worksheet(1);
         var rows = worksheet.RowsUsed().Skip(1).ToList();
+        TotalRowCount = rows.Count;
         if (rows.Count == 0)
         {
             ModelState.AddModelError(string.Empty, "Excel 檔案中没有資料行。");

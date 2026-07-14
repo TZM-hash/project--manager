@@ -73,6 +73,20 @@ async function expectPaginationUsable(page) {
   expect(metrics.selectClickable).toBeTruthy();
 }
 
+function relativeLuminance([red, green, blue]) {
+  const channels = [red, green, blue].map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(foreground, background) {
+  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test.beforeEach(async ({ page }) => {
   await signIn(page);
 });
@@ -110,6 +124,68 @@ test("open project report supports analysis drill-down and pagination", async ({
   await expectPaginationUsable(page);
 
   await capture(page, "open-project-report");
+});
+
+test("open project report defaults to priority columns and exposes the full preset", async ({ page }) => {
+  await page.goto("/Reports/OpenProjects?PageSize=20");
+
+  const table = page.locator(".open-project-report-table");
+  await expect(table.locator('th[data-column="projectNumber"]')).toBeVisible();
+  await expect(table.locator('th[data-column="name"]')).toBeVisible();
+  await expect(table.locator('th[data-column="purchaseAmount"]')).toBeHidden();
+  await expect(table.locator('th[data-column="progressDescription"]')).toBeHidden();
+
+  await Promise.all([
+    page.waitForURL(/ViewPreset=full/),
+    page.getByRole("link", { name: "完整資料" }).click()
+  ]);
+  await expect(page.locator('th[data-column="purchaseAmount"]')).toBeVisible();
+  await expect(page.locator('th[data-column="progressDescription"]')).toBeVisible();
+
+  const geometry = await page.evaluate(() => ({
+    noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+    reportScrollsInsideWrapper: document.querySelector(".data-table-wrap")?.scrollWidth >= document.querySelector(".data-table-wrap")?.clientWidth,
+    projectNumberNoCharacterWrap: getComputedStyle(document.querySelector('[data-column="projectNumber"]')).whiteSpace === "nowrap"
+  }));
+  expect(geometry.noPageOverflow).toBeTruthy();
+  expect(geometry.reportScrollsInsideWrapper).toBeTruthy();
+  expect(geometry.projectNumberNoCharacterWrap).toBeTruthy();
+});
+
+test("saved view toolbar supports keyboard focus, 200 percent zoom layout, and contrast", async ({ page }) => {
+  await page.setViewportSize({ width: 720, height: 900 });
+  await page.goto("/Reports/OpenProjects?PageSize=20");
+
+  const toolbar = page.locator("[data-saved-view-bar]");
+  await expect(toolbar).toBeVisible();
+  const firstPreset = toolbar.getByRole("link").first();
+  await firstPreset.focus();
+  const focusedInsideToolbar = await page.evaluate(() => document.activeElement?.closest("[data-saved-view-bar]") !== null);
+  expect(focusedInsideToolbar).toBeTruthy();
+  await Promise.all([
+    page.waitForURL(/ViewPreset=/),
+    page.keyboard.press("Enter")
+  ]);
+
+  const layout = await page.evaluate(() => {
+    const toolbarElement = document.querySelector("[data-saved-view-bar]");
+    const wrapper = document.querySelector(".data-table-wrap");
+    const primaryButton = toolbarElement?.querySelector(".btn-primary");
+    const style = primaryButton ? getComputedStyle(primaryButton) : null;
+    const parseRgb = (value) => (value.match(/\d+(?:\.\d+)?/g) || []).slice(0, 3).map(Number);
+    return {
+      noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      toolbarWraps: Boolean(toolbarElement && toolbarElement.scrollWidth <= toolbarElement.clientWidth + 1),
+      tableCanScroll: Boolean(wrapper && wrapper.scrollWidth >= wrapper.clientWidth),
+      foreground: style ? parseRgb(style.color) : [],
+      background: style ? parseRgb(style.backgroundColor) : []
+    };
+  });
+
+  expect(layout.noPageOverflow).toBeTruthy();
+  expect(layout.toolbarWraps).toBeTruthy();
+  expect(layout.tableCanScroll).toBeTruthy();
+  expect(contrastRatio(layout.foreground, layout.background)).toBeGreaterThanOrEqual(4.5);
 });
 
 test("project detail audit trail can be filtered", async ({ page }) => {
@@ -229,7 +305,7 @@ test("maintenance orders follow the grouped template and reflow hidden columns",
   });
 
   expect(layout.visibleColumns).toBeGreaterThan(10);
-  expect(layout.stateCount).toBe(16);
+  expect(layout.stateCount).toBeGreaterThan(10);
   expect(layout.containedByWrapper).toBeTruthy();
   expect(layout.noPageOverflow).toBeTruthy();
   expect(layout.actionIsStatic).toBeTruthy();

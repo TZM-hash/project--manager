@@ -158,7 +158,12 @@
         {
             <tr>
                 <td colspan="7">
-                    <div class="empty-state">暫無使用者資料</div>
+                    <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                        "目前沒有使用者資料",
+                        "建立使用者帳號後，即可分配角色與專案權限。",
+                        "inbox",
+                        "新增使用者",
+                        "/Admin/Users/Create")' />
                 </td>
             </tr>
         }

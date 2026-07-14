@@ -26,7 +26,7 @@
 <div class="insight-grid">
     <section class="chart-card">
         <div class="chart-title">狀態分布</div>
-        <div class="chart-subtitle">当前帳號可見專案</div>
+        <div class="chart-subtitle">目前帳號可見專案</div>
         <div class="bar-list">
             @foreach (var slice in Model.StatusSlices)
             {
@@ -54,7 +54,7 @@
     </section>
 </div>
 
-<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer data-saved-view-filters>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
             <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" />
@@ -103,25 +103,47 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
+<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
 
 <div class="data-list-card">
+    <div class="d-flex justify-content-end gap-2 p-2">
+        <div class="dropdown" data-column-manager>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-column-manager-toggle>列管理</button>
+            <div class="dropdown-menu dropdown-menu-end p-3 column-manager-menu">
+                <div data-column-manager-list></div>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-column-manager-all>全選</button>
+                <button type="button" class="dropdown-item" data-column-manager-none>保留必要欄位</button>
+            </div>
+        </div>
+        <div class="dropdown" data-row-spacing>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-row-spacing-toggle>行間距</button>
+            <div class="dropdown-menu dropdown-menu-end p-2">
+                <button type="button" class="dropdown-item" data-row-spacing-option="compact">緊湊</button>
+                <button type="button" class="dropdown-item" data-row-spacing-option="normal">預設</button>
+                <button type="button" class="dropdown-item" data-row-spacing-option="spacious">寬鬆</button>
+            </div>
+        </div>
+    </div>
     <div class="data-table-wrap">
-        <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
+        <table class="table table-sm table-striped align-middle data-table has-sticky-actions"
+               data-column-manager-table
+               data-initial-visible-columns='@System.Text.Json.JsonSerializer.Serialize(Model.SavedViewBar.VisibleColumns)'
+               data-initial-row-density="@Model.SavedViewBar.RowDensity">
         <thead>
             <tr>
-                <th>專案類型</th>
-                <th style="width: 60px;">項次</th>
-                <th>專案工號</th>
-                <th style="min-width: 180px;">專案名稱</th>
-                <th>專案人員</th>
-                <th>狀態</th>
-                <th class="numeric">進度</th>
-                <th class="numeric">金額</th>
-                <th class="numeric">收款比例</th>
-                <th>結案日期</th>
-                <th>推进判断</th>
-                <th class="text-end">操作</th>
-                <th>母案案號</th>
+                <th data-column="projectType" data-column-label="專案類型">專案類型</th>
+                <th data-column="item" data-column-label="項次" data-column-fixed style="width: 60px;">項次</th>
+                <th data-column="projectNumber" data-column-label="專案工號" data-column-fixed>專案工號</th>
+                <th data-column="name" data-column-label="專案名稱" data-column-fixed style="min-width: 180px;">專案名稱</th>
+                <th data-column="assignments" data-column-label="專案人員">專案人員</th>
+                <th data-column="status" data-column-label="狀態">狀態</th>
+                <th data-column="progress" data-column-label="進度" class="numeric">進度</th>
+                <th data-column="projectAmount" data-column-label="專案金額" class="numeric">金額</th>
+                <th data-column="collection" data-column-label="收款比例" class="numeric">收款比例</th>
+                <th data-column="updatedAt" data-column-label="最後更新時間">最後更新時間</th>
+                <th data-column="actions" data-column-label="操作" data-column-fixed class="text-end">操作</th>
+                <th data-column="parentCaseNumber" data-column-label="母案案號">母案案號</th>
             </tr>
         </thead>
         <tbody>
@@ -129,33 +151,37 @@
         @foreach (var project in Model.Projects)
         {
             <tr>
-                <td>@project.ProjectType.GetDisplayName()</td>
-                <td>@idx</td>
-                <td>@project.ProjectNumber</td>
-                <td>@project.Name</td>
-                <td>@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
-                <td><partial name="_StatusBadge" model="project.Status" /></td>
-                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
-                <td class="numeric">@project.ProjectAmount.ToString("N0")</td>
-                <td class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
-                <td>@project.ClosedYearMonth?.ToString("yyyy-MM")</td>
-                <td><partial name="_ProgressRiskBadge" model="project" /></td>
-                <td class="text-end text-nowrap">
+                <td data-column="projectType">@project.ProjectType.GetDisplayName()</td>
+                <td data-column="item">@idx</td>
+                <td data-column="projectNumber">@project.ProjectNumber</td>
+                <td data-column="name">@project.Name</td>
+                <td data-column="assignments">@string.Join("；", project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId))</td>
+                <td data-column="status"><partial name="_StatusBadge" model="project.Status" /></td>
+                <td data-column="progress" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.ProgressPercent)" /></td>
+                <td data-column="projectAmount" class="numeric">@project.ProjectAmount.ToString("N0")</td>
+                <td data-column="collection" class="numeric"><partial name="_PercentBar" model="new ProjectManager.Web.Pages.Shared.PercentBarModel(project.CollectionPercent)" /></td>
+                <td data-column="updatedAt" class="text-nowrap">@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                <td data-column="actions" class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">明細</a>
                     @if (Model.CanEditAll || project.Assignments.Any(x => x.UserId == Model.CurrentUserId))
                     {
                         <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
                     }
                 </td>
-                <td>@project.ParentCaseNumber</td>
+                <td data-column="parentCaseNumber">@project.ParentCaseNumber</td>
             </tr>
             idx++;
         }
         @if (!Model.Projects.Any())
         {
             <tr>
-                <td colspan="13">
-                    <div class="empty-state">暂无可查看的专案資料</div>
+                <td colspan="12">
+                    <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
+                        "目前沒有可檢視的專案",
+                        "請調整篩選條件；若仍無資料，請聯絡管理員確認專案分配。",
+                        "search",
+                        ClearActionText: "清除篩選",
+                        ClearActionPage: "/Workbench/Projects/Index")' />
                 </td>
             </tr>
         }
@@ -164,7 +190,7 @@
             <tr class="report-total">
                 <td colspan="6" class="text-end"><strong>累積金額</strong></td>
                 <td class="numeric"><strong>@Model.TotalProjectAmount.ToString("N0")</strong></td>
-                <td colspan="6"></td>
+                <td colspan="5"></td>
             </tr>
         </tfoot>
         </table>

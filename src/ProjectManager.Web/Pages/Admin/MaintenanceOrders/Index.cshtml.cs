@@ -8,12 +8,19 @@ using ProjectManager.Web.Models;
 using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
+using ProjectManager.Web.Services.DataViews;
+using System.Security.Claims;
 
 namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 
 [Authorize(Roles = RoleNames.Administrator)]
-public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbContext db) : PageModel
+public sealed class IndexModel(
+    MaintenanceOrderService service,
+    ApplicationDbContext db,
+    SavedDataViewPageSupport savedDataViews) : PageModel
 {
+    private const string DataViewPageKey = "maintenance-orders";
+
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
 
@@ -37,6 +44,17 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
     [BindProperty(SupportsGet = true)]
     public decimal? MaxProgressPercent { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? ViewPreset { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int? SavedViewId { get; set; }
+
+    [BindProperty]
+    public SaveDataViewInput Input { get; set; } = new();
+
+    public SavedDataViewBarViewModel SavedViewBar { get; private set; } = null!;
 
     public IReadOnlyList<MaintenanceOrder> Orders { get; private set; } = [];
 
@@ -74,6 +92,7 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        await ResolveSavedViewAsync(cancellationToken);
         await LoadOptionsAsync(cancellationToken);
         var page = await service.GetOrdersPageAsync(CreateFilter(), PageNumber, PageSize, cancellationToken);
         Orders = page.Items;
@@ -84,6 +103,86 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
         await LoadInsightsAsync(cancellationToken);
     }
 
+    public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
+    {
+        var userId = CurrentUserId();
+        try
+        {
+            var saved = await savedDataViews.SaveAsync(userId, DataViewPageKey, Input, cancellationToken);
+            TempData["SuccessMessage"] = $"已儲存個人檢視「{saved.Name}」。";
+        }
+        catch (ArgumentException exception)
+        {
+            TempData["ErrorMessage"] = exception.Message;
+        }
+        return RedirectToLocal(Input.ReturnUrl);
+    }
+
+    public async Task<IActionResult> OnPostDeleteViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
+    {
+        var deleted = await savedDataViews.DeleteAsync(CurrentUserId(), id, cancellationToken);
+        TempData[deleted ? "SuccessMessage" : "ErrorMessage"] = deleted ? "個人檢視已刪除。" : "找不到可刪除的個人檢視。";
+        return RedirectToLocal(returnUrl);
+    }
+
+    public async Task<IActionResult> OnPostSetDefaultViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
+    {
+        var updated = await savedDataViews.SetDefaultAsync(CurrentUserId(), id, cancellationToken);
+        TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated ? "預設檢視已更新。" : "找不到可設定的個人檢視。";
+        return RedirectToLocal(returnUrl);
+    }
+
+    private async Task ResolveSavedViewAsync(CancellationToken cancellationToken)
+    {
+        var explicitFilters = new Dictionary<string, string?>
+        {
+            ["Year"] = Year?.ToString(),
+            ["CustomerName"] = CustomerName,
+            ["Method"] = Method?.ToString(),
+            ["ExecutorUserId"] = ExecutorUserId,
+            ["MinProgressPercent"] = MinProgressPercent?.ToString(),
+            ["MaxProgressPercent"] = MaxProgressPercent?.ToString()
+        };
+        var filterKeys = explicitFilters.Keys.ToArray();
+        var hasExplicitFilters = filterKeys.Any(key => Request.Query.ContainsKey(key));
+        var resolved = await savedDataViews.ResolveAsync(
+            CurrentUserId(),
+            DataViewPageKey,
+            ViewPreset,
+            SavedViewId,
+            explicitFilters,
+            hasExplicitFilters,
+            $"{Request.Path}{Request.QueryString}",
+            cancellationToken);
+        SavedViewBar = resolved.Bar;
+        if (!hasExplicitFilters)
+        {
+            Year = ParseInt(resolved.Filters, "Year");
+            CustomerName = Value(resolved.Filters, "CustomerName");
+            Method = Enum.TryParse<MaintenanceMethod>(Value(resolved.Filters, "Method"), out var method) ? method : null;
+            ExecutorUserId = Value(resolved.Filters, "ExecutorUserId");
+            MinProgressPercent = ParseDecimal(resolved.Filters, "MinProgressPercent");
+            MaxProgressPercent = ParseDecimal(resolved.Filters, "MaxProgressPercent");
+        }
+    }
+
+    private string CurrentUserId() =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new InvalidOperationException("找不到目前使用者。");
+
+    private IActionResult RedirectToLocal(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? LocalRedirect(returnUrl)
+            : RedirectToPage();
+
+    private static string? Value(IReadOnlyDictionary<string, string?> values, string key) =>
+        values.TryGetValue(key, out var value) ? value : null;
+
+    private static int? ParseInt(IReadOnlyDictionary<string, string?> values, string key) =>
+        int.TryParse(Value(values, key), out var value) ? value : null;
+
+    private static decimal? ParseDecimal(IReadOnlyDictionary<string, string?> values, string key) =>
+        decimal.TryParse(Value(values, key), out var value) ? value : null;
+
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
         await service.DeleteAsync(id, cancellationToken);
@@ -92,7 +191,9 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
-        await service.DeleteManyAsync(ids, cancellationToken);
+        var attempted = ids.Distinct().Count();
+        var succeeded = await service.DeleteManyAsync(ids, cancellationToken);
+        TempData["SuccessMessage"] = $"已處理 {attempted} 筆：成功 {succeeded} 筆，失敗 {attempted - succeeded} 筆。";
         return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
@@ -213,7 +314,9 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
             [nameof(Method)] = Method?.ToString(),
             [nameof(ExecutorUserId)] = ExecutorUserId,
             [nameof(MinProgressPercent)] = MinProgressPercent?.ToString(),
-            [nameof(MaxProgressPercent)] = MaxProgressPercent?.ToString()
+            [nameof(MaxProgressPercent)] = MaxProgressPercent?.ToString(),
+            [nameof(ViewPreset)] = ViewPreset,
+            [nameof(SavedViewId)] = SavedViewId?.ToString()
         };
     }
 
