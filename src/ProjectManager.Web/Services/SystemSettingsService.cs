@@ -7,6 +7,8 @@ namespace ProjectManager.Web.Services;
 
 public sealed class SystemSettingsService(ApplicationDbContext db)
 {
+    private IReadOnlyDictionary<string, string>? cachedSettings;
+
     public const string UiEffectsLevelKey = "UiEffectsLevel";
     public const string VisualThemeKey = "VisualTheme";
     public const string MotionStyleKey = "MotionStyle";
@@ -43,11 +45,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
 
     public async Task<UiEffectsLevel> GetUiEffectsLevelAsync(CancellationToken cancellationToken)
     {
-        var value = await db.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Key == UiEffectsLevelKey)
-            .Select(x => x.Value)
-            .SingleOrDefaultAsync(cancellationToken);
+        var value = await GetSettingValueAsync(UiEffectsLevelKey, cancellationToken);
 
         return Enum.TryParse<UiEffectsLevel>(value, ignoreCase: true, out var level)
             && Enum.IsDefined(level)
@@ -79,6 +77,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
         setting.Value = level.ToString();
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        cachedSettings = null;
     }
 
     public static string ToCssClass(UiEffectsLevel level)
@@ -93,11 +92,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
 
     public async Task<VisualTheme> GetVisualThemeAsync(CancellationToken cancellationToken)
     {
-        var value = await db.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Key == VisualThemeKey)
-            .Select(x => x.Value)
-            .SingleOrDefaultAsync(cancellationToken);
+        var value = await GetSettingValueAsync(VisualThemeKey, cancellationToken);
 
         return Enum.TryParse<VisualTheme>(value, ignoreCase: true, out var theme)
             && Enum.IsDefined(theme)
@@ -129,6 +124,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
         setting.Value = theme.ToString();
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        cachedSettings = null;
     }
 
     public static string ToThemeCssClass(VisualTheme theme)
@@ -142,11 +138,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
 
     public async Task<MotionStyle> GetMotionStyleAsync(CancellationToken cancellationToken)
     {
-        var value = await db.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Key == MotionStyleKey)
-            .Select(x => x.Value)
-            .SingleOrDefaultAsync(cancellationToken);
+        var value = await GetSettingValueAsync(MotionStyleKey, cancellationToken);
 
         return Enum.TryParse<MotionStyle>(value, ignoreCase: true, out var style)
             && Enum.IsDefined(style)
@@ -178,6 +170,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
         setting.Value = style.ToString();
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        cachedSettings = null;
     }
 
     public static string ToMotionCssClass(MotionStyle style)
@@ -191,11 +184,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
 
     public async Task<DisplayLanguage> GetDisplayLanguageAsync(CancellationToken cancellationToken)
     {
-        var value = await db.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Key == DisplayLanguageKey)
-            .Select(x => x.Value)
-            .SingleOrDefaultAsync(cancellationToken);
+        var value = await GetSettingValueAsync(DisplayLanguageKey, cancellationToken);
 
         return Enum.TryParse<DisplayLanguage>(value, ignoreCase: true, out var lang)
             && Enum.IsDefined(lang)
@@ -227,6 +216,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
         setting.Value = language.ToString();
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        cachedSettings = null;
     }
 
     public static string ToLanguageClass(DisplayLanguage language)
@@ -240,11 +230,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
 
     public async Task<GlobalFont> GetGlobalFontAsync(CancellationToken cancellationToken)
     {
-        var value = await db.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Key == GlobalFontKey)
-            .Select(x => x.Value)
-            .SingleOrDefaultAsync(cancellationToken);
+        var value = await GetSettingValueAsync(GlobalFontKey, cancellationToken);
 
         return Enum.TryParse<GlobalFont>(value, ignoreCase: true, out var font)
             && Enum.IsDefined(font)
@@ -276,6 +262,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
         setting.Value = font.ToString();
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        cachedSettings = null;
     }
 
     public static string ToFontCssClass(GlobalFont font)
@@ -292,11 +279,7 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
 
     public async Task<DateOnly> GetArchiveDateAsync(CancellationToken cancellationToken)
     {
-        var value = await db.SystemSettings
-            .AsNoTracking()
-            .Where(x => x.Key == ArchiveDateKey)
-            .Select(x => x.Value)
-            .SingleOrDefaultAsync(cancellationToken);
+        var value = await GetSettingValueAsync(ArchiveDateKey, cancellationToken);
 
         return DateOnly.TryParseExact(
             value,
@@ -327,5 +310,17 @@ public sealed class SystemSettingsService(ApplicationDbContext db)
         setting.Value = archiveDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         setting.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        cachedSettings = null;
+    }
+
+    private async Task<string?> GetSettingValueAsync(
+        string key,
+        CancellationToken cancellationToken)
+    {
+        cachedSettings ??= await db.SystemSettings
+            .AsNoTracking()
+            .ToDictionaryAsync(x => x.Key, x => x.Value, cancellationToken);
+
+        return cachedSettings.GetValueOrDefault(key);
     }
 }

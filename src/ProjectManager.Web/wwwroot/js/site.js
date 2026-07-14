@@ -10,6 +10,7 @@ window.toggleNavGroup = function (el) {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  initActiveNavigation();
   initThemePreview();
   initMotionStylePreview();
   initGlobalFontPreview();
@@ -28,6 +29,35 @@ document.addEventListener("DOMContentLoaded", () => {
   initColumnManagers();
   initRowSpacing();
 });
+
+function initActiveNavigation() {
+  const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+  const links = Array.from(document.querySelectorAll(".app-sidebar-nav a.nav-link[href]"));
+  const candidates = links
+    .map((link) => {
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("javascript:") || href.startsWith("#")) {
+        return null;
+      }
+
+      const linkPath = new URL(href, window.location.origin).pathname.replace(/\/$/, "") || "/";
+      const matches = linkPath === "/"
+        ? currentPath === "/"
+        : currentPath === linkPath || currentPath.startsWith(`${linkPath}/`);
+      return matches ? { link, linkPath } : null;
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.linkPath.length - left.linkPath.length);
+
+  const active = candidates[0]?.link;
+  if (!active) {
+    return;
+  }
+
+  active.classList.add("active");
+  active.setAttribute("aria-current", "page");
+  active.closest(".nav-group")?.classList.add("nav-group-open");
+}
 
 function initThemePreview() {
   const options = document.querySelectorAll("[data-theme-option]");

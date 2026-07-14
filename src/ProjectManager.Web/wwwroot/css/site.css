@@ -240,6 +240,7 @@ a:hover {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 100vh;
   margin-left: var(--sidebar-width);
   transition: margin-left 0.3s ease;
@@ -318,10 +319,23 @@ a:hover {
 
 .app-main {
   flex: 1 0 auto;
+  min-width: 0;
   width: 100%;
   padding: 0.65rem 1rem 1.65rem;
   max-width: 1600px;
   margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    width: calc(100% - var(--sidebar-width));
+    max-width: calc(100vw - var(--sidebar-width));
+  }
+
+  .sidebar-collapsed .app-content {
+    width: calc(100% - var(--sidebar-collapsed-width));
+    max-width: calc(100vw - var(--sidebar-collapsed-width));
+  }
 }
 
 .app-footer {
@@ -1093,6 +1107,8 @@ h1.h3 {
 }
 
 .data-list-card {
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   margin-bottom: 0.9rem;
   border: 1px solid var(--app-border);
@@ -1103,6 +1119,9 @@ h1.h3 {
 
 .data-table-wrap {
   position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: visible;
   max-height: none;
@@ -1110,6 +1129,65 @@ h1.h3 {
   border-radius: var(--app-radius-md);
   background: #fff;
   box-shadow: var(--app-shadow-soft);
+}
+
+.numeric,
+.metric-value,
+.bar-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.numeric {
+  white-space: nowrap;
+}
+
+.project-analysis-panel {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.project-analysis-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--app-text-soft);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.project-analysis-summary::-webkit-details-marker {
+  display: none;
+}
+
+.project-analysis-summary::after {
+  content: "+";
+  color: var(--app-primary);
+  font-size: 1.1rem;
+}
+
+.project-analysis-panel[open] .project-analysis-summary::after {
+  content: "−";
+}
+
+.project-analysis-content {
+  padding: 0 0.75rem 0.75rem;
+}
+
+body.theme-clear-glass .data-work-surface,
+body.theme-clear-glass .data-list-card,
+body.theme-clear-glass .data-table-wrap,
+body.theme-clear-glass .project-analysis-panel {
+  border-color: rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
 }
 
 .data-list-card > .data-table-wrap {
@@ -1168,6 +1246,32 @@ h1.h3 {
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
+}
+
+.data-table [data-column="projectNumber"] {
+  min-width: 8.5rem;
+  white-space: nowrap;
+}
+
+.data-table [data-column="assignments"],
+.data-table [data-column="assignee"] {
+  min-width: 10rem;
+}
+
+.data-table [data-column="projectType"],
+.data-table [data-column="status"] {
+  min-width: 5.5rem;
+}
+
+.data-table [data-column="amount"],
+.data-table [data-column="projectAmount"] {
+  min-width: 9rem;
+}
+
+.data-table [data-column="progress"],
+.data-table [data-column="collection"],
+.data-table [data-column="collectionPercent"] {
+  min-width: 6.5rem;
 }
 
 .table td,
@@ -4386,49 +4490,46 @@ body.ui-effects-high.page-transition-leaving .app-main {
   background: #75b843;
 }
 
-.gantt-progress-line {
+.gantt-chart-overlay {
   position: absolute;
   top: 0;
   right: 5rem;
   bottom: 0;
   left: max(9rem, 18%);
   z-index: 5;
-  width: auto;
-  height: 100%;
   overflow: visible;
   pointer-events: none;
 }
 
+.gantt-progress-line {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  shape-rendering: geometricPrecision;
+}
+
 .gantt-progress-line line,
-.gantt-progress-line-row line,
 .gantt-print-progress-line line {
   fill: none;
   stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .gantt-progress-line .is-behind,
 .gantt-progress-line .is-on-schedule,
-.gantt-progress-line-row .is-behind,
-.gantt-progress-line-row .is-on-schedule,
 .gantt-print-progress-line .is-behind,
 .gantt-print-progress-line .is-on-schedule {
   stroke: #e11d2e;
 }
 
 .gantt-progress-line .is-ahead,
-.gantt-progress-line-row .is-ahead,
 .gantt-print-progress-line .is-ahead {
   stroke: #1769d2;
-}
-
-.gantt-progress-line-row {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
 }
 
 .gantt-print-grid-wrap {
@@ -4985,6 +5086,7 @@ body.theme-clear-glass .app-footer {
 }
 
 .gantt-panel .gantt-chart-row {
+  height: 3.25rem;
   min-height: 3.25rem;
 }
 
@@ -5087,12 +5189,12 @@ body.theme-clear-glass .app-footer {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.64), 0 0 6px rgba(225, 29, 46, 0.22);
 }
 
-.gantt-panel .gantt-progress-line-row {
+.gantt-panel .gantt-progress-line {
   z-index: 6;
   opacity: 1;
 }
 
-.gantt-panel .gantt-progress-line-row line {
+.gantt-panel .gantt-progress-line line {
   stroke-width: 2;
   stroke-dasharray: none;
 }

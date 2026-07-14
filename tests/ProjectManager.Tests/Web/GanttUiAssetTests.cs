@@ -26,12 +26,23 @@ public sealed class GanttUiAssetTests
         css.Should().Contain(".gantt-task-state-waiting");
         css.Should().Contain(".gantt-task-state-blocked");
         css.Should().Contain(".gantt-task-state-not-started");
-        css.Should().Contain(".gantt-panel .gantt-progress-line-row");
+        partial.Should().Contain("class=\"gantt-chart-overlay\"");
+        partial.Should().Contain("class=\"gantt-progress-line\"");
+        partial.Should().Contain("viewBox=\"0 0 100 @taskRows.Count\"");
+        partial.Should().Contain("previousX = point.PositionPercent");
+        partial.Should().Contain("previousY = currentY");
+        partial.Should().NotContain("gantt-progress-line-row");
+        partial.Should().NotContain("class=\"gantt-chart-redline\"");
+
+        css.Should().Contain(".gantt-panel .gantt-progress-line");
+        css.Should().Contain(".gantt-chart-overlay");
+        css.Should().Contain("width: 100%");
+        css.Should().NotContain(".gantt-progress-line-row");
         css.Should().Contain("z-index: 6");
         css.Should().Contain("stroke-width: 2");
         css.Should().Contain("stroke-dasharray: none");
-        css.Should().Contain(".gantt-progress-line-row .is-behind");
-        css.Should().Contain(".gantt-progress-line-row .is-ahead");
+        css.Should().Contain(".gantt-progress-line .is-behind");
+        css.Should().Contain(".gantt-progress-line .is-ahead");
     }
 
     [Fact]
@@ -57,4 +68,5 @@ public sealed class GanttUiAssetTests
         var root = directory ?? throw new DirectoryNotFoundException("Cannot locate ProjectManager.sln.");
         return File.ReadAllText(Path.Combine(new[] { root.FullName }.Concat(pathParts).ToArray()));
     }
+
 }

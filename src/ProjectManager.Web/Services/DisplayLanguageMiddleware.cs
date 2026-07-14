@@ -16,12 +16,6 @@ public sealed class DisplayLanguageMiddleware(RequestDelegate next)
         }
 
         var language = await systemSettingsService.GetDisplayLanguageAsync(context.RequestAborted);
-        if (language != SystemSettingsService.DisplayLanguage.SimplifiedChinese)
-        {
-            await next(context);
-            return;
-        }
-
         var originalBody = context.Response.Body;
         await using var responseBuffer = new MemoryStream();
         context.Response.Body = responseBuffer;
@@ -39,7 +33,9 @@ public sealed class DisplayLanguageMiddleware(RequestDelegate next)
                     detectEncodingFromByteOrderMarks: true,
                     leaveOpen: true);
                 var html = await reader.ReadToEndAsync(context.RequestAborted);
-                var convertedHtml = htmlLanguageConverter.ToSimplified(html);
+                var convertedHtml = language == SystemSettingsService.DisplayLanguage.SimplifiedChinese
+                    ? htmlLanguageConverter.ToSimplified(html)
+                    : htmlLanguageConverter.ToTraditional(html);
                 var convertedBytes = Encoding.UTF8.GetBytes(convertedHtml);
                 context.Response.ContentLength = convertedBytes.Length;
                 await originalBody.WriteAsync(convertedBytes, context.RequestAborted);

@@ -113,13 +113,6 @@
                     var row = taskRows[progressIndex];
                     var bar = ProjectGanttService.BuildBar(row.Task, months);
                     var point = progressPoints[progressIndex];
-                    var previousPoint = progressIndex == 0 ? archiveLinePosition : progressPoints[progressIndex - 1].PositionPercent;
-                    var nextPoint = progressIndex == progressPoints.Count - 1 ? archiveLinePosition : progressPoints[progressIndex + 1].PositionPercent;
-                    var topX = progressIndex == 0 ? archiveLinePosition : (previousPoint + point.PositionPercent) / 2m;
-                    var bottomX = progressIndex == progressPoints.Count - 1 ? archiveLinePosition : (point.PositionPercent + nextPoint) / 2m;
-                    var currentStateClass = point.State == GanttProgressState.Ahead ? "is-ahead" : point.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
-                    var nextState = progressIndex == progressPoints.Count - 1 ? GanttProgressState.OnSchedule : progressPoints[progressIndex + 1].State;
-                    var nextStateClass = nextState == GanttProgressState.Ahead ? "is-ahead" : nextState == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
                     var visualState = ProjectGanttService.GetTaskVisualState(row.Task, archiveDemand.Date, point.State);
                     var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
                     var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
@@ -130,7 +123,6 @@
                             <span class="gantt-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
                         </div>
                         <div class="gantt-chart-track">
-                            <span class="gantt-chart-redline" style="left:@archiveLinePosition.ToString("0.###")%" aria-hidden="true"></span>
                             @if (bar.WidthPercent > 0)
                             {
                                 <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@row.Task.Name：@visualStateLabel，完成 @progressText">
@@ -138,12 +130,27 @@
                                     <span class="gantt-bar-progress-label">@progressText</span>
                                 </span>
                             }
-                            <svg class="gantt-progress-line-row" viewBox="0 0 100 1" preserveAspectRatio="none" aria-label="@(point.State == GanttProgressState.Ahead ? "進度超前" : point.State == GanttProgressState.Behind ? "進度滯後" : "進度符合")">
-                                <line class="@currentStateClass" x1="@topX.ToString("0.###")" y1="0" x2="@point.PositionPercent.ToString("0.###")" y2="0.5" vector-effect="non-scaling-stroke" />
-                                <line class="@nextStateClass" x1="@point.PositionPercent.ToString("0.###")" y1="0.5" x2="@bottomX.ToString("0.###")" y2="1" vector-effect="non-scaling-stroke" />
-                            </svg>
                         </div>
                         <div class="gantt-chart-percent @visualStateClass"><strong>@progressText</strong></div>
+                    </div>
+                }
+                @if (taskRows.Count > 0)
+                {
+                    var previousX = archiveLinePosition;
+                    decimal previousY = 0;
+                    <div class="gantt-chart-overlay" aria-hidden="true">
+                        <svg class="gantt-progress-line" viewBox="0 0 100 @taskRows.Count" preserveAspectRatio="none">
+                            @for (var pointIndex = 0; pointIndex < progressPoints.Count; pointIndex++)
+                            {
+                                var point = progressPoints[pointIndex];
+                                var currentY = pointIndex + 0.5m;
+                                var stateClass = point.State == GanttProgressState.Ahead ? "is-ahead" : point.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
+                                <line class="@stateClass" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@point.PositionPercent.ToString("0.###")" y2="@currentY.ToString("0.###")" vector-effect="non-scaling-stroke" />
+                                previousX = point.PositionPercent;
+                                previousY = currentY;
+                            }
+                            <line class="is-on-schedule" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@archiveLinePosition.ToString("0.###")" y2="@taskRows.Count" vector-effect="non-scaling-stroke" />
+                        </svg>
                     </div>
                 }
             </div>

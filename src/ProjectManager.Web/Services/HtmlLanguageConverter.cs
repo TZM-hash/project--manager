@@ -7,7 +7,7 @@ namespace ProjectManager.Web.Services;
 public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
 {
     private static readonly Regex TranslatableAttributePattern = new(
-        @"(?<prefix>\s(?:placeholder|title|aria-label|alt)\s*=\s*(?<quote>[""']))(?<value>.*?)(?:\k<quote>)",
+        @"(?<prefix>\s(?:placeholder|title|aria-label|alt|data-confirm-message)\s*=\s*(?<quote>[""']))(?<value>.*?)(?:\k<quote>)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly HashSet<string> SkippedContentTags = new(
@@ -35,7 +35,43 @@ public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
         ("建立", "创建")
     ];
 
+    private static readonly (string Source, string Target)[] TraditionalInterfaceTerms =
+    [
+        ("臺塑", "台塑"),
+        ("後臺", "後台"),
+        ("系統設置", "系統設定"),
+        ("狀態設置", "狀態設定"),
+        ("設置", "設定"),
+        ("項目", "專案"),
+        ("界面", "介面"),
+        ("用戶", "使用者"),
+        ("數據", "資料"),
+        ("保存", "儲存"),
+        ("菜單", "選單"),
+        ("登錄", "登入"),
+        ("導入", "匯入"),
+        ("導出", "匯出"),
+        ("打印", "列印"),
+        ("程序", "程式"),
+        ("當前", "目前"),
+        ("查看", "檢視"),
+        ("創建", "建立")
+    ];
+
     public string ToSimplified(string html)
+    {
+        return ConvertHtml(html, converter.ToSimplified, SimplifiedInterfaceTerms);
+    }
+
+    public string ToTraditional(string html)
+    {
+        return ConvertHtml(html, converter.ToTraditional, TraditionalInterfaceTerms);
+    }
+
+    private static string ConvertHtml(
+        string html,
+        Func<string?, string> convert,
+        IReadOnlyList<(string Source, string Target)> interfaceTerms)
     {
         if (string.IsNullOrEmpty(html))
         {
@@ -68,12 +104,12 @@ public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
                 var tagEnd = FindTagEnd(html, index);
                 if (tagEnd < 0)
                 {
-                    output.Append(ConvertInterfaceText(html[index..]));
+                    output.Append(ConvertInterfaceText(html[index..], convert, interfaceTerms));
                     break;
                 }
 
                 var tag = html[index..(tagEnd + 1)];
-                output.Append(ConvertAttributes(tag));
+                output.Append(ConvertAttributes(tag, convert, interfaceTerms));
 
                 var (tagName, isClosing, isSelfClosing) = ParseTag(tag);
                 if (!isClosing && !isSelfClosing && tagName is not null && SkippedContentTags.Contains(tagName))
@@ -87,14 +123,17 @@ public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
 
             var nextTag = html.IndexOf('<', index);
             var textEnd = nextTag < 0 ? html.Length : nextTag;
-            output.Append(ConvertInterfaceText(html[index..textEnd]));
+            output.Append(ConvertInterfaceText(html[index..textEnd], convert, interfaceTerms));
             index = textEnd;
         }
 
         return output.ToString();
     }
 
-    private string ConvertAttributes(string tag)
+    private static string ConvertAttributes(
+        string tag,
+        Func<string?, string> convert,
+        IReadOnlyList<(string Source, string Target)> interfaceTerms)
     {
         if (tag.StartsWith("<!--", StringComparison.Ordinal)
             || tag.StartsWith("<!", StringComparison.Ordinal)
@@ -105,15 +144,18 @@ public sealed class HtmlLanguageConverter(OpenCcConverterService converter)
 
         return TranslatableAttributePattern.Replace(tag, match =>
             match.Groups["prefix"].Value
-            + ConvertInterfaceText(match.Groups["value"].Value)
+            + ConvertInterfaceText(match.Groups["value"].Value, convert, interfaceTerms)
             + match.Groups["quote"].Value);
     }
 
-    private string ConvertInterfaceText(string text)
+    private static string ConvertInterfaceText(
+        string text,
+        Func<string?, string> convert,
+        IReadOnlyList<(string Source, string Target)> interfaceTerms)
     {
         var decoded = WebUtility.HtmlDecode(text);
-        var converted = converter.ToSimplified(decoded);
-        foreach (var (source, target) in SimplifiedInterfaceTerms)
+        var converted = convert(decoded);
+        foreach (var (source, target) in interfaceTerms)
         {
             converted = converted.Replace(source, target, StringComparison.Ordinal);
         }

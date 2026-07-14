@@ -18,61 +18,11 @@
     </div>
 </div>
 
-<div class="metric-grid dashboard-grid">
-    @foreach (var metric in Model.Metrics)
-    {
-        <div class="metric-card metric-@metric.Accent">
-            <div class="metric-label">@metric.Label</div>
-            <div class="metric-value" data-countup>@metric.Value</div>
-            <div class="metric-hint">@metric.Hint</div>
-        </div>
-    }
-</div>
-
-<div class="insight-grid">
-    <section class="chart-card">
-        <div class="chart-card-header">
-            <div>
-                <div class="chart-title">狀態分布</div>
-                <div class="chart-subtitle">按当前篩選筆件統計</div>
-            </div>
-        </div>
-        <div class="bar-list">
-            @foreach (var slice in Model.StatusSlices)
-            {
-                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
-                    <div class="bar-row-label">@slice.Label</div>
-                    <div class="bar-track"><span></span></div>
-                    <div class="bar-value">@slice.Value.ToString("0")</div>
-                </div>
-            }
-        </div>
-    </section>
-    <section class="chart-card">
-        <div class="chart-card-header">
-            <div>
-                <div class="chart-title">進度区间</div>
-                <div class="chart-subtitle">识别推进节奏和完工占比</div>
-            </div>
-        </div>
-        <div class="bar-list">
-            @foreach (var slice in Model.ProgressSlices)
-            {
-                <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
-                    <div class="bar-row-label">@slice.Label</div>
-                    <div class="bar-track"><span></span></div>
-                    <div class="bar-value">@slice.Value.ToString("0")</div>
-                </div>
-            }
-        </div>
-    </section>
-</div>
-
-<form method="get" class="filter-panel advanced-filter-panel" data-filter-drawer>
+<form method="get" class="filter-panel advanced-filter-panel data-work-surface" data-filter-drawer>
     <div class="filter-quick-row">
         <div class="filter-quick-main">
-            <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" />
-            <input class="form-control" asp-for="ProjectNumber" placeholder="專案工號" />
+            <input class="form-control" asp-for="ProjectName" placeholder="搜尋專案名稱" aria-label="搜尋專案名稱" />
+            <input class="form-control" asp-for="ProjectNumber" placeholder="專案工號" aria-label="搜尋專案工號" />
         </div>
         <div class="filter-quick-actions">
             <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
@@ -88,24 +38,24 @@
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
         <div class="row g-2">
-            <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" /></div>
-            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案號" /></div>
+            <div class="col-md-2"><input class="form-control" asp-for="Year" placeholder="年" aria-label="篩選專案年度" /></div>
+            <div class="col-md-3"><input class="form-control" asp-for="ParentCaseNumber" placeholder="母案案號" aria-label="篩選母案案號" /></div>
             <div class="col-md-3">
-                <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions">
+                <select class="form-select" asp-for="PersonnelUserId" asp-items="Model.UserOptions" aria-label="篩選經辦人員">
                 </select>
             </div>
             <div class="col-md-2">
-                <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions">
+                <select class="form-select" asp-for="StatusId" asp-items="Model.StatusOptions" aria-label="篩選專案狀態">
                     <option value="">狀態</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <select class="form-select" asp-for="ProjectType" asp-items="Model.ProjectTypeOptions">
+                <select class="form-select" asp-for="ProjectType" asp-items="Model.ProjectTypeOptions" aria-label="篩選專案類型">
                     <option value="">專案類型</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <select class="form-select" asp-for="OpenOnly">
+                <select class="form-select" asp-for="OpenOnly" aria-label="篩選結案狀態">
                     <option value="false">全部</option>
                     <option value="true">未結案</option>
                 </select>
@@ -117,6 +67,61 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
+
+<details class="project-analysis-panel data-work-surface">
+    <summary class="project-analysis-summary">檢視統計分析</summary>
+    <div class="project-analysis-content">
+        <div class="metric-grid dashboard-grid">
+            @foreach (var metric in Model.Metrics)
+            {
+                <div class="metric-card metric-@metric.Accent">
+                    <div class="metric-label">@metric.Label</div>
+                    <div class="metric-value" data-countup>@metric.Value</div>
+                    <div class="metric-hint">@metric.Hint</div>
+                </div>
+            }
+        </div>
+
+        <div class="insight-grid mb-0">
+            <section class="chart-card">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-title">狀態分布</div>
+                        <div class="chart-subtitle">按目前篩選筆件統計</div>
+                    </div>
+                </div>
+                <div class="bar-list">
+                    @foreach (var slice in Model.StatusSlices)
+                    {
+                        <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                            <div class="bar-row-label">@slice.Label</div>
+                            <div class="bar-track"><span></span></div>
+                            <div class="bar-value">@slice.Value.ToString("0")</div>
+                        </div>
+                    }
+                </div>
+            </section>
+            <section class="chart-card">
+                <div class="chart-card-header">
+                    <div>
+                        <div class="chart-title">進度區間</div>
+                        <div class="chart-subtitle">識別推進節奏和完工占比</div>
+                    </div>
+                </div>
+                <div class="bar-list">
+                    @foreach (var slice in Model.ProgressSlices)
+                    {
+                        <div class="bar-row" style="--bar-width:@slice.Percent%;--bar-color:@slice.Color">
+                            <div class="bar-row-label">@slice.Label</div>
+                            <div class="bar-track"><span></span></div>
+                            <div class="bar-value">@slice.Value.ToString("0")</div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+</details>
 
 <div class="detail-tab-shell mb-3">
     <div class="detail-tabs" role="tablist" aria-label="專案管理分區">
@@ -476,7 +481,7 @@ else
             <table class="table table-sm table-striped align-middle data-table has-sticky-actions" data-column-manager-table>
                 <thead>
                     <tr>
-                        <th class="checkbox-cell" data-column="checkbox"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
+                        <th class="checkbox-cell" data-column="checkbox"><input class="form-check-input" type="checkbox" data-bulk-check-all aria-label="選擇全部專案" /></th>
                         <th data-column="item">項次</th>
                         <th data-column="projectNumber">工程編號</th>
                         <th data-column="name" style="min-width: 180px;">專案名稱</th>
@@ -497,7 +502,7 @@ else
                     {
                         var project = Model.Projects[i];
                         <tr>
-                            <td class="checkbox-cell" data-column="checkbox"><input class="form-check-input" type="checkbox" value="@project.Id" data-bulk-checkbox /></td>
+                            <td class="checkbox-cell" data-column="checkbox"><input class="form-check-input" type="checkbox" value="@project.Id" data-bulk-checkbox aria-label="選擇專案 @project.ProjectNumber" /></td>
                             <td data-column="item">@(i + 1)</td>
                             <td data-column="projectNumber">@project.ProjectNumber</td>
                             <td data-column="name">@project.Name</td>
@@ -528,7 +533,7 @@ else
                                     </form>
                                 }
                                 <form method="post" asp-page="./Edit" asp-page-handler="Delete" asp-route-id="@project.Id" class="d-inline" onsubmit="return confirm('確定刪除該專案嗎？');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="刪除專案 @project.ProjectNumber">刪除</button>
                                 </form>
                             </td>
                             <td data-column="parentCase">@project.ParentCaseNumber</td>
