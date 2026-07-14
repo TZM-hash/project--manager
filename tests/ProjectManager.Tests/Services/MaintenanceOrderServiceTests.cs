@@ -52,18 +52,49 @@ public sealed class MaintenanceOrderServiceTests
         remaining.Should().Be(0);
     }
 
+    [Fact]
+    public async Task GetOrdersPageAsync_filters_by_maintenance_progress()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        var early = CreateOrder("Early", 2026);
+        early.ProgressPercent = 20;
+        var active = CreateOrder("Active", 2026);
+        active.ProgressPercent = 55;
+        var nearlyDone = CreateOrder("Nearly done", 2026);
+        nearlyDone.ProgressPercent = 90;
+        db.MaintenanceOrders.AddRange(early, active, nearlyDone);
+        await db.SaveChangesAsync();
+        var service = new MaintenanceOrderService(db);
+
+        var page = await service.GetOrdersPageAsync(
+            new MaintenanceOrderFilter(null, null, null, null, 40, 70),
+            pageNumber: 1,
+            pageSize: 20,
+            CancellationToken.None);
+
+        page.Items.Should().ContainSingle(x => x.CustomerName == "Active");
+    }
+
     private static MaintenanceOrder CreateOrder(string customerName, int year)
     {
         return new MaintenanceOrder
         {
             Year = year,
+            ContractNumber = $"MO-{year}-{customerName}",
             CustomerName = customerName,
+            SiteName = "Main site",
             MaintenanceStartDate = new DateOnly(year, 1, 1),
             MaintenanceEndDate = new DateOnly(year, 12, 31),
             MaintenanceMethod = MaintenanceMethod.Both,
             OnSiteAnnualCount = 2,
             RemoteAnnualCount = 4,
-            HandoverPercent = 30
+            OnSiteSoftwareFrequency = "Twice yearly",
+            OnSiteHardwareFrequency = "Yearly",
+            ProgressPercent = 30,
+            HandoverPercent = 30,
+            MaintenanceDescription = "Preventive maintenance"
         };
     }
 }

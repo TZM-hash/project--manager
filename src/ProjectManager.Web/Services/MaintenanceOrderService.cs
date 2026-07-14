@@ -63,14 +63,20 @@ public sealed class MaintenanceOrderService(ApplicationDbContext db)
     public async Task<MaintenanceOrder?> UpdateAsync(
         int id,
         int year,
+        string contractNumber,
         string customerName,
+        string siteName,
         DateOnly startDate,
         DateOnly endDate,
         MaintenanceMethod method,
         int onSiteCount,
         int remoteCount,
+        string onSiteSoftwareFrequency,
+        string onSiteHardwareFrequency,
         string? executorUserId,
+        decimal progressPercent,
         decimal handoverPercent,
+        string maintenanceDescription,
         string? currentUserId,
         CancellationToken cancellationToken)
     {
@@ -83,14 +89,20 @@ public sealed class MaintenanceOrderService(ApplicationDbContext db)
         }
 
         order.Year = year;
+        order.ContractNumber = contractNumber;
         order.CustomerName = customerName;
+        order.SiteName = siteName;
         order.MaintenanceStartDate = startDate;
         order.MaintenanceEndDate = endDate;
         order.MaintenanceMethod = method;
         order.OnSiteAnnualCount = onSiteCount;
         order.RemoteAnnualCount = remoteCount;
+        order.OnSiteSoftwareFrequency = onSiteSoftwareFrequency;
+        order.OnSiteHardwareFrequency = onSiteHardwareFrequency;
         order.ExecutorUserId = executorUserId;
+        order.ProgressPercent = progressPercent;
         order.HandoverPercent = handoverPercent;
+        order.MaintenanceDescription = maintenanceDescription;
         order.UpdatedByUserId = currentUserId;
         order.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -170,14 +182,14 @@ public sealed class MaintenanceOrderService(ApplicationDbContext db)
             query = query.Where(x => x.ExecutorUserId == filter.ExecutorUserId);
         }
 
-        if (filter.MinHandoverPercent is not null)
+        if (filter.MinProgressPercent is not null)
         {
-            query = query.Where(x => x.HandoverPercent >= filter.MinHandoverPercent);
+            query = query.Where(x => x.ProgressPercent >= filter.MinProgressPercent);
         }
 
-        if (filter.MaxHandoverPercent is not null)
+        if (filter.MaxProgressPercent is not null)
         {
-            query = query.Where(x => x.HandoverPercent <= filter.MaxHandoverPercent);
+            query = query.Where(x => x.ProgressPercent <= filter.MaxProgressPercent);
         }
 
         return query;
@@ -189,5 +201,5 @@ public sealed record MaintenanceOrderFilter(
     string? CustomerName,
     MaintenanceMethod? Method,
     string? ExecutorUserId,
-    decimal? MinHandoverPercent,
-    decimal? MaxHandoverPercent);
+    decimal? MinProgressPercent,
+    decimal? MaxProgressPercent);

@@ -127,6 +127,26 @@ public sealed class ProjectUiRegressionTests
     }
 
     [Fact]
+    public void Maintenance_orders_match_template_fields_and_support_grouped_column_visibility()
+    {
+        var index = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml");
+        var create = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Create.cshtml");
+        var css = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "site.css");
+        var script = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "site.js");
+
+        index.Should().Contain("maintenance-order-table");
+        index.Should().Contain("data-column-group=\"remoteScope softwareScope hardwareScope\"");
+        index.Should().Contain("data-column=\"description\"");
+        index.Should().Contain("data-column-manager-table");
+        create.Should().Contain("Input.ContractNumber");
+        create.Should().Contain("Input.OnSiteSoftwareFrequency");
+        create.Should().Contain("Input.MaintenanceDescription");
+        css.Should().Contain(".maintenance-order-table");
+        script.Should().Contain("data-column-group");
+        script.Should().Contain("data-visible-column-count");
+    }
+
+    [Fact]
     public void Dynamic_project_values_can_opt_out_of_language_conversion()
     {
         var adminPage = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Details.cshtml");

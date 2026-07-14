@@ -117,6 +117,7 @@
                     var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
                     var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
                     var progressText = $"{bar.ProgressPercent:0.##}%";
+                    var progressPosition = bar.LeftPercent + (bar.WidthPercent * Math.Clamp(bar.ProgressPercent, 0m, 100m) / 100m);
                     var progressTooltip = ProjectGanttService.GetProgressSummary(point);
                     <div class="gantt-chart-row">
                         <div class="gantt-chart-label">
@@ -128,8 +129,8 @@
                             {
                                 <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@progressTooltip" title="@progressTooltip">
                                     <i style="width:@bar.ProgressPercent.ToString("0.##")%"></i>
-                                    <span class="gantt-bar-progress-label">@progressText</span>
                                 </span>
+                                <span class="gantt-bar-progress-label" style="--gantt-progress-position:@progressPosition.ToString("0.##")%;">@progressText</span>
                             }
                         </div>
                         <div class="gantt-chart-percent @visualStateClass"><strong>@progressText</strong></div>

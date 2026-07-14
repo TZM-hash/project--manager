@@ -211,7 +211,9 @@ public sealed class DataExchangeService(
         WriteHeader(sheet, [
             "Year", "CustomerName", "MaintenanceStartDate", "MaintenanceEndDate",
             "MaintenanceMethod", "OnSiteAnnualCount", "RemoteAnnualCount",
-            "Executor", "HandoverPercent"
+            "Executor", "HandoverPercent", "ContractNumber", "SiteName",
+            "OnSiteSoftwareFrequency", "OnSiteHardwareFrequency", "ProgressPercent",
+            "MaintenanceDescription"
         ]);
 
         var orders = await db.MaintenanceOrders
@@ -234,6 +236,12 @@ public sealed class DataExchangeService(
             sheet.Cell(row, 7).SetValue(order.RemoteAnnualCount);
             sheet.Cell(row, 8).SetValue(DisplayUser(order.Executor));
             sheet.Cell(row, 9).SetValue(order.HandoverPercent);
+            sheet.Cell(row, 10).SetValue(order.ContractNumber);
+            sheet.Cell(row, 11).SetValue(order.SiteName);
+            sheet.Cell(row, 12).SetValue(order.OnSiteSoftwareFrequency);
+            sheet.Cell(row, 13).SetValue(order.OnSiteHardwareFrequency);
+            sheet.Cell(row, 14).SetValue(order.ProgressPercent);
+            sheet.Cell(row, 15).SetValue(order.MaintenanceDescription);
             row++;
         }
 
@@ -565,6 +573,17 @@ public sealed class DataExchangeService(
             order.RemoteAnnualCount = CellInt(row, 7, 0);
             order.ExecutorUserId = await ResolveUserIdAsync(CellText(row, 8), cancellationToken);
             order.HandoverPercent = ClampPercent(CellDecimal(row, 9, 0));
+            var generatedContractNumber = $"MO-{year}-{customerName}";
+            order.ContractNumber = EmptyToNull(CellText(row, 10))
+                ?? generatedContractNumber[..Math.Min(generatedContractNumber.Length, 50)];
+            order.SiteName = EmptyToNull(CellText(row, 11)) ?? "主厂区";
+            order.OnSiteSoftwareFrequency = EmptyToNull(CellText(row, 12))
+                ?? (order.OnSiteAnnualCount > 0 ? "半年/次" : "无");
+            order.OnSiteHardwareFrequency = EmptyToNull(CellText(row, 13))
+                ?? (order.OnSiteAnnualCount > 0 ? "一年/次" : "无");
+            order.ProgressPercent = ClampPercent(CellDecimal(row, 14, order.HandoverPercent));
+            order.MaintenanceDescription = EmptyToNull(CellText(row, 15))
+                ?? "年度例行保養、远程支持与异常问题处理。";
             order.UpdatedAt = DateTimeOffset.UtcNow;
             order.UpdatedByUserId = currentUserId;
         }

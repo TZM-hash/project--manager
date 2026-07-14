@@ -867,12 +867,13 @@ function initColumnManagers() {
       saved = {};
     }
 
-    const headers = Array.from(table.querySelectorAll("thead th[data-column]"));
+    const headers = Array.from(table.querySelectorAll("thead th[data-column]:not([data-column-fixed])"));
     const columns = headers.map((th) => {
       const key = th.getAttribute("data-column");
-      const label = th.textContent.trim() || key;
-      return { key, label, th };
-    });
+      const label = th.getAttribute("data-column-label") || th.textContent.trim() || key;
+      const order = Number(th.getAttribute("data-column-order") || Number.MAX_SAFE_INTEGER);
+      return { key, label, order, th };
+    }).sort((left, right) => left.order - right.order);
 
     if (list) {
       list.innerHTML = "";
@@ -903,6 +904,22 @@ function initColumnManagers() {
           td.style.display = display;
         });
       });
+
+      table.querySelectorAll("thead th[data-column-group]").forEach((groupHeader) => {
+        const groupKeys = (groupHeader.getAttribute("data-column-group") || "")
+          .split(/\s+/)
+          .filter(Boolean);
+        const visibleCount = groupKeys.filter((key) => newState[key] !== false).length;
+        groupHeader.style.display = visibleCount > 0 ? "" : "none";
+        if (visibleCount > 0) {
+          groupHeader.colSpan = visibleCount;
+        }
+      });
+
+      table.setAttribute(
+        "data-visible-column-count",
+        String(columns.filter((col) => newState[col.key] !== false).length)
+      );
       try {
         localStorage.setItem(storageKey, JSON.stringify(newState));
       } catch (e) {

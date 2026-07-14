@@ -1292,6 +1292,178 @@ body.theme-clear-glass .project-analysis-panel {
   line-height: var(--row-line-height, 1.5);
 }
 
+.maintenance-table-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.maintenance-table-caption {
+  display: flex;
+  gap: 0.65rem;
+  align-items: baseline;
+}
+
+.maintenance-table-caption span {
+  color: var(--app-muted);
+  font-size: 0.78rem;
+}
+
+.maintenance-table-toolbar .column-manager-menu {
+  width: 17rem;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.maintenance-order-table {
+  --row-padding: 0.44rem 0.4rem;
+  --row-font-size: 0.82rem;
+  --row-line-height: 1.35;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.maintenance-order-table thead th {
+  border-right: 2px solid rgba(255, 255, 255, 0.72);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.78);
+  background: #43bbc2;
+  color: #fff;
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+}
+
+.maintenance-order-table .maintenance-group-row th {
+  top: 0;
+  z-index: 7;
+  min-height: 2.5rem;
+  background: #29aeb8;
+  font-size: 0.78rem;
+}
+
+.maintenance-order-table .maintenance-subheader-row th {
+  top: 2.5rem;
+  z-index: 6;
+  background: #69c9ce;
+  font-size: 0.74rem;
+}
+
+.maintenance-order-table tbody td {
+  border-right: 1px solid #c5e6e8;
+  border-bottom: 1px solid #c5e6e8;
+  background: #f8fdfd;
+  color: #18333a;
+}
+
+.maintenance-order-table tbody tr:nth-child(odd) td {
+  background: #e4f5f6;
+}
+
+.maintenance-order-table tbody tr:hover td {
+  background: #d7f0f2;
+}
+
+.maintenance-order-table [data-column="contractNumber"] {
+  min-width: 7.25rem;
+}
+
+.maintenance-order-table [data-column="customerName"] {
+  min-width: 11.5rem;
+  max-width: 15rem;
+}
+
+.maintenance-order-table [data-column="siteName"] {
+  min-width: 6.25rem;
+}
+
+.maintenance-order-table [data-column="executor"] {
+  min-width: 6.5rem;
+}
+
+.maintenance-order-table [data-column="contractStart"],
+.maintenance-order-table [data-column="contractEnd"] {
+  min-width: 6.75rem;
+}
+
+.maintenance-order-table [data-column="remoteScope"] {
+  min-width: 4.25rem;
+}
+
+.maintenance-order-table [data-column="softwareScope"],
+.maintenance-order-table [data-column="hardwareScope"] {
+  min-width: 5.75rem;
+  font-weight: 700;
+}
+
+.maintenance-order-table [data-column="progress"],
+.maintenance-order-table [data-column="handover"] {
+  min-width: 6.25rem;
+}
+
+.maintenance-order-table [data-column="description"] {
+  min-width: 13.5rem;
+  max-width: 18rem;
+  white-space: normal;
+}
+
+.maintenance-order-table [data-column="item"] {
+  min-width: 3.75rem;
+}
+
+.maintenance-order-table [data-column="method"] {
+  min-width: 5.75rem;
+}
+
+.maintenance-order-table [data-column="onSiteCount"],
+.maintenance-order-table [data-column="remoteCount"] {
+  min-width: 4.75rem;
+}
+
+.maintenance-order-table [data-column="updatedAt"] {
+  min-width: 8.25rem;
+}
+
+.maintenance-order-table [data-column="updatedBy"] {
+  min-width: 6.5rem;
+}
+
+.maintenance-customer-cell strong,
+.maintenance-customer-cell small {
+  display: block;
+}
+
+.maintenance-customer-cell small {
+  margin-top: 0.15rem;
+  color: var(--app-muted);
+  font-size: 0.72rem;
+}
+
+.maintenance-scope-check {
+  color: #147d74;
+  font-size: 1.15rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.maintenance-description-cell {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.maintenance-order-table .maintenance-actions-column {
+  position: static;
+  right: auto;
+  min-width: 6.75rem;
+  white-space: nowrap;
+}
+
 .data-table tbody tr:hover {
   background: #f8fbff;
 }
@@ -5219,18 +5391,21 @@ body.theme-clear-glass .app-footer {
 
 .gantt-bar-progress-label {
   position: absolute;
-  top: 50%;
-  right: 0.18rem;
+  top: calc(50% - 0.85rem);
+  left: clamp(1rem, var(--gantt-progress-position), calc(100% - 1rem));
   z-index: 3;
-  padding: 0 0.22rem;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.82);
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #111827;
   font-size: 0.62rem;
   font-weight: 850;
-  line-height: 1.15rem;
-  transform: translateY(-50%);
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.95);
+  transform: translate(-50%, -100%);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .gantt-panel .gantt-chart-redline {

@@ -33,10 +33,10 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
     public string? ExecutorUserId { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public decimal? MinHandoverPercent { get; set; }
+    public decimal? MinProgressPercent { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public decimal? MaxHandoverPercent { get; set; }
+    public decimal? MaxProgressPercent { get; set; }
 
     public IReadOnlyList<MaintenanceOrder> Orders { get; private set; } = [];
 
@@ -48,7 +48,7 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
 
     public IReadOnlyList<ChartSlice> MethodSlices { get; private set; } = [];
 
-    public IReadOnlyList<ChartSlice> HandoverSlices { get; private set; } = [];
+    public IReadOnlyList<ChartSlice> ProgressSlices { get; private set; } = [];
 
     public List<SelectListItem> ExecutorOptions { get; private set; } = [];
 
@@ -103,8 +103,8 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
             CustomerName,
             Method,
             ExecutorUserId,
-            MinHandoverPercent,
-            MaxHandoverPercent);
+            MinProgressPercent,
+            MaxProgressPercent);
     }
 
     private async Task LoadOptionsAsync(CancellationToken cancellationToken)
@@ -125,8 +125,8 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
         var query = ApplyFilter(db.MaintenanceOrders
             .AsNoTracking()
             .Where(x => !x.IsDeleted));
-        var completedCount = await query.CountAsync(x => x.HandoverPercent >= 100, cancellationToken);
-        var averageHandover = await query.AverageAsync(x => (decimal?)x.HandoverPercent, cancellationToken) ?? 0;
+        var completedCount = await query.CountAsync(x => x.ProgressPercent >= 100, cancellationToken);
+        var averageProgress = await query.AverageAsync(x => (decimal?)x.ProgressPercent, cancellationToken) ?? 0;
         var executorCount = await query
             .Where(x => x.ExecutorUserId != null)
             .Select(x => x.ExecutorUserId)
@@ -136,8 +136,8 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
         Metrics =
         [
             new MetricInsight("保養訂單", TotalCount.ToString("N0"), "当前有效訂單"),
-            new MetricInsight("已移交完成", completedCount.ToString("N0"), "移交 100%"),
-            new MetricInsight("平均移交", $"{averageHandover:0.#}%", "整体推进狀態", "info"),
+            new MetricInsight("已完成", completedCount.ToString("N0"), "保養進度 100%"),
+            new MetricInsight("平均進度", $"{averageProgress:0.#}%", "整体保養狀態", "info"),
             new MetricInsight("执行人数", executorCount.ToString("N0"), "已分配执行人", "success")
         ];
 
@@ -147,14 +147,14 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
             .ToListAsync(cancellationToken);
         MethodSlices = ChartPalette.BuildSlices(methodRows.Select(x => (MethodLabel(x.Label), (decimal)x.Value)));
 
-        var handoverRows = new[]
+        var progressRows = new[]
         {
-            ("0-49%", await query.CountAsync(x => x.HandoverPercent < 50, cancellationToken)),
-            ("50-79%", await query.CountAsync(x => x.HandoverPercent >= 50 && x.HandoverPercent < 80, cancellationToken)),
-            ("80-99%", await query.CountAsync(x => x.HandoverPercent >= 80 && x.HandoverPercent < 100, cancellationToken)),
-            ("100%", await query.CountAsync(x => x.HandoverPercent >= 100, cancellationToken))
+            ("0-49%", await query.CountAsync(x => x.ProgressPercent < 50, cancellationToken)),
+            ("50-79%", await query.CountAsync(x => x.ProgressPercent >= 50 && x.ProgressPercent < 80, cancellationToken)),
+            ("80-99%", await query.CountAsync(x => x.ProgressPercent >= 80 && x.ProgressPercent < 100, cancellationToken)),
+            ("100%", await query.CountAsync(x => x.ProgressPercent >= 100, cancellationToken))
         };
-        HandoverSlices = ChartPalette.BuildSlices(handoverRows.Select(x => (x.Item1, (decimal)x.Item2)));
+        ProgressSlices = ChartPalette.BuildSlices(progressRows.Select(x => (x.Item1, (decimal)x.Item2)));
     }
 
     private static string MethodLabel(MaintenanceMethod method)
@@ -191,14 +191,14 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
             query = query.Where(x => x.ExecutorUserId == filter.ExecutorUserId);
         }
 
-        if (filter.MinHandoverPercent is not null)
+        if (filter.MinProgressPercent is not null)
         {
-            query = query.Where(x => x.HandoverPercent >= filter.MinHandoverPercent);
+            query = query.Where(x => x.ProgressPercent >= filter.MinProgressPercent);
         }
 
-        if (filter.MaxHandoverPercent is not null)
+        if (filter.MaxProgressPercent is not null)
         {
-            query = query.Where(x => x.HandoverPercent <= filter.MaxHandoverPercent);
+            query = query.Where(x => x.ProgressPercent <= filter.MaxProgressPercent);
         }
 
         return query;
@@ -212,8 +212,8 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
             [nameof(CustomerName)] = CustomerName,
             [nameof(Method)] = Method?.ToString(),
             [nameof(ExecutorUserId)] = ExecutorUserId,
-            [nameof(MinHandoverPercent)] = MinHandoverPercent?.ToString(),
-            [nameof(MaxHandoverPercent)] = MaxHandoverPercent?.ToString()
+            [nameof(MinProgressPercent)] = MinProgressPercent?.ToString(),
+            [nameof(MaxProgressPercent)] = MaxProgressPercent?.ToString()
         };
     }
 
@@ -249,9 +249,9 @@ public sealed class IndexModel(MaintenanceOrderService service, ApplicationDbCon
             items.Add(new FilterSummaryItem("执行人", userText));
         }
 
-        if (MinHandoverPercent is not null || MaxHandoverPercent is not null)
+        if (MinProgressPercent is not null || MaxProgressPercent is not null)
         {
-            items.Add(new FilterSummaryItem("移交進度", $"{MinHandoverPercent?.ToString() ?? "0"}%-{MaxHandoverPercent?.ToString() ?? "100"}%"));
+            items.Add(new FilterSummaryItem("保養進度", $"{MinProgressPercent?.ToString() ?? "0"}%-{MaxProgressPercent?.ToString() ?? "100"}%"));
         }
 
         return items;

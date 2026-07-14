@@ -216,8 +216,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<MaintenanceOrder>(entity =>
         {
+            entity.Property(x => x.ContractNumber).HasMaxLength(50).IsRequired();
             entity.Property(x => x.CustomerName).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.SiteName).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.OnSiteSoftwareFrequency).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.OnSiteHardwareFrequency).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.ProgressPercent).HasPrecision(5, 2);
             entity.Property(x => x.HandoverPercent).HasPrecision(5, 2);
+            entity.Property(x => x.MaintenanceDescription).HasMaxLength(1000).IsRequired();
 
             entity.HasOne(x => x.Executor)
                 .WithMany()

@@ -14,16 +14,28 @@
 <form method="post" class="form-section">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="row g-3">
+        <div class="col-12"><h2 class="h6 mb-0">合約基本資料</h2></div>
         <div class="col-md-2">
             <label asp-for="Input.Year" class="form-label">年度</label>
             <input asp-for="Input.Year" class="form-control" />
             <span asp-validation-for="Input.Year" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.ContractNumber" class="form-label">合約編號</label>
+            <input asp-for="Input.ContractNumber" class="form-control" />
+            <span asp-validation-for="Input.ContractNumber" class="text-danger"></span>
         </div>
         <div class="col-md-4">
             <label asp-for="Input.CustomerName" class="form-label">客戶名稱</label>
             <input asp-for="Input.CustomerName" class="form-control" />
             <span asp-validation-for="Input.CustomerName" class="text-danger"></span>
         </div>
+        <div class="col-md-3">
+            <label asp-for="Input.SiteName" class="form-label">厂区/據點</label>
+            <input asp-for="Input.SiteName" class="form-control" />
+            <span asp-validation-for="Input.SiteName" class="text-danger"></span>
+        </div>
+        <div class="col-12 mt-4"><h2 class="h6 mb-0">維保合約與範圍</h2></div>
         <div class="col-md-3">
             <label asp-for="Input.MaintenanceStartDate" class="form-label">保養開始日期</label>
             <input asp-for="Input.MaintenanceStartDate" class="form-control" type="date" />
@@ -41,26 +53,47 @@
             </select>
             <span asp-validation-for="Input.MaintenanceMethod" class="text-danger"></span>
         </div>
-        <div class="col-md-2">
-            <label asp-for="Input.OnSiteAnnualCount" class="form-label">现场次數</label>
-            <input asp-for="Input.OnSiteAnnualCount" class="form-control" type="number" min="0" />
-            <span asp-validation-for="Input.OnSiteAnnualCount" class="text-danger"></span>
-        </div>
-        <div class="col-md-2">
-            <label asp-for="Input.RemoteAnnualCount" class="form-label">远程次數</label>
-            <input asp-for="Input.RemoteAnnualCount" class="form-control" type="number" min="0" />
-            <span asp-validation-for="Input.RemoteAnnualCount" class="text-danger"></span>
-        </div>
-        <div class="col-md-5">
-            <label asp-for="Input.ExecutorUserId" class="form-label">保養执行人</label>
+        <div class="col-md-4">
+            <label asp-for="Input.ExecutorUserId" class="form-label">經辦/保養执行人</label>
             <select asp-for="Input.ExecutorUserId" asp-items="Model.UserOptions" class="form-select">
                 <option value="">請選擇</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <label asp-for="Input.OnSiteSoftwareFrequency" class="form-label">现场软件频率</label>
+            <input asp-for="Input.OnSiteSoftwareFrequency" class="form-control" placeholder="例如：半年/次、待通知、无" />
+            <span asp-validation-for="Input.OnSiteSoftwareFrequency" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.OnSiteHardwareFrequency" class="form-label">现场硬件频率</label>
+            <input asp-for="Input.OnSiteHardwareFrequency" class="form-control" placeholder="例如：一年/次、半年/次、无" />
+            <span asp-validation-for="Input.OnSiteHardwareFrequency" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.OnSiteAnnualCount" class="form-label">现场次數</label>
+            <input asp-for="Input.OnSiteAnnualCount" class="form-control" type="number" min="0" />
+            <span asp-validation-for="Input.OnSiteAnnualCount" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Input.RemoteAnnualCount" class="form-label">远程次數</label>
+            <input asp-for="Input.RemoteAnnualCount" class="form-control" type="number" min="0" />
+            <span asp-validation-for="Input.RemoteAnnualCount" class="text-danger"></span>
+        </div>
+        <div class="col-12 mt-4"><h2 class="h6 mb-0">進度與保養說明</h2></div>
+        <div class="col-md-3">
+            <label asp-for="Input.ProgressPercent" class="form-label">保養進度</label>
+            <input asp-for="Input.ProgressPercent" class="form-control" type="number" min="0" max="100" step="0.01" />
+            <span asp-validation-for="Input.ProgressPercent" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
             <label asp-for="Input.HandoverPercent" class="form-label">签收单移交百分比</label>
             <input asp-for="Input.HandoverPercent" class="form-control" type="number" min="0" max="100" step="0.01" />
             <span asp-validation-for="Input.HandoverPercent" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Input.MaintenanceDescription" class="form-label">保養内容说明</label>
+            <textarea asp-for="Input.MaintenanceDescription" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Input.MaintenanceDescription" class="text-danger"></span>
         </div>
     </div>
     <div class="mt-4">

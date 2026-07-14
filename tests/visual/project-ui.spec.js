@@ -158,13 +158,81 @@ test("project detail gantt loads on demand without desktop overflow", async ({ p
     return {
       noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
       widthsMatch: Boolean(overlayRect && svgRect && Math.abs(overlayRect.width - svgRect.width) < 1),
-      markerCount: document.querySelectorAll(".gantt-progress-marker").length
+      markerCount: document.querySelectorAll(".gantt-progress-marker").length,
+      progressLabels: Array.from(document.querySelectorAll(".gantt-bar-progress-label")).map((label) => {
+        const row = label.closest(".gantt-chart-row");
+        const bar = row?.querySelector(".gantt-bar");
+        const fill = bar?.querySelector("i");
+        const labelRect = label.getBoundingClientRect();
+        const barRect = bar?.getBoundingClientRect();
+        const fillRect = fill?.getBoundingClientRect();
+
+        return {
+          transparent: getComputedStyle(label).backgroundColor === "rgba(0, 0, 0, 0)",
+          clearsBar: Boolean(barRect && labelRect.bottom <= barRect.top),
+          followsFillEnd: Boolean(fillRect && Math.abs(labelRect.left + labelRect.width / 2 - fillRect.right) < 2.5)
+        };
+      })
     };
   });
 
   expect(ganttGeometry.noPageOverflow).toBeTruthy();
   expect(ganttGeometry.widthsMatch).toBeTruthy();
   expect(ganttGeometry.markerCount).toBeGreaterThan(0);
+  expect(ganttGeometry.progressLabels.length).toBeGreaterThan(0);
+  expect(ganttGeometry.progressLabels.every((label) => label.transparent)).toBeTruthy();
+  expect(ganttGeometry.progressLabels.every((label) => label.clearsBar)).toBeTruthy();
+  expect(ganttGeometry.progressLabels.every((label) => label.followsFillEnd)).toBeTruthy();
   await captureElement(page, ".gantt-chart-wrap", "project-detail-gantt-chart");
   await capture(page, "project-detail-gantt");
+});
+
+test("maintenance orders follow the grouped template and reflow hidden columns", async ({ page }) => {
+  await page.goto("/Admin/MaintenanceOrders?PageSize=20");
+
+  const table = page.locator("#maintenance-orders-table");
+  await expect(table).toBeVisible();
+  await expect(table.locator('th[data-column-group="remoteScope softwareScope hardwareScope"]')).toHaveText("維保範圍");
+  await expect(table.locator('tbody td[data-column="contractNumber"]').first()).not.toHaveText("");
+  await expect(table.locator('tbody td[data-column="description"]').first()).not.toHaveText("");
+
+  const manager = page.locator("[data-column-manager]");
+  await manager.locator("[data-column-manager-toggle]").click();
+  await manager.locator('[data-column-key="updatedAt"]').uncheck();
+  await manager.locator('[data-column-key="updatedBy"]').uncheck();
+
+  await expect(table.locator('th[data-column-group="updatedAt updatedBy"]')).toBeHidden();
+  await expect(table.locator('tbody td[data-column="updatedAt"]').first()).toBeHidden();
+  await expect(table.locator('tbody td[data-column="updatedBy"]').first()).toBeHidden();
+
+  const layout = await table.evaluate((element) => {
+    const wrapper = element.closest(".data-table-wrap");
+    if (wrapper) {
+      wrapper.scrollLeft = wrapper.scrollWidth;
+    }
+    const visibleColumns = Array.from(element.querySelectorAll("tbody tr:first-child td"))
+      .filter((cell) => getComputedStyle(cell).display !== "none").length;
+    const visibleCells = Array.from(element.querySelectorAll("tbody tr:first-child td"))
+      .filter((cell) => getComputedStyle(cell).display !== "none");
+    const actionCell = visibleCells.at(-1);
+    const previousCell = visibleCells.at(-2);
+    const actionRect = actionCell?.getBoundingClientRect();
+    const previousRect = previousCell?.getBoundingClientRect();
+    return {
+      visibleColumns,
+      stateCount: Number(element.getAttribute("data-visible-column-count")),
+      containedByWrapper: Boolean(wrapper && element.getBoundingClientRect().width <= wrapper.scrollWidth + 1),
+      noPageOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      actionIsStatic: actionCell ? getComputedStyle(actionCell).position === "static" : false,
+      actionDoesNotOverlap: Boolean(actionRect && previousRect && previousRect.right <= actionRect.left + 1)
+    };
+  });
+
+  expect(layout.visibleColumns).toBeGreaterThan(10);
+  expect(layout.stateCount).toBe(16);
+  expect(layout.containedByWrapper).toBeTruthy();
+  expect(layout.noPageOverflow).toBeTruthy();
+  expect(layout.actionIsStatic).toBeTruthy();
+  expect(layout.actionDoesNotOverlap).toBeTruthy();
+  await capture(page, "maintenance-orders-template");
 });

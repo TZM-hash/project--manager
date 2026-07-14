@@ -40,14 +40,20 @@ public sealed class EditModel(
         {
             Id = order.Id,
             Year = order.Year,
+            ContractNumber = order.ContractNumber,
             CustomerName = order.CustomerName,
+            SiteName = order.SiteName,
             MaintenanceStartDate = order.MaintenanceStartDate,
             MaintenanceEndDate = order.MaintenanceEndDate,
             MaintenanceMethod = order.MaintenanceMethod,
             OnSiteAnnualCount = order.OnSiteAnnualCount,
             RemoteAnnualCount = order.RemoteAnnualCount,
+            OnSiteSoftwareFrequency = order.OnSiteSoftwareFrequency,
+            OnSiteHardwareFrequency = order.OnSiteHardwareFrequency,
             ExecutorUserId = order.ExecutorUserId,
-            HandoverPercent = order.HandoverPercent
+            ProgressPercent = order.ProgressPercent,
+            HandoverPercent = order.HandoverPercent,
+            MaintenanceDescription = order.MaintenanceDescription
         };
 
         await LoadUserOptionsAsync(cancellationToken);
@@ -56,6 +62,11 @@ public sealed class EditModel(
 
     public async Task<IActionResult> OnPostAsync(int id, CancellationToken cancellationToken)
     {
+        if (Input.MaintenanceEndDate < Input.MaintenanceStartDate)
+        {
+            ModelState.AddModelError("Input.MaintenanceEndDate", "保養结束日期不得早于開始日期。");
+        }
+
         if (!ModelState.IsValid)
         {
             await LoadUserOptionsAsync(cancellationToken);
@@ -65,14 +76,20 @@ public sealed class EditModel(
         var updated = await service.UpdateAsync(
             id,
             Input.Year,
+            Input.ContractNumber.Trim(),
             Input.CustomerName.Trim(),
+            Input.SiteName.Trim(),
             Input.MaintenanceStartDate,
             Input.MaintenanceEndDate,
             Input.MaintenanceMethod,
             Input.OnSiteAnnualCount,
             Input.RemoteAnnualCount,
+            Input.OnSiteSoftwareFrequency.Trim(),
+            Input.OnSiteHardwareFrequency.Trim(),
             string.IsNullOrWhiteSpace(Input.ExecutorUserId) ? null : Input.ExecutorUserId,
+            Input.ProgressPercent,
             Input.HandoverPercent,
+            Input.MaintenanceDescription.Trim(),
             userManager.GetUserId(User),
             cancellationToken);
 
@@ -108,9 +125,20 @@ public sealed class EditModel(
         [Range(2000, 2100, ErrorMessage = "请输入有效年份。")]
         public int Year { get; set; }
 
+        [Display(Name = "合約編號")]
+        [Required(ErrorMessage = "请输入合約編號。")]
+        [StringLength(50, ErrorMessage = "合約編號不可超过50个字。")]
+        public string ContractNumber { get; set; } = string.Empty;
+
         [Display(Name = "客戶名稱")]
         [Required(ErrorMessage = "请输入客戶名稱。")]
+        [StringLength(200, ErrorMessage = "客戶名稱不可超过200个字。")]
         public string CustomerName { get; set; } = string.Empty;
+
+        [Display(Name = "厂区/據點")]
+        [Required(ErrorMessage = "请输入厂区或據點。")]
+        [StringLength(100, ErrorMessage = "厂区或據點不可超过100个字。")]
+        public string SiteName { get; set; } = string.Empty;
 
         [Display(Name = "保養開始日期")]
         [Required(ErrorMessage = "請選擇保養開始日期。")]
@@ -132,11 +160,30 @@ public sealed class EditModel(
         [Range(0, 100, ErrorMessage = "远程次數应在0-100之间。")]
         public int RemoteAnnualCount { get; set; }
 
+        [Display(Name = "现场软件保養频率")]
+        [Required(ErrorMessage = "请输入现场软件保養频率，无则填写“无”。")]
+        [StringLength(50, ErrorMessage = "现场软件保養频率不可超过50个字。")]
+        public string OnSiteSoftwareFrequency { get; set; } = string.Empty;
+
+        [Display(Name = "现场硬件保養频率")]
+        [Required(ErrorMessage = "请输入现场硬件保養频率，无则填写“无”。")]
+        [StringLength(50, ErrorMessage = "现场硬件保養频率不可超过50个字。")]
+        public string OnSiteHardwareFrequency { get; set; } = string.Empty;
+
         [Display(Name = "保養执行人")]
         public string? ExecutorUserId { get; set; }
+
+        [Display(Name = "保養進度")]
+        [Range(0, 100, ErrorMessage = "保養進度应在0-100之间。")]
+        public decimal ProgressPercent { get; set; }
 
         [Display(Name = "签收单移交百分比")]
         [Range(0, 100, ErrorMessage = "移交百分比应在0-100之间。")]
         public decimal HandoverPercent { get; set; }
+
+        [Display(Name = "保養内容说明")]
+        [Required(ErrorMessage = "请输入保養内容说明。")]
+        [StringLength(1000, ErrorMessage = "保養内容说明不可超过1000个字。")]
+        public string MaintenanceDescription { get; set; } = string.Empty;
     }
 }
