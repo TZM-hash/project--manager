@@ -126,6 +126,74 @@ public sealed class ProjectUiRegressionTests
     }
 
     [Fact]
+    public void Print_layout_loads_the_split_stylesheets_used_by_all_print_pages()
+    {
+        var layout = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_PrintLayout.cshtml");
+        var printPages = new[]
+        {
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Reports", "OpenProjects", "Print.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Settlements", "Print.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Report.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Print.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "PrintList.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "GanttPrint.cshtml")
+        };
+
+        layout.Should().Contain("~/css/base.css");
+        layout.Should().Contain("~/css/components.css");
+        layout.Should().Contain("~/css/pages.css");
+        layout.Should().Contain("~/css/themes.css");
+        layout.Should().Contain("~/ProjectManager.Web.styles.css");
+        layout.Should().NotContain("~/css/site.css");
+        printPages.Should().OnlyContain(page => page.Contains("Layout = \"_PrintLayout\"", StringComparison.Ordinal));
+        printPages[0].Should().Contain("ViewData[\"VisibleColumns\"]");
+        printPages[0].Should().Contain("\"collectionPercent\"");
+        printPages[0].Should().Contain("\"risk\"");
+    }
+
+    [Fact]
+    public void Data_table_prefers_personal_memory_until_a_server_view_is_explicitly_selected()
+    {
+        var script = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "js", "components", "data-table.js");
+
+        script.Should().Contain("hasExplicitServerView");
+        script.Should().Contain("resolveInitialColumnState");
+        script.Should().Contain("resolveInitialRowDensity");
+        script.Should().Contain("params.has(\"ViewPreset\")");
+        script.Should().Contain("params.has(\"SavedViewId\")");
+    }
+
+    [Fact]
+    public void Desktop_layout_defines_notebook_desktop_and_ultrawide_boundaries()
+    {
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+
+        css.Should().Contain("@media (min-width: 768px) and (max-width: 1199.98px)");
+        css.Should().Contain("@media (min-width: 1600px)");
+        css.Should().Contain("max-width: calc(100vw - 1.5rem);");
+        css.Should().Contain("overscroll-behavior-inline: contain;");
+    }
+
+    [Fact]
+    public void Sql_configuration_tools_cover_connection_migrations_health_and_release_launch()
+    {
+        var script = ReadRepositoryFile("SQL配置工具.ps1");
+        var desktopTool = ReadRepositoryFile("tools", "SqlConfigTool", "Program.cs");
+
+        script.Should().Contain("[switch]$ApplyMigrations");
+        script.Should().Contain("[switch]$HealthCheck");
+        script.Should().Contain("[switch]$Launch");
+        script.Should().Contain("Invoke-DatabaseMigration");
+        script.Should().Contain("Test-ProjectHealth");
+        script.Should().Contain("Start-ProjectRelease");
+        desktopTool.Should().Contain("測試連線");
+        desktopTool.Should().Contain("套用資料庫更新");
+        desktopTool.Should().Contain("檢查系統健康");
+        desktopTool.Should().Contain("啟動系統");
+        desktopTool.Should().Contain("RunDotNetAsync");
+    }
+
+    [Fact]
     public void Open_project_report_declares_the_approved_default_columns_and_presets()
     {
         var registry = ReadRepositoryFile("src", "ProjectManager.Web", "Services", "DataViews", "DataViewRegistry.cs");

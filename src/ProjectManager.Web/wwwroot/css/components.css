@@ -726,6 +726,7 @@ h1.h3 {
   max-width: 100%;
   overflow-x: auto;
   overflow-y: visible;
+  overscroll-behavior-inline: contain;
   max-height: none;
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-md);
@@ -916,8 +917,35 @@ body.theme-clear-glass .project-analysis-panel {
 
 .maintenance-table-toolbar .column-manager-menu {
   width: 17rem;
+  max-width: calc(100vw - 1.5rem);
   max-height: 26rem;
   overflow-y: auto;
+  right: 0 !important;
+  left: auto !important;
+}
+
+.data-list-card .column-manager-menu {
+  max-width: calc(100vw - 1.5rem);
+  right: 0 !important;
+  left: auto !important;
+}
+
+@media (max-width: 1199.98px) {
+  .maintenance-table-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .maintenance-table-toolbar > .d-flex {
+    max-width: 100%;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .maintenance-table-toolbar .column-manager-menu {
+    right: 0;
+    left: auto;
+  }
 }
 
 .maintenance-order-table {

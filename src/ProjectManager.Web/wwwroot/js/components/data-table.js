@@ -1,5 +1,44 @@
 ﻿/* Column visibility and row-density controls. */
 
+function hasExplicitServerView() {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("ViewPreset") || params.has("SavedViewId");
+}
+
+function resolveInitialColumnState(saved, initialVisibleColumns) {
+  const hasSavedState = saved && Object.keys(saved).length > 0;
+  if (!hasExplicitServerView() && hasSavedState) {
+    return (key) => saved[key] !== false;
+  }
+  if (Array.isArray(initialVisibleColumns)) {
+    return (key) => initialVisibleColumns.includes(key);
+  }
+  if (hasSavedState) {
+    return (key) => saved[key] !== false;
+  }
+  return () => true;
+}
+
+function resolveInitialRowDensity(storageKey, serverDensity, supportedModes) {
+  let savedDensity = "";
+  try {
+    savedDensity = (localStorage.getItem(storageKey) || "").toLowerCase();
+  } catch (e) {
+    savedDensity = "";
+  }
+
+  if (!hasExplicitServerView() && supportedModes.has(savedDensity)) {
+    return savedDensity;
+  }
+  if (supportedModes.has(serverDensity)) {
+    return serverDensity;
+  }
+  if (supportedModes.has(savedDensity)) {
+    return savedDensity;
+  }
+  return "normal";
+}
+
 function initColumnManagers() {
   document.querySelectorAll("[data-column-manager]").forEach((manager) => {
     const table = manager.nextElementSibling?.querySelector("[data-column-manager-table]") ??
@@ -30,6 +69,8 @@ function initColumnManagers() {
       initialVisibleColumns = null;
     }
 
+    const isInitiallyVisible = resolveInitialColumnState(saved, initialVisibleColumns);
+
     const headers = Array.from(table.querySelectorAll("thead th[data-column]:not([data-column-fixed])"));
     const columns = headers.map((th) => {
       const key = th.getAttribute("data-column");
@@ -41,9 +82,7 @@ function initColumnManagers() {
     if (list) {
       list.innerHTML = "";
       columns.forEach((col) => {
-        const isVisible = Array.isArray(initialVisibleColumns)
-          ? initialVisibleColumns.includes(col.key)
-          : saved[col.key] !== false;
+        const isVisible = isInitiallyVisible(col.key);
         const item = document.createElement("div");
         item.className = "form-check";
         item.innerHTML = `
@@ -177,7 +216,8 @@ function initRowSpacing() {
     };
 
     const serverDensity = (table.getAttribute("data-initial-row-density") || "").toLowerCase();
-    let saved = serverDensity || localStorage.getItem(storageKey) || "normal";
+    const supportedModes = new Set(Object.keys(spacingStyles));
+    const saved = resolveInitialRowDensity(storageKey, serverDensity, supportedModes);
 
     const applySpacing = (mode) => {
       const styles = spacingStyles[mode] || spacingStyles.normal;
@@ -191,7 +231,11 @@ function initRowSpacing() {
       const persistedName = mode.charAt(0).toUpperCase() + mode.slice(1);
       table.setAttribute("data-current-row-density", persistedName);
       table.dispatchEvent(new CustomEvent("data-table-state-change", { bubbles: true }));
-      localStorage.setItem(storageKey, mode);
+      try {
+        localStorage.setItem(storageKey, mode);
+      } catch (e) {
+        // ignore
+      }
     };
 
     applySpacing(saved);

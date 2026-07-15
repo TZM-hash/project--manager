@@ -18,17 +18,27 @@ Internal ASP.NET Core Razor Pages project management system.
 
 ## SQL 配置工具
 
-项目复制到新电脑或 SQL Server 实例变化后，直接双击项目根目录的：
+專案複製到新電腦、SQL Server 執行個體變更或版本升級後，直接雙擊專案根目錄的：
 
 `SQL配置工具.exe`
 
-工具会自动定位当前项目，无需修改任何绝对路径。配置保存到原来的
-`src/ProjectManager.Web/appsettings.json`，并自动生成 `appsettings.json.bak` 备份。
-你也可以继续直接打开 `appsettings.json`，按原来的方式手动修改连接字符串。
+工具會自動定位目前專案，並提供：
 
-如需使用脚本备用方式，可运行：
+- 測試 SQL 連線。
+- 儲存 `ConnectionStrings:DefaultConnection`，同時建立 `appsettings.json.bak`。
+- 明確按下後套用最新 EF Migration。
+- 檢查 `/health/live`、`/health/ready` 與 `App_Data` 寫入權限。
+- 以 Release、隱藏視窗方式啟動網站。
+
+「儲存設定」不會自動變更資料庫；只有「套用資料庫更新」會執行 Migration。
+
+如需使用腳本備用方式，可執行：
 
 `pwsh -ExecutionPolicy Bypass -File ".\SQL配置工具.ps1"`
+
+Headless 範例：
+
+`pwsh -ExecutionPolicy Bypass -File ".\SQL配置工具.ps1" -Headless -TestConnection -ApplyMigrations -HealthCheck`
 
 ## Default Admin
 

@@ -14,15 +14,24 @@
     <meta name="google" content="notranslate" />
     <title>@ViewData["Title"] - 台塑電子專案管理系統</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/themes.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ProjectManager.Web.styles.css" asp-append-version="true" />
     <style>
         body {
             background: #fff;
+            color: #111827;
+            overflow-x: auto;
         }
         .print-report {
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
+        }
+        .print-report-wide {
+            max-width: 1400px;
         }
         .print-header {
             text-align: center;
@@ -69,8 +78,27 @@
             vertical-align: top;
         }
         @@media print {
+            html,
+            body {
+                width: 100%;
+                min-width: 0;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                background: #fff !important;
+            }
             .no-print {
                 display: none !important;
+            }
+            .print-report {
+                max-width: none;
+                padding: 0;
+            }
+            .data-list-card,
+            .data-table-wrap {
+                overflow: visible !important;
+                border-radius: 0;
+                box-shadow: none !important;
             }
         }
         .print-back-btn {

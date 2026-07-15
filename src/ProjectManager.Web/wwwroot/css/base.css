@@ -48,6 +48,37 @@ html {
   }
 }
 
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  :root {
+    --sidebar-width: 15rem;
+  }
+
+  .app-header-content,
+  .app-main {
+    max-width: none;
+  }
+
+  .app-main {
+    padding-inline: 0.75rem;
+  }
+
+  .app-sidebar-brand {
+    padding-inline: 0.75rem;
+  }
+
+  .app-sidebar-nav .nav-link {
+    gap: 0.6rem;
+    padding-inline: 0.6rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .app-header-content,
+  .app-main {
+    max-width: 1760px;
+  }
+}
+
 body {
   margin: 0;
   background: var(--app-bg);
