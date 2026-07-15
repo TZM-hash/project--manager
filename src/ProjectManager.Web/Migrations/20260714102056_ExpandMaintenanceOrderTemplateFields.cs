@@ -10,54 +10,26 @@ namespace ProjectManager.Web.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "ContractNumber",
-                table: "MaintenanceOrders",
-                type: "nvarchar(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "");
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH(N'dbo.MaintenanceOrders', N'ContractNumber') IS NULL
+                    ALTER TABLE [dbo].[MaintenanceOrders] ADD [ContractNumber] nvarchar(50) NOT NULL DEFAULT N'';
 
-            migrationBuilder.AddColumn<string>(
-                name: "MaintenanceDescription",
-                table: "MaintenanceOrders",
-                type: "nvarchar(1000)",
-                maxLength: 1000,
-                nullable: false,
-                defaultValue: "");
+                IF COL_LENGTH(N'dbo.MaintenanceOrders', N'MaintenanceDescription') IS NULL
+                    ALTER TABLE [dbo].[MaintenanceOrders] ADD [MaintenanceDescription] nvarchar(1000) NOT NULL DEFAULT N'';
 
-            migrationBuilder.AddColumn<string>(
-                name: "OnSiteHardwareFrequency",
-                table: "MaintenanceOrders",
-                type: "nvarchar(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "");
+                IF COL_LENGTH(N'dbo.MaintenanceOrders', N'OnSiteHardwareFrequency') IS NULL
+                    ALTER TABLE [dbo].[MaintenanceOrders] ADD [OnSiteHardwareFrequency] nvarchar(50) NOT NULL DEFAULT N'';
 
-            migrationBuilder.AddColumn<string>(
-                name: "OnSiteSoftwareFrequency",
-                table: "MaintenanceOrders",
-                type: "nvarchar(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "");
+                IF COL_LENGTH(N'dbo.MaintenanceOrders', N'OnSiteSoftwareFrequency') IS NULL
+                    ALTER TABLE [dbo].[MaintenanceOrders] ADD [OnSiteSoftwareFrequency] nvarchar(50) NOT NULL DEFAULT N'';
 
-            migrationBuilder.AddColumn<decimal>(
-                name: "ProgressPercent",
-                table: "MaintenanceOrders",
-                type: "decimal(5,2)",
-                precision: 5,
-                scale: 2,
-                nullable: false,
-                defaultValue: 0m);
+                IF COL_LENGTH(N'dbo.MaintenanceOrders', N'ProgressPercent') IS NULL
+                    ALTER TABLE [dbo].[MaintenanceOrders] ADD [ProgressPercent] decimal(5,2) NOT NULL DEFAULT 0;
 
-            migrationBuilder.AddColumn<string>(
-                name: "SiteName",
-                table: "MaintenanceOrders",
-                type: "nvarchar(100)",
-                maxLength: 100,
-                nullable: false,
-                defaultValue: "");
+                IF COL_LENGTH(N'dbo.MaintenanceOrders', N'SiteName') IS NULL
+                    ALTER TABLE [dbo].[MaintenanceOrders] ADD [SiteName] nvarchar(100) NOT NULL DEFAULT N'';
+                """);
 
             migrationBuilder.Sql(
                 """

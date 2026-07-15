@@ -92,7 +92,7 @@ public sealed class ExcelReportService(
             sheet.Cell(row, 15).SetValue(item.SubCaseContactSummary);
             sheet.Cell(row, 16).SetValue(item.PaymentPercentSummary);
             sheet.Cell(row, 17).SetValue(item.ActualPaidAmountTotal);
-            sheet.Cell(row, 18).SetValue(item.ProgressDescription ?? string.Empty);
+            sheet.Cell(row, 18).SetValue(RichTextSanitizer.ToPlainText(item.ProgressDescription));
             sheet.Cell(row, 19).SetValue(item.UpdatedByUserName);
             sheet.Cell(row, 20).SetValue(item.SourceUpdatedAt.LocalDateTime);
             row++;
@@ -140,7 +140,7 @@ public sealed class ExcelReportService(
             sheet.Cell(row, 11).SetValue(purchaseRequests.Sum(x => x.PurchaseAmount));
             sheet.Cell(row, 12).SetValue(JoinDistinct(purchaseRequests.Select(x => DisplayName(x.SubCaseContact))));
             sheet.Cell(row, 13).SetValue(purchaseRequests.Sum(x => x.ActualPaidAmount));
-            sheet.Cell(row, 14).SetValue(project.ProgressDescription ?? string.Empty);
+            sheet.Cell(row, 14).SetValue(RichTextSanitizer.ToPlainText(project.ProgressDescription));
             sheet.Cell(row, 15).SetValue(DisplayName(project.UpdatedByUser));
             sheet.Cell(row, 16).SetValue(project.UpdatedAt.LocalDateTime);
             row++;

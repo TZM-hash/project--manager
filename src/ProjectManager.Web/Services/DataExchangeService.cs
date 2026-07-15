@@ -135,7 +135,7 @@ public sealed class DataExchangeService(
             sheet.Cell(row, 8).SetValue(project.ProgressPercent);
             sheet.Cell(row, 9).SetValue(project.ProjectAmount);
             sheet.Cell(row, 10).SetValue(project.CollectionPercent);
-            sheet.Cell(row, 11).SetValue(project.ProgressDescription ?? string.Empty);
+            sheet.Cell(row, 11).SetValue(RichTextSanitizer.ToPlainText(project.ProgressDescription));
             row++;
         }
 

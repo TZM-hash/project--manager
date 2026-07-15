@@ -401,7 +401,9 @@ public sealed class IndexModel(
             worksheet.Cell(row, 5).Value = project.ProjectType switch { Models.ProjectType.Engineering => "工程", Models.ProjectType.Maintenance => "保養", _ => "-" };
             worksheet.Cell(row, 6).Value = project.Status?.Name ?? "-";
             worksheet.Cell(row, 7).Value = project.ProgressPercent;
-            worksheet.Cell(row, 8).Value = project.ProgressDescription ?? "-";
+            worksheet.Cell(row, 8).Value = RichTextSanitizer.ToPlainText(project.ProgressDescription) is { Length: > 0 } progressDescription
+                ? progressDescription
+                : "-";
             worksheet.Cell(row, 9).Value = project.ProjectAmount;
             worksheet.Cell(row, 10).Value = project.ParentCaseNumber ?? "-";
             worksheet.Cell(row, 11).Value = vendorName;

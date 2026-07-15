@@ -128,6 +128,28 @@ public sealed class ExcelReportServiceTests
         sheet.Cell(2, 12).GetString().Should().Be("Contact User");
     }
 
+    [Fact]
+    public async Task ExportOpenProjectsAsync_writes_rich_text_progress_as_plain_text()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var disposeDb = db;
+        await using var disposeConnection = connection;
+        await SeedOpenProjectAsync(
+            db,
+            "1.工程已完工，高毛利冲销<br><span style=\"color:#2563eb\">2.剩余88w待尋他案請購還款</span>。");
+        var service = new ExcelReportService(db, new ProjectQueryService(db));
+
+        var export = await service.ExportOpenProjectsAsync(
+            new ProjectFilter(2026, null, null, null, null, null, OpenOnly: true),
+            CancellationToken.None);
+
+        using var workbook = LoadWorkbook(export);
+        var description = workbook.Worksheet(1).Cell(2, 14).GetString();
+        description.Should().Be("1.工程已完工，高毛利冲销\n2.剩余88w待尋他案請購還款。");
+        description.Should().NotContain("<br>");
+        description.Should().NotContain("<span");
+    }
+
     private static XLWorkbook LoadWorkbook(ExportFile export)
     {
         return new XLWorkbook(new MemoryStream(export.Contents));
@@ -140,7 +162,9 @@ public sealed class ExcelReportServiceTests
             .ToArray();
     }
 
-    private static async Task SeedOpenProjectAsync(ProjectManager.Web.Data.ApplicationDbContext db)
+    private static async Task SeedOpenProjectAsync(
+        ProjectManager.Web.Data.ApplicationDbContext db,
+        string progressDescription = "Open progress")
     {
         var staff = new ApplicationUser
         {
@@ -172,7 +196,7 @@ public sealed class ExcelReportServiceTests
             ProjectAmount = 10000,
             ProgressPercent = 30,
             CollectionPercent = 20,
-            ProgressDescription = "Open progress",
+            ProgressDescription = progressDescription,
             UpdatedByUser = staff,
             UpdatedAt = new DateTimeOffset(2026, 7, 10, 8, 30, 0, TimeSpan.Zero),
             Assignments =

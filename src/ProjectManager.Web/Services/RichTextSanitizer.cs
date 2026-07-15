@@ -50,6 +50,29 @@ public static partial class RichTextSanitizer
         return string.IsNullOrWhiteSpace(StripHtml(normalized)) ? null : normalized;
     }
 
+    public static string ToPlainText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var text = value.Replace("\r\n", "\n").Replace('\r', '\n');
+        text = BreakTagRegex().Replace(text, "\n");
+        text = ParagraphTagRegex().Replace(text, "\n");
+        text = HtmlTagRegex().Replace(text, string.Empty);
+        text = WebUtility.HtmlDecode(text).Replace('\u00a0', ' ');
+
+        var lines = text
+            .Replace("\r\n", "\n")
+            .Replace('\r', '\n')
+            .Split('\n')
+            .Select(line => HorizontalWhitespaceRegex().Replace(line, " ").Trim())
+            .Where(line => line.Length > 0);
+
+        return string.Join("\n", lines);
+    }
+
     private static void AppendAllowedTag(StringBuilder output, string tag, ref int openSpans)
     {
         var lower = tag.ToLowerInvariant();
@@ -169,6 +192,15 @@ public static partial class RichTextSanitizer
 
     [GeneratedRegex("<[^>]+>", RegexOptions.Compiled)]
     private static partial Regex HtmlTagRegex();
+
+    [GeneratedRegex("<br\\s*/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex BreakTagRegex();
+
+    [GeneratedRegex("</?(div|p)[^>]*>", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex ParagraphTagRegex();
+
+    [GeneratedRegex("[\\t ]+", RegexOptions.Compiled)]
+    private static partial Regex HorizontalWhitespaceRegex();
 
     [GeneratedRegex("color\\s*:\\s*(#[0-9a-fA-F]{6}|rgb\\(\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*\\))", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex ColorStyleRegex();
