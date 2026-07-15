@@ -9,7 +9,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
+[Authorize(Roles = RoleNames.BusinessDataRoles)]
 public sealed class PrintListModel(
     PlanningProjectService planningProjectService,
     UserManager<ApplicationUser> userManager) : PageModel
@@ -40,7 +40,7 @@ public sealed class PrintListModel(
         }
 
         Projects = await planningProjectService.GetPlanningProjectsByIdsAsync(idList, cancellationToken);
-        if (!User.CanManageAllBusinessData())
+        if (!User.CanViewAllBusinessData())
         {
             var currentUserId = userManager.GetUserId(User);
             Projects = string.IsNullOrWhiteSpace(currentUserId)

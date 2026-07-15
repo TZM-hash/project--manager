@@ -104,7 +104,10 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
-<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
+@if (Model.CanManageSavedViews)
+{
+    <partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
+}
 
 <div class="data-list-card">
     <div class="d-flex justify-content-end gap-2 p-2">
@@ -164,7 +167,7 @@
                 <td data-column="updatedAt" class="text-nowrap">@project.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                 <td data-column="actions" class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@project.Id">明細</a>
-                    @if (Model.CanEditAll || project.Assignments.Any(x => x.UserId == Model.CurrentUserId))
+                    @if (Model.CanEditAll || (User.IsInRole(ProjectManager.Web.Security.RoleNames.ProjectStaff) && project.Assignments.Any(x => x.UserId == Model.CurrentUserId)))
                     {
                         <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
                     }

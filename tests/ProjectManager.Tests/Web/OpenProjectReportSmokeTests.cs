@@ -36,16 +36,28 @@ public sealed class OpenProjectReportSmokeTests
     }
 
     [Fact]
-    public async Task Viewer_can_access_open_project_report()
+    public async Task Data_viewer_can_access_all_open_project_report_views()
     {
         await using var factory = new ReportWebFactory();
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.Viewer);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.DataViewer);
         await factory.SeedProjectsAsync();
 
         var response = await client.GetAsync("/Reports/OpenProjects");
+        var html = await response.Content.ReadAsStringAsync();
+        var print = await client.GetAsync("/Reports/OpenProjects/Print");
+        var printHtml = await print.Content.ReadAsStringAsync();
+        var statistics = await client.GetAsync("/Reports/OpenProjects/Statistics");
+        var statisticsHtml = await statistics.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain("Assigned Project");
+        html.Should().Contain("Other Project");
+        html.Should().NotContain("儲存目前檢視");
+        print.StatusCode.Should().Be(HttpStatusCode.OK);
+        printHtml.Should().Contain("Assigned Project");
+        printHtml.Should().Contain("Other Project");
+        statistics.StatusCode.Should().Be(HttpStatusCode.OK, statisticsHtml);
     }
 
     [Fact]

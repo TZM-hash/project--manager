@@ -15,7 +15,7 @@ public static class RoleSelection
             : new RoleSelectionResult(
                 false,
                 [],
-                "請選擇一個主權限層級：系統管理員、資訊管理員或一般使用者。");
+                "請選擇一個主權限層級：系統管理員、資訊管理員、資料查看員或一般使用者。");
     }
 }
 

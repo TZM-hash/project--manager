@@ -51,7 +51,7 @@ public static class SeedData
         await SeedRolesAsync(roleManager);
         await SeedStatusesAsync(db);
         await SeedAdminUserAsync(userManager, configuration);
-        await EnsureLegacyRoleCompatibilityAsync(userManager);
+        await EnsureLegacyRoleCompatibilityAsync(userManager, roleManager);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -145,12 +145,21 @@ public static class SeedData
     }
 
     private static async Task EnsureLegacyRoleCompatibilityAsync(
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager)
     {
         var processedUserIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var legacyRole in RoleNames.LegacyRegularRoles)
+        var legacyViewerUsers = await roleManager.RoleExistsAsync(RoleNames.LegacyViewer)
+            ? await userManager.GetUsersInRoleAsync(RoleNames.LegacyViewer)
+            : [];
+
+        var usersByLegacyRole = new[]
         {
-            var users = await userManager.GetUsersInRoleAsync(legacyRole);
+            legacyViewerUsers,
+            await userManager.GetUsersInRoleAsync(RoleNames.SubCaseContact)
+        };
+        foreach (var users in usersByLegacyRole)
+        {
             foreach (var user in users.Where(x => processedUserIds.Add(x.Id)))
             {
                 var currentRoles = await userManager.GetRolesAsync(user);
@@ -158,6 +167,29 @@ public static class SeedData
                 {
                     await userManager.AddToRoleAsync(user, RoleNames.ProjectStaff);
                 }
+            }
+        }
+
+        foreach (var user in legacyViewerUsers)
+        {
+            var result = await userManager.RemoveFromRoleAsync(user, RoleNames.LegacyViewer);
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Failed to remove legacy Viewer role: " +
+                    string.Join("; ", result.Errors.Select(x => x.Description)));
+            }
+        }
+
+        var legacyViewerRole = await roleManager.FindByNameAsync(RoleNames.LegacyViewer);
+        if (legacyViewerRole is not null)
+        {
+            var result = await roleManager.DeleteAsync(legacyViewerRole);
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Failed to delete legacy Viewer role: " +
+                    string.Join("; ", result.Errors.Select(x => x.Description)));
             }
         }
     }

@@ -11,7 +11,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Settlements;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.FullBusinessReadRoles)]
 public sealed class IndexModel(ApplicationDbContext db) : PageModel
 {
     [BindProperty(SupportsGet = true)]
@@ -37,7 +37,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public IReadOnlyList<MonthlySettlementBatch> Batches { get; private set; } = [];
 
-    public bool IsAdministrator => User.CanManageAllBusinessData();
+    public bool CanManageBusinessData => User.CanManageAllBusinessData();
 
     public int TotalCount { get; private set; }
 

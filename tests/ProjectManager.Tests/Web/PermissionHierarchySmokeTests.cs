@@ -74,7 +74,7 @@ public sealed class PermissionHierarchySmokeTests
             .Cast<Microsoft.AspNetCore.Authorization.AuthorizeAttribute>()
             .Single();
 
-        attribute.Roles.Should().Be(RoleNames.BusinessManagerRoles);
+        attribute.Roles.Should().Be(RoleNames.FullBusinessReadRoles);
     }
 
     [Theory]
@@ -94,9 +94,104 @@ public sealed class PermissionHierarchySmokeTests
         html.Should().Contain("OTHER-PLANNING-PROJECT");
     }
 
+    [Fact]
+    public async Task Data_viewer_can_read_all_project_and_planning_views_without_edit_controls()
+    {
+        await using var factory = new PermissionWebFactory();
+        var ids = await factory.SeedScopedProjectsAsync();
+        var client = CreateClient(factory, RoleNames.DataViewer);
+
+        var projects = await client.GetAsync("/Workbench/Projects");
+        var projectsHtml = WebUtility.HtmlDecode(await projects.Content.ReadAsStringAsync());
+        var details = await client.GetAsync($"/Workbench/Projects/Details/{ids.OtherProjectId}");
+        var detailsHtml = WebUtility.HtmlDecode(await details.Content.ReadAsStringAsync());
+        var ganttPrint = await client.GetAsync($"/Workbench/Projects/GanttPrint/{ids.OtherProjectId}");
+        var planning = await client.GetAsync("/Workbench/PlanningProjects");
+        var planningHtml = WebUtility.HtmlDecode(await planning.Content.ReadAsStringAsync());
+        var planningPrint = await client.GetAsync($"/Workbench/PlanningProjects/Print/{ids.OtherPlanningProjectId}");
+        var planningPrintList = await client.GetAsync(
+            $"/Workbench/PlanningProjects/PrintList?Ids={ids.OwnPlanningProjectId},{ids.OtherPlanningProjectId}");
+        var planningPrintListHtml = WebUtility.HtmlDecode(await planningPrintList.Content.ReadAsStringAsync());
+
+        projects.StatusCode.Should().Be(HttpStatusCode.OK);
+        projectsHtml.Should().Contain("MY-SCOPED-PROJECT");
+        projectsHtml.Should().Contain("OTHER-SCOPED-PROJECT");
+        projectsHtml.Should().NotContain(">編輯<");
+        projectsHtml.Should().NotContain("儲存目前檢視");
+        details.StatusCode.Should().Be(HttpStatusCode.OK);
+        detailsHtml.Should().Contain("OTHER-SCOPED-PROJECT");
+        detailsHtml.Should().NotContain("編輯專案");
+        ganttPrint.StatusCode.Should().Be(HttpStatusCode.OK);
+        planning.StatusCode.Should().Be(HttpStatusCode.OK);
+        planningHtml.Should().Contain("MY-SCOPED-PLANNING");
+        planningHtml.Should().Contain("OTHER-SCOPED-PLANNING");
+        planningHtml.Should().NotContain(">新增<");
+        planningHtml.Should().NotContain(">編輯<");
+        planningHtml.Should().NotContain("批量刪除");
+        planningPrint.StatusCode.Should().Be(HttpStatusCode.OK);
+        planningPrintList.StatusCode.Should().Be(HttpStatusCode.OK);
+        planningPrintListHtml.Should().Contain("MY-SCOPED-PLANNING");
+        planningPrintListHtml.Should().Contain("OTHER-SCOPED-PLANNING");
+    }
+
+    [Fact]
+    public async Task Data_viewer_can_open_read_only_business_pages_but_not_system_or_write_actions()
+    {
+        await using var factory = new PermissionWebFactory();
+        var client = CreateClient(factory, RoleNames.DataViewer);
+
+        var maintenance = await client.GetAsync("/Admin/MaintenanceOrders");
+        var maintenanceHtml = WebUtility.HtmlDecode(await maintenance.Content.ReadAsStringAsync());
+        var settlements = await client.GetAsync("/Settlements");
+        var settlementsHtml = WebUtility.HtmlDecode(await settlements.Content.ReadAsStringAsync());
+        var archives = await client.GetAsync("/Admin/Archives");
+        var archivesHtml = WebUtility.HtmlDecode(await archives.Content.ReadAsStringAsync());
+
+        maintenance.StatusCode.Should().Be(HttpStatusCode.OK);
+        maintenanceHtml.Should().NotContain(">新增<");
+        maintenanceHtml.Should().NotContain(">編輯<");
+        maintenanceHtml.Should().NotContain("批量刪除");
+        settlements.StatusCode.Should().Be(HttpStatusCode.OK);
+        settlementsHtml.Should().NotContain("新增月結");
+        settlementsHtml.Should().NotContain("批量刪除");
+        archives.StatusCode.Should().Be(HttpStatusCode.OK, archivesHtml);
+        archivesHtml.Should().NotContain(">還原<");
+
+        foreach (var page in new[]
+                 {
+                     "/Admin/Projects",
+                     "/Admin/Users",
+                     "/Admin/Statuses",
+                     "/Admin/Vendors",
+                     "/Admin/DataExchange",
+                     "/Admin/Operations",
+                     "/Admin/Settings"
+                 })
+        {
+            (await client.GetAsync(page)).StatusCode.Should().Be(HttpStatusCode.Forbidden, page);
+        }
+
+        var planning = await client.GetAsync("/Workbench/PlanningProjects");
+        var token = ExtractAntiforgeryToken(await planning.Content.ReadAsStringAsync());
+        var form = new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = token,
+            ["ids"] = "1"
+        };
+        (await client.PostAsync("/Admin/MaintenanceOrders?handler=BatchDelete", new FormUrlEncodedContent(form)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsync("/Settlements?handler=BatchDelete", new FormUrlEncodedContent(form)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsync("/Admin/Archives?handler=Restore&id=1", new FormUrlEncodedContent(form)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsync("/Workbench/Projects?handler=SaveView", new FormUrlEncodedContent(form)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await client.PostAsync("/Reports/OpenProjects?handler=SaveView", new FormUrlEncodedContent(form)))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     [Theory]
     [InlineData(RoleNames.ProjectStaff)]
-    [InlineData(RoleNames.Viewer)]
     public async Task Regular_users_only_see_their_planning_projects(string role)
     {
         await using var factory = new PermissionWebFactory();
@@ -156,11 +251,11 @@ public sealed class PermissionHierarchySmokeTests
     }
 
     [Fact]
-    public async Task Legacy_regular_user_cannot_print_or_report_other_users_projects()
+    public async Task Project_staff_cannot_print_or_report_other_users_projects()
     {
         await using var factory = new PermissionWebFactory();
         var ids = await factory.SeedScopedProjectsAsync();
-        var client = CreateClient(factory, RoleNames.Viewer);
+        var client = CreateClient(factory, RoleNames.ProjectStaff);
 
         var ganttPrint = await client.GetAsync($"/Workbench/Projects/GanttPrint?id={ids.OtherProjectId}");
         var planningPrint = await client.GetAsync($"/Workbench/PlanningProjects/Print?id={ids.OtherPlanningProjectId}");
@@ -182,10 +277,10 @@ public sealed class PermissionHierarchySmokeTests
     }
 
     [Fact]
-    public async Task Legacy_regular_user_cannot_open_manager_only_settlement_pages()
+    public async Task Project_staff_cannot_open_manager_only_settlement_pages()
     {
         await using var factory = new PermissionWebFactory();
-        var client = CreateClient(factory, RoleNames.Viewer);
+        var client = CreateClient(factory, RoleNames.ProjectStaff);
 
         var details = await client.GetAsync("/Settlements/Details/1");
         var print = await client.GetAsync("/Settlements/Print/1");

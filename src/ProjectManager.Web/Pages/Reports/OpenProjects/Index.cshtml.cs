@@ -13,7 +13,7 @@ using ProjectManager.Web.Services.DataViews;
 
 namespace ProjectManager.Web.Pages.Reports.OpenProjects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Leader + "," + RoleNames.Viewer + "," + RoleNames.ProjectStaff)]
+[Authorize(Roles = RoleNames.BusinessDataRoles)]
 public sealed class IndexModel(
     ProjectQueryService projectQueryService,
     ExcelReportService excelReportService,
@@ -60,6 +60,8 @@ public sealed class IndexModel(
     public SaveDataViewInput Input { get; set; } = new();
 
     public SavedDataViewBarViewModel SavedViewBar { get; private set; } = null!;
+
+    public bool CanManageSavedViews => !User.IsInRole(RoleNames.DataViewer);
 
     public IReadOnlyList<Project> Projects { get; private set; } = [];
 
@@ -111,6 +113,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
     {
+        if (!CanManageSavedViews)
+        {
+            return Forbid();
+        }
+
         var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
         try
         {
@@ -126,6 +133,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostDeleteViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
     {
+        if (!CanManageSavedViews)
+        {
+            return Forbid();
+        }
+
         var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
         var deleted = await savedDataViews.DeleteAsync(userId, id, cancellationToken);
         TempData[deleted ? "SuccessMessage" : "ErrorMessage"] = deleted ? "個人檢視已刪除。" : "找不到可刪除的個人檢視。";
@@ -134,6 +146,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostSetDefaultViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
     {
+        if (!CanManageSavedViews)
+        {
+            return Forbid();
+        }
+
         var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
         var updated = await savedDataViews.SetDefaultAsync(userId, id, cancellationToken);
         TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated ? "預設檢視已更新。" : "找不到可設定的個人檢視。";
@@ -148,7 +165,7 @@ public sealed class IndexModel(
 
     private ProjectFilter CreateFilter()
     {
-        var personnelUserId = User.CanManageAllBusinessData()
+        var personnelUserId = User.CanViewAllBusinessData()
             ? PersonnelUserId
             : userManager.GetUserId(User);
 

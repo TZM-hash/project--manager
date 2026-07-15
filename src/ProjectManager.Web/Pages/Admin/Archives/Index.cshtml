@@ -61,15 +61,19 @@
                     <td class="text-center">@archive.ArchivedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</td>
                     <td class="text-center">@archive.ArchivedByUser?.DisplayName ?? archive.ArchivedByUser?.UserName ?? "-"</td>
                     <td class="text-end text-nowrap">
-                        @if (Model.CanRestore(archive))
+                        @if (Model.CanManageBusinessData && Model.CanRestore(archive))
                         {
                             <form method="post" asp-page-handler="Restore" asp-route-id="@archive.Id" class="d-inline" onsubmit="return confirm('確定還原該歸檔專案嗎？還原後專案將回到專案總覽清單。');">
                                 <button type="submit" class="btn btn-sm btn-outline-success">還原</button>
                             </form>
                         }
-                        else
+                        else if (Model.CanManageBusinessData)
                         {
                             <span class="text-muted small">超過半年</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">僅查看</span>
                         }
                     </td>
                 </tr>

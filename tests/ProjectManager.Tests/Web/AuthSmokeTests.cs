@@ -53,7 +53,7 @@ public sealed class AuthSmokeTests
         {
             AllowAutoRedirect = false
         });
-        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.Viewer);
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.DataViewer);
 
         var response = await client.GetAsync("/Admin/Users");
 

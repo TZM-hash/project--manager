@@ -2,8 +2,9 @@
 @{
     var isAdministrator = User.IsSystemAdministrator();
     var canManageBusinessData = User.CanManageAllBusinessData();
+    var canViewAllBusinessData = User.CanViewAllBusinessData();
     var canViewReports = User.IsRegularUser();
-    var canUseSettlements = canManageBusinessData;
+    var canUseSettlements = canViewAllBusinessData;
 }
 
 <section class="nav-section" aria-labelledby="nav-work-label">
@@ -45,7 +46,7 @@
                 <span>規劃中專案</span>
             </a>
         </li>
-        @if (canManageBusinessData)
+        @if (canViewAllBusinessData)
         {
             <li class="nav-item">
                 <a class="nav-link" asp-area="" asp-page="/Admin/MaintenanceOrders/Index" data-nav-label="保養訂單">
@@ -89,7 +90,7 @@
                     </a>
                 </li>
             }
-            @if (canManageBusinessData)
+            @if (canViewAllBusinessData)
             {
                 <li class="nav-item">
                     <a class="nav-link" asp-area="" asp-page="/Admin/Archives/Index" data-nav-label="歸檔歷史">

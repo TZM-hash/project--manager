@@ -11,7 +11,10 @@
         <div class="page-subtitle">統一管理維保合約、執行範圍、進度與保養內容</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Create">新增</a>
+        @if (Model.CanManageBusinessData)
+        {
+            <a class="btn btn-primary" asp-page="./Create">新增</a>
+        }
     </div>
 </div>
 
@@ -96,25 +99,31 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
-<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
+@if (Model.CanManageBusinessData)
+{
+    <partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
+}
 
-<form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的保養訂單嗎？">
-    <div class="bulk-toolbar-copy">
-        <span class="bulk-toolbar-count" data-selected-count>0</span>
-        <span>個訂單已選擇</span>
-    </div>
-    <div class="bulk-toolbar-actions">
-        <input type="hidden" asp-for="Year" />
-        <input type="hidden" asp-for="CustomerName" />
-        <input type="hidden" asp-for="Method" />
-        <input type="hidden" asp-for="ExecutorUserId" />
-        <input type="hidden" asp-for="MinProgressPercent" />
-        <input type="hidden" asp-for="MaxProgressPercent" />
-        <input type="hidden" asp-for="PageNumber" />
-        <input type="hidden" asp-for="PageSize" />
-        <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection data-processing-label="正在刪除…">批量刪除</button>
-    </div>
-</form>
+@if (Model.CanManageBusinessData)
+{
+    <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的保養訂單嗎？">
+        <div class="bulk-toolbar-copy">
+            <span class="bulk-toolbar-count" data-selected-count>0</span>
+            <span>個訂單已選擇</span>
+        </div>
+        <div class="bulk-toolbar-actions">
+            <input type="hidden" asp-for="Year" />
+            <input type="hidden" asp-for="CustomerName" />
+            <input type="hidden" asp-for="Method" />
+            <input type="hidden" asp-for="ExecutorUserId" />
+            <input type="hidden" asp-for="MinProgressPercent" />
+            <input type="hidden" asp-for="MaxProgressPercent" />
+            <input type="hidden" asp-for="PageNumber" />
+            <input type="hidden" asp-for="PageSize" />
+            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection data-processing-label="正在刪除…">批量刪除</button>
+        </div>
+    </form>
+}
 
 <div class="data-list-card">
     <div class="maintenance-table-toolbar">
@@ -156,7 +165,10 @@
                data-initial-row-density="@Model.SavedViewBar.RowDensity">
         <thead>
             <tr class="maintenance-group-row">
-                <th class="checkbox-cell" rowspan="2"><input class="form-check-input" type="checkbox" data-bulk-check-all aria-label="選擇全部保養訂單" /></th>
+                @if (Model.CanManageBusinessData)
+                {
+                    <th class="checkbox-cell" rowspan="2"><input class="form-check-input" type="checkbox" data-bulk-check-all aria-label="選擇全部保養訂單" /></th>
+                }
                 <th rowspan="2" data-column="item" data-column-label="項次" data-column-order="1" data-column-fixed>項次</th>
                 <th colspan="3" data-column-group="contractNumber customerName siteName">客戶與合約</th>
                 <th rowspan="2" data-column="executor" data-column-label="經辦" data-column-order="5">經辦</th>
@@ -192,7 +204,10 @@
             var itemNumber = ((Model.PageNumber - 1) * Model.PageSize) + index + 1;
             var hasRemoteScope = order.MaintenanceMethod is ProjectManager.Web.Models.MaintenanceMethod.Remote or ProjectManager.Web.Models.MaintenanceMethod.Both || order.RemoteAnnualCount > 0;
             <tr>
-                <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@order.Id" data-bulk-checkbox /></td>
+                @if (Model.CanManageBusinessData)
+                {
+                    <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@order.Id" data-bulk-checkbox /></td>
+                }
                 <td data-column="item" class="numeric">@itemNumber</td>
                 <td data-column="contractNumber" class="text-nowrap"><strong>@order.ContractNumber</strong></td>
                 <td data-column="customerName" class="maintenance-customer-cell"><strong>@order.CustomerName</strong><small>@order.Year 年保養案</small></td>
@@ -212,10 +227,13 @@
                 <td data-column="updatedAt" class="text-nowrap">@order.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 <td data-column="updatedBy">@(order.UpdatedByUser?.DisplayName ?? order.UpdatedByUser?.UserName ?? order.UpdatedByUserId)</td>
                 <td data-column="actions" class="text-end text-nowrap maintenance-actions-column">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@order.Id">編輯</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-Year="@Model.Year" asp-route-CustomerName="@Model.CustomerName" asp-route-Method="@Model.Method" asp-route-ExecutorUserId="@Model.ExecutorUserId" asp-route-MinProgressPercent="@Model.MinProgressPercent" asp-route-MaxProgressPercent="@Model.MaxProgressPercent" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該訂單嗎？');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
-                    </form>
+                    @if (Model.CanManageBusinessData)
+                    {
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@order.Id">編輯</a>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@order.Id" asp-route-Year="@Model.Year" asp-route-CustomerName="@Model.CustomerName" asp-route-Method="@Model.Method" asp-route-ExecutorUserId="@Model.ExecutorUserId" asp-route-MinProgressPercent="@Model.MinProgressPercent" asp-route-MaxProgressPercent="@Model.MaxProgressPercent" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該訂單嗎？');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+                        </form>
+                    }
                 </td>
             </tr>
         }
@@ -227,7 +245,7 @@
                         "目前沒有保養訂單",
                         "可以新增第一筆保養訂單，或清除篩選後重新查看。",
                         "inbox",
-                        "新增保養訂單",
+                        Model.CanManageBusinessData ? "新增保養訂單" : null,
                         "/Admin/MaintenanceOrders/Create",
                         ClearActionText: "清除篩選",
                         ClearActionPage: "/Admin/MaintenanceOrders/Index")' />

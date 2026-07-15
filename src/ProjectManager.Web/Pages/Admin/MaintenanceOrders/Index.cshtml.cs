@@ -15,7 +15,7 @@ using ProjectManager.Web.Services.Operations;
 
 namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 
-[Authorize(Roles = RoleNames.BusinessManagerRoles)]
+[Authorize(Roles = RoleNames.FullBusinessReadRoles)]
 public sealed class IndexModel(
     MaintenanceOrderService service,
     ApplicationDbContext db,
@@ -71,6 +71,8 @@ public sealed class IndexModel(
 
     public IReadOnlyList<ChartSlice> ProgressSlices { get; private set; } = [];
 
+    public bool CanManageBusinessData => User.CanManageAllBusinessData();
+
     public List<SelectListItem> ExecutorOptions { get; private set; } = [];
 
     public List<SelectListItem> MethodOptions { get; } =
@@ -108,6 +110,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
     {
+        if (!CanManageBusinessData)
+        {
+            return Forbid();
+        }
+
         var userId = CurrentUserId();
         try
         {
@@ -123,6 +130,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostDeleteViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
     {
+        if (!CanManageBusinessData)
+        {
+            return Forbid();
+        }
+
         var deleted = await savedDataViews.DeleteAsync(CurrentUserId(), id, cancellationToken);
         TempData[deleted ? "SuccessMessage" : "ErrorMessage"] = deleted ? "個人檢視已刪除。" : "找不到可刪除的個人檢視。";
         return RedirectToLocal(returnUrl);
@@ -130,6 +142,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostSetDefaultViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
     {
+        if (!CanManageBusinessData)
+        {
+            return Forbid();
+        }
+
         var updated = await savedDataViews.SetDefaultAsync(CurrentUserId(), id, cancellationToken);
         TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated ? "預設檢視已更新。" : "找不到可設定的個人檢視。";
         return RedirectToLocal(returnUrl);
@@ -188,12 +205,22 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
+        if (!CanManageBusinessData)
+        {
+            return Forbid();
+        }
+
         await service.DeleteAsync(id, cancellationToken);
         return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
+        if (!CanManageBusinessData)
+        {
+            return Forbid();
+        }
+
         var job = await operationJobs.QueueAsync(
             OperationJobType.MaintenanceBulkDelete,
             CurrentUserId(),

@@ -9,7 +9,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
+[Authorize(Roles = RoleNames.BusinessDataRoles)]
 public sealed class PrintModel(
     PlanningProjectService planningProjectService,
     UserManager<ApplicationUser> userManager) : PageModel
@@ -26,7 +26,7 @@ public sealed class PrintModel(
             return NotFound();
         }
 
-        if (!User.CanManageAllBusinessData())
+        if (!User.CanViewAllBusinessData())
         {
             var currentUserId = userManager.GetUserId(User);
             var leaderIds = (project.LeaderUserId ?? string.Empty)

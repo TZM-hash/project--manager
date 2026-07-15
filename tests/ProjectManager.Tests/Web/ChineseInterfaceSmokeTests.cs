@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectManager.Web.Data;
+using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
 
 namespace ProjectManager.Tests.Web;
@@ -88,6 +90,36 @@ public sealed class ChineseInterfaceSmokeTests
         html.Should().Contain("系統管理員");
         html.Should().NotContain("<th>Email</th>");
         html.Should().NotContain(">Administrator<");
+    }
+
+    [Fact]
+    public async Task Administrator_user_forms_show_four_primary_roles_without_legacy_viewer()
+    {
+        await using var factory = new ChineseInterfaceWebFactory();
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.Administrator);
+        string administratorId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            administratorId = (await userManager.GetUsersInRoleAsync(RoleNames.Administrator)).Single().Id;
+        }
+
+        var create = await client.GetAsync("/Admin/Users/Create");
+        var createHtml = WebUtility.HtmlDecode(await create.Content.ReadAsStringAsync());
+        var edit = await client.GetAsync($"/Admin/Users/Edit/{administratorId}");
+        var editHtml = WebUtility.HtmlDecode(await edit.Content.ReadAsStringAsync());
+
+        create.StatusCode.Should().Be(HttpStatusCode.OK);
+        edit.StatusCode.Should().Be(HttpStatusCode.OK);
+        foreach (var html in new[] { createHtml, editHtml })
+        {
+            html.Should().Contain("系統管理員");
+            html.Should().Contain("資訊管理員");
+            html.Should().Contain("資料查看員");
+            html.Should().Contain("一般使用者");
+            html.Should().NotContain("舊查詢角色");
+        }
     }
 
     [Fact]

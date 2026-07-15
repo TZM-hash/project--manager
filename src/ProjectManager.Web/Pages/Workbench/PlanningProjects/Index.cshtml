@@ -15,7 +15,10 @@
         {
             <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量匯入</a>
         }
-        <a class="btn btn-primary" asp-page="./Create">新增</a>
+        @if (Model.CanEdit)
+        {
+            <a class="btn btn-primary" asp-page="./Create">新增</a>
+        }
     </div>
 </div>
 
@@ -103,14 +106,17 @@
         <form method="post" asp-page-handler="BatchPrint" class="bulk-action-form" data-bulk-form>
             <button type="submit" class="btn btn-outline-secondary" data-bulk-requires-selection>批量列印</button>
         </form>
-        <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="確定刪除選中的專案嗎？">
-            <input type="hidden" asp-for="Name" />
-            <input type="hidden" asp-for="LeaderUserId" />
-            <input type="hidden" asp-for="Vendor" />
-            <input type="hidden" asp-for="PageNumber" />
-            <input type="hidden" asp-for="PageSize" />
-            <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
-        </form>
+        @if (Model.CanEdit)
+        {
+            <form method="post" asp-page-handler="BatchDelete" class="bulk-action-form" data-bulk-form data-confirm-message="確定刪除選中的專案嗎？">
+                <input type="hidden" asp-for="Name" />
+                <input type="hidden" asp-for="LeaderUserId" />
+                <input type="hidden" asp-for="Vendor" />
+                <input type="hidden" asp-for="PageNumber" />
+                <input type="hidden" asp-for="PageSize" />
+                <button type="submit" class="btn btn-outline-danger" data-bulk-requires-selection>批量刪除</button>
+            </form>
+        }
     </div>
 </div>
 
@@ -177,11 +183,17 @@
                 <td data-column="createdAt" class="text-nowrap">@project.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 <td data-column="updatedAt" class="text-nowrap">@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 <td data-column="actions" class="text-end text-nowrap">
-                    <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
+                    @if (Model.CanEdit)
+                    {
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
+                    }
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@project.Id">列印</a>
-                    <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" asp-route-Name="@Model.Name" asp-route-LeaderUserId="@Model.LeaderUserId" asp-route-Vendor="@Model.Vendor" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該專案嗎？');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
-                    </form>
+                    @if (Model.CanEdit)
+                    {
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" asp-route-Name="@Model.Name" asp-route-LeaderUserId="@Model.LeaderUserId" asp-route-Vendor="@Model.Vendor" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該專案嗎？');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
+                        </form>
+                    }
                 </td>
             </tr>
             idx++;
@@ -194,7 +206,7 @@
                         "目前沒有規劃中專案",
                         "可以建立第一筆規劃中專案，或清除篩選後重新查看。",
                         "inbox",
-                        "新增規劃專案",
+                        Model.CanEdit ? "新增規劃專案" : null,
                         "/Workbench/PlanningProjects/Create",
                         ClearActionText: "清除篩選",
                         ClearActionPage: "/Workbench/PlanningProjects/Index")' />

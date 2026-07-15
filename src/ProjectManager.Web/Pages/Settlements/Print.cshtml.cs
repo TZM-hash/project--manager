@@ -8,7 +8,7 @@ using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Settlements;
 
-[Authorize(Roles = RoleNames.BusinessManagerRoles)]
+[Authorize(Roles = RoleNames.FullBusinessReadRoles)]
 public sealed class PrintModel(ApplicationDbContext db) : PageModel
 {
     public MonthlySettlementBatch Batch { get; private set; } = new();

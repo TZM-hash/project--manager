@@ -10,7 +10,10 @@
         <div class="page-subtitle">查看歷史月結批次并进入列印或匯出流程</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-primary" asp-page="./Create">新增月結</a>
+        @if (Model.CanManageBusinessData)
+        {
+            <a class="btn btn-primary" asp-page="./Create">新增月結</a>
+        }
     </div>
 </div>
 
@@ -84,7 +87,7 @@
     </section>
 </div>
 
-@if (Model.IsAdministrator)
+@if (Model.CanManageBusinessData)
 {
     <form method="post" asp-page-handler="BatchDelete" class="bulk-toolbar" data-bulk-form data-confirm-message="確定刪除選中的月結批次嗎？">
         <div class="bulk-toolbar-copy">
@@ -109,7 +112,7 @@
         <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
         <thead>
             <tr>
-                @if (Model.IsAdministrator)
+                @if (Model.CanManageBusinessData)
                 {
                     <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
                 }
@@ -127,7 +130,7 @@
         @foreach (var batch in Model.Batches)
         {
             <tr>
-                @if (Model.IsAdministrator)
+                @if (Model.CanManageBusinessData)
                 {
                     <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@batch.Id" data-bulk-checkbox /></td>
                 }
@@ -141,7 +144,7 @@
                 <td class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Details" asp-route-id="@batch.Id">明細</a>
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@batch.Id">列印</a>
-                    @if (Model.IsAdministrator)
+                    @if (Model.CanManageBusinessData)
                     {
                         <form method="post" asp-page-handler="Delete" asp-route-id="@batch.Id" asp-route-Year="@Model.Year" asp-route-Month="@Model.Month" asp-route-BatchNumber="@Model.BatchNumber" asp-route-CreatedByUserId="@Model.CreatedByUserId" asp-route-Notes="@Model.Notes" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該月結批次嗎？');">
                             <button type="submit" class="btn btn-sm btn-outline-danger">刪除</button>
@@ -153,12 +156,12 @@
         @if (!Model.Batches.Any())
         {
             <tr>
-                <td colspan="@(Model.IsAdministrator ? 9 : 8)">
+                <td colspan="@(Model.CanManageBusinessData ? 9 : 8)">
                     <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
                         "目前沒有月結批次",
                         "可以建立新的月結批次，或清除篩選後查看其他月份。",
                         "inbox",
-                        "新增月結批次",
+                        Model.CanManageBusinessData ? "新增月結批次" : null,
                         "/Settlements/Create",
                         ClearActionText: "清除篩選",
                         ClearActionPage: "/Settlements/Index")' />

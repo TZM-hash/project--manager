@@ -63,6 +63,26 @@ public sealed class SettlementPageSmokeTests
     }
 
     [Fact]
+    public async Task Data_viewer_can_view_settlement_details_and_print_but_cannot_create()
+    {
+        await using var factory = new SettlementWebFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+        client.DefaultRequestHeaders.Add(TestAuthHandler.RoleHeader, RoleNames.DataViewer);
+        var batchId = await factory.SeedSettlementBatchAsync();
+
+        var details = await client.GetAsync($"/Settlements/Details/{batchId}");
+        var print = await client.GetAsync($"/Settlements/Print/{batchId}");
+        var create = await client.GetAsync("/Settlements/Create");
+
+        details.StatusCode.Should().Be(HttpStatusCode.OK);
+        print.StatusCode.Should().Be(HttpStatusCode.OK);
+        create.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task Export_action_returns_excel_content_type()
     {
         await using var factory = new SettlementWebFactory();

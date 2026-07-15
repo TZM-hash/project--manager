@@ -9,7 +9,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Settlements;
 
-[Authorize(Roles = RoleNames.BusinessManagerRoles)]
+[Authorize(Roles = RoleNames.FullBusinessReadRoles)]
 public sealed class DetailsModel(
     ApplicationDbContext db,
     ExcelReportService excelReportService) : PageModel

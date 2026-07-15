@@ -10,20 +10,23 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Archives;
 
-[Authorize(Roles = RoleNames.BusinessManagerRoles)]
+[Authorize(Roles = RoleNames.FullBusinessReadRoles)]
 public sealed class IndexModel(
     ApplicationDbContext db,
     ProjectArchiveService projectArchiveService) : PageModel
 {
     public IReadOnlyList<ProjectArchive> Archives { get; private set; } = [];
 
+    public bool CanManageBusinessData => User.CanManageAllBusinessData();
+
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        Archives = await db.ProjectArchives
+        Archives = (await db.ProjectArchives
             .AsNoTracking()
             .Include(x => x.ArchivedByUser)
+            .ToListAsync(cancellationToken))
             .OrderByDescending(x => x.ArchivedAt)
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 
     public bool CanRestore(ProjectArchive archive)
@@ -33,6 +36,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostRestoreAsync(int id, CancellationToken cancellationToken)
     {
+        if (!CanManageBusinessData)
+        {
+            return Forbid();
+        }
+
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
         var result = await projectArchiveService.RestoreProjectAsync(id, userId, cancellationToken);

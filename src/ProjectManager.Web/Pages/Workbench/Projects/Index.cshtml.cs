@@ -73,6 +73,8 @@ public sealed class IndexModel(
 
     public bool CanEditAll { get; private set; }
 
+    public bool CanManageSavedViews => !User.IsInRole(RoleNames.DataViewer);
+
     public int TotalCount { get; private set; }
 
     public int TotalPages { get; private set; } = 1;
@@ -114,7 +116,7 @@ public sealed class IndexModel(
         await ResolveSavedViewAsync(cancellationToken);
         await LoadOptionsAsync(cancellationToken);
         CanEditAll = User.CanManageAllBusinessData();
-        var canViewAll = CanEditAll;
+        var canViewAll = User.CanViewAllBusinessData();
 
         if (!canViewAll && PersonnelUserId == null)
         {
@@ -139,6 +141,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostSaveViewAsync(CancellationToken cancellationToken)
     {
+        if (!CanManageSavedViews)
+        {
+            return Forbid();
+        }
+
         var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
         try
         {
@@ -154,6 +161,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostDeleteViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
     {
+        if (!CanManageSavedViews)
+        {
+            return Forbid();
+        }
+
         var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
         var deleted = await savedDataViews.DeleteAsync(userId, id, cancellationToken);
         TempData[deleted ? "SuccessMessage" : "ErrorMessage"] = deleted ? "個人檢視已刪除。" : "找不到可刪除的個人檢視。";
@@ -162,6 +174,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostSetDefaultViewAsync(int id, string returnUrl, CancellationToken cancellationToken)
     {
+        if (!CanManageSavedViews)
+        {
+            return Forbid();
+        }
+
         var userId = userManager.GetUserId(User) ?? throw new InvalidOperationException("找不到目前使用者。");
         var updated = await savedDataViews.SetDefaultAsync(userId, id, cancellationToken);
         TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated ? "預設檢視已更新。" : "找不到可設定的個人檢視。";

@@ -19,11 +19,16 @@ public static class PermissionExtensions
         return user.IsInformationAdministrator();
     }
 
+    public static bool CanViewAllBusinessData(this ClaimsPrincipal user)
+    {
+        return user.CanManageAllBusinessData() || user.IsInRole(RoleNames.DataViewer);
+    }
+
     public static bool IsRegularUser(this ClaimsPrincipal user)
     {
         return user.IsInformationAdministrator() ||
+               user.IsInRole(RoleNames.DataViewer) ||
                user.IsInRole(RoleNames.ProjectStaff) ||
-               user.IsInRole(RoleNames.Viewer) ||
                user.IsInRole(RoleNames.SubCaseContact);
     }
 }

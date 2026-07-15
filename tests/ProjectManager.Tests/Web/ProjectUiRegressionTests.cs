@@ -179,11 +179,13 @@ public sealed class ProjectUiRegressionTests
         var workbench = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Index.cshtml.cs");
         var navigation = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_SidebarNavigation.cshtml");
 
-        home.Should().Contain("CanManageAllBusinessData()");
+        home.Should().Contain("CanViewAllBusinessData()");
         home.Should().NotContain("RoleNames.Viewer");
         workbench.Should().Contain("CanManageAllBusinessData()");
+        workbench.Should().Contain("CanViewAllBusinessData()");
         workbench.Should().NotContain("canViewAll = CanEditAll || User.IsInRole(RoleNames.Viewer)");
         navigation.Should().Contain("CanManageAllBusinessData()");
+        navigation.Should().Contain("CanViewAllBusinessData()");
         navigation.Should().Contain("IsSystemAdministrator()");
     }
 

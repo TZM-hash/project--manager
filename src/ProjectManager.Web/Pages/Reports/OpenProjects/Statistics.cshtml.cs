@@ -8,7 +8,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Reports.OpenProjects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Leader + "," + RoleNames.Viewer + "," + RoleNames.ProjectStaff)]
+[Authorize(Roles = RoleNames.BusinessDataRoles)]
 public sealed class StatisticsModel(
     ProjectQueryService projectQueryService,
     UserManager<ApplicationUser> userManager) : PageModel
@@ -38,7 +38,7 @@ public sealed class StatisticsModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        var personnelUserId = User.CanManageAllBusinessData()
+        var personnelUserId = User.CanViewAllBusinessData()
             ? PersonnelUserId
             : userManager.GetUserId(User);
 

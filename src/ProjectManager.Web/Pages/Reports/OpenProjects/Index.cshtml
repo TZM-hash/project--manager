@@ -62,7 +62,10 @@
 </form>
 
 <partial name="_FilterSummary" model="Model.FilterSummary" />
-<partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
+@if (Model.CanManageSavedViews)
+{
+    <partial name="_SavedDataViewBar" model="Model.SavedViewBar" />
+}
 
 <div class="metric-grid dashboard-grid">
     @foreach (var metric in Model.Metrics)

@@ -8,7 +8,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.Projects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
+[Authorize(Roles = RoleNames.BusinessDataRoles)]
 public sealed class GanttPrintModel(
     WorkbenchProjectService workbenchProjectService,
     UserManager<ApplicationUser> userManager,
@@ -24,7 +24,7 @@ public sealed class GanttPrintModel(
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.CanManageAllBusinessData();
+        var canViewAll = User.CanViewAllBusinessData();
         var project = await workbenchProjectService.GetProjectForUserAsync(
             id,
             userId,

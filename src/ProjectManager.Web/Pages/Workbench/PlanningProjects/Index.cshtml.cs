@@ -12,7 +12,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader + "," + RoleNames.Viewer)]
+[Authorize(Roles = RoleNames.BusinessDataRoles)]
 public sealed class IndexModel(
     PlanningProjectService planningProjectService,
     UserManager<ApplicationUser> userManager,
@@ -49,6 +49,8 @@ public sealed class IndexModel(
 
     public IReadOnlyList<ChartSlice> VendorSlices { get; private set; } = [];
 
+    public bool CanEdit { get; private set; }
+
     public PaginationViewModel Pagination => new(
         PageNumber,
         PageSize,
@@ -64,7 +66,8 @@ public sealed class IndexModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        if (!User.CanManageAllBusinessData())
+        CanEdit = User.CanManageAllBusinessData() || User.IsInRole(RoleNames.ProjectStaff);
+        if (!User.CanViewAllBusinessData())
         {
             LeaderUserId = userManager.GetUserId(User) ?? "__missing-current-user__";
         }
@@ -109,6 +112,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
+        if (!User.CanManageAllBusinessData() && !User.IsInRole(RoleNames.ProjectStaff))
+        {
+            return Forbid();
+        }
+
         var project = await planningProjectService.GetPlanningProjectAsync(id, cancellationToken);
         if (project is null || !CanManage(project))
         {
@@ -121,6 +129,11 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
+        if (!User.CanManageAllBusinessData() && !User.IsInRole(RoleNames.ProjectStaff))
+        {
+            return Forbid();
+        }
+
         var allowedIds = await GetAllowedIdsAsync(ids, cancellationToken);
         await planningProjectService.DeleteManyAsync(allowedIds, cancellationToken);
         return RedirectToPage("./Index", BuildRouteValuesWithPaging());
@@ -141,6 +154,11 @@ public sealed class IndexModel(
         if (User.CanManageAllBusinessData())
         {
             return true;
+        }
+
+        if (!User.IsInRole(RoleNames.ProjectStaff))
+        {
+            return false;
         }
 
         var currentUserId = userManager.GetUserId(User);
@@ -172,7 +190,7 @@ public sealed class IndexModel(
             x => string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName);
         var currentUserId = userManager.GetUserId(User);
         UserOptions = users
-            .Where(x => x.IsActive && (User.CanManageAllBusinessData() || x.Id == currentUserId))
+            .Where(x => x.IsActive && (User.CanViewAllBusinessData() || x.Id == currentUserId))
             .Select(x => new SelectListItem(
                 string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
                 x.Id))
