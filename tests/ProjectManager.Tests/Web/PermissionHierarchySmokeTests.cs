@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -114,6 +115,8 @@ public sealed class PermissionHierarchySmokeTests
         var planningPrintListHtml = WebUtility.HtmlDecode(await planningPrintList.Content.ReadAsStringAsync());
 
         projects.StatusCode.Should().Be(HttpStatusCode.OK);
+        projectsHtml.Should().Contain("專案查詢");
+        projectsHtml.Should().NotContain("<h1 class=\"page-title\">我的專案</h1>");
         projectsHtml.Should().Contain("MY-SCOPED-PROJECT");
         projectsHtml.Should().Contain("OTHER-SCOPED-PROJECT");
         projectsHtml.Should().NotContain(">編輯<");
@@ -341,6 +344,87 @@ public sealed class PermissionHierarchySmokeTests
         (await factory.IsInRoleAsync(administrator.Id, RoleNames.Administrator)).Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Last_active_system_administrator_cannot_be_deleted()
+    {
+        await using var factory = new PermissionWebFactory();
+        var administrator = await factory.GetOnlyActiveAdministratorAsync();
+        var client = CreateClient(factory, RoleNames.Administrator);
+        var indexResponse = await client.GetAsync("/Admin/Users");
+        var token = ExtractAntiforgeryToken(await indexResponse.Content.ReadAsStringAsync());
+
+        var response = await client.PostAsync(
+            $"/Admin/Users?handler=Delete&id={administrator.Id}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await factory.UserExistsAsync(administrator.Id)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Batch_delete_cannot_remove_last_active_system_administrator()
+    {
+        await using var factory = new PermissionWebFactory();
+        var administrator = await factory.GetOnlyActiveAdministratorAsync();
+        var client = CreateClient(factory, RoleNames.Administrator);
+        var indexResponse = await client.GetAsync("/Admin/Users");
+        var token = ExtractAntiforgeryToken(await indexResponse.Content.ReadAsStringAsync());
+
+        var response = await client.PostAsync(
+            "/Admin/Users?handler=BatchDelete",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token,
+                ["ids"] = administrator.Id
+            }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await factory.UserExistsAsync(administrator.Id)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Administrator_cannot_delete_the_current_account()
+    {
+        await using var factory = new PermissionWebFactory();
+        await factory.CreateActiveAdministratorAsync(TestAuthHandler.UserId);
+        var client = CreateClient(factory, RoleNames.Administrator);
+        var indexResponse = await client.GetAsync("/Admin/Users");
+        var token = ExtractAntiforgeryToken(await indexResponse.Content.ReadAsStringAsync());
+
+        var response = await client.PostAsync(
+            $"/Admin/Users?handler=Delete&id={TestAuthHandler.UserId}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await factory.UserExistsAsync(TestAuthHandler.UserId)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Referenced_user_delete_failure_is_shown_without_server_error()
+    {
+        await using var factory = new PermissionWebFactory();
+        var userId = await factory.CreateReferencedUserAsync();
+        var client = CreateClient(factory, RoleNames.Administrator);
+        var indexResponse = await client.GetAsync("/Admin/Users");
+        var token = ExtractAntiforgeryToken(await indexResponse.Content.ReadAsStringAsync());
+
+        var response = await client.PostAsync(
+            $"/Admin/Users?handler=Delete&id={userId}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token
+            }));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await factory.UserExistsAsync(userId)).Should().BeTrue();
+    }
+
     private static string ExtractAntiforgeryToken(string html)
     {
         var match = Regex.Match(
@@ -536,6 +620,60 @@ public sealed class PermissionHierarchySmokeTests
             var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             var user = await userManager.FindByIdAsync(userId) ?? throw new InvalidOperationException("User not found.");
             return await userManager.IsInRoleAsync(user, role);
+        }
+
+        public async Task CreateActiveAdministratorAsync(string userId)
+        {
+            using var scope = Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                user = new ApplicationUser
+                {
+                    Id = userId,
+                    UserName = userId,
+                    DisplayName = "Current Administrator",
+                    IsActive = true
+                };
+                (await userManager.CreateAsync(user)).Succeeded.Should().BeTrue();
+            }
+
+            if (!await userManager.IsInRoleAsync(user, RoleNames.Administrator))
+            {
+                (await userManager.AddToRoleAsync(user, RoleNames.Administrator)).Succeeded.Should().BeTrue();
+            }
+        }
+
+        public async Task<bool> UserExistsAsync(string userId)
+        {
+            using var scope = Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            return await userManager.FindByIdAsync(userId) is not null;
+        }
+
+        public async Task<string> CreateReferencedUserAsync()
+        {
+            using var scope = Services.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var user = new ApplicationUser
+            {
+                Id = "referenced-user",
+                UserName = "referenced-user",
+                DisplayName = "Referenced User",
+                IsActive = true
+            };
+            (await userManager.CreateAsync(user)).Succeeded.Should().BeTrue();
+            db.PlanningProjects.Add(new PlanningProject
+            {
+                Name = "Referenced planning project",
+                LeaderUserId = user.Id,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+            return user.Id;
         }
 
         private static async Task EnsureScopedUsersAsync(ApplicationDbContext db)

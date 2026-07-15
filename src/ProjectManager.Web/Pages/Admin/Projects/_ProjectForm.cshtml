@@ -13,8 +13,8 @@
                 <label class="form-label">專案類型</label>
                 <select class="form-select" asp-for="Input.ProjectType" asp-items="Model.ProjectTypeOptions"></select>
             </div>
-            <div class="col-md-3"><label class="form-label">母案案號</label><input class="form-control" asp-for="Input.ParentCaseNumber" /></div>
-            <div class="col-md-2"><label class="form-label">專案工號</label><input class="form-control" asp-for="Input.ProjectNumber" /><span class="text-danger" asp-validation-for="Input.ProjectNumber"></span></div>
+            <div class="col-md-3"><label class="form-label">母案案號</label><input class="form-control" asp-for="Input.ParentCaseNumber" maxlength="64" /><span class="text-danger" asp-validation-for="Input.ParentCaseNumber"></span></div>
+            <div class="col-md-2"><label class="form-label">專案工號</label><input class="form-control" asp-for="Input.ProjectNumber" maxlength="64" /><span class="text-danger" asp-validation-for="Input.ProjectNumber"></span></div>
             <div class="col-md-3"><label class="form-label">專案名稱</label><input class="form-control" asp-for="Input.Name" /><span class="text-danger" asp-validation-for="Input.Name"></span></div>
             <div class="col-md-4">
                 <label class="form-label">專案人員</label>
@@ -93,7 +93,7 @@
                     <tr>
                         <td>
                             <input asp-for="Input.Purchases[i].Id" type="hidden" />
-                            <input class="form-control form-control-sm" asp-for="Input.Purchases[i].RequestNumber" />
+                            <input class="form-control form-control-sm" asp-for="Input.Purchases[i].RequestNumber" maxlength="64" />
                         </td>
                         <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseType" asp-items="Model.PurchaseTypeOptions"></select></td>
                         <td><select class="form-select form-select-sm" asp-for="Input.Purchases[i].PurchaseStaffUserId" asp-items="Model.UserOptions"><option value="">-</option></select></td>

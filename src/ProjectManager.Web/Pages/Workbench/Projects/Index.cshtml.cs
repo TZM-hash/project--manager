@@ -75,6 +75,8 @@ public sealed class IndexModel(
 
     public bool CanManageSavedViews => !User.IsInRole(RoleNames.DataViewer);
 
+    public string PageTitle => User.IsInRole(RoleNames.DataViewer) ? "專案查詢" : "我的專案";
+
     public int TotalCount { get; private set; }
 
     public int TotalPages { get; private set; } = 1;

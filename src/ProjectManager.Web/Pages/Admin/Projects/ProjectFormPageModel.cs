@@ -402,10 +402,11 @@ public sealed class ProjectInputModel
     [Range(2000, 2100, ErrorMessage = "請輸入有效年份。")]
     public int Year { get; set; } = DateTime.Today.Year;
 
+    [StringLength(64, ErrorMessage = "母案案號不可超過64個字。")]
     public string? ParentCaseNumber { get; set; }
 
     [Required(ErrorMessage = "請輸入專案工號。")]
-    [StringLength(100, ErrorMessage = "專案工號不可超過100個字。")]
+    [StringLength(64, ErrorMessage = "專案工號不可超過64個字。")]
     public string? ProjectNumber { get; set; }
 
     [Required(ErrorMessage = "請輸入專案名稱。")]
@@ -446,6 +447,7 @@ public sealed class PurchaseInputModel
 
     public bool IsDeleted { get; set; }
 
+    [StringLength(64, ErrorMessage = "請購編號不可超過64個字。")]
     public string? RequestNumber { get; set; }
 
     public PurchaseType PurchaseType { get; set; } = PurchaseType.InternalPurchase;

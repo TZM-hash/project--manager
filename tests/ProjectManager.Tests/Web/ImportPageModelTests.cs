@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Services;
@@ -87,12 +88,52 @@ public sealed class ImportPageModelTests
     }
 
     [Fact]
+    public async Task Admin_project_import_rejects_text_longer_than_database_limits()
+    {
+        await using var services = await TestServices.CreateAsync();
+        var db = services.Provider.GetRequiredService<ApplicationDbContext>();
+        db.ProjectStatuses.Add(new ProjectStatus
+        {
+            Code = "Created",
+            Name = "Created",
+            SortOrder = 10,
+            IsActive = true
+        });
+        await db.SaveChangesAsync();
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("ProjectsImport");
+        sheet.Cell(1, 2).Value = "工程編號";
+        sheet.Cell(1, 3).Value = "工程名稱";
+        sheet.Cell(2, 2).Value = new string('P', 65);
+        sheet.Cell(2, 3).Value = new string('N', 201);
+        var model = new AdminProjectImportModel(
+            db,
+            services.Provider.GetRequiredService<UserManager<ApplicationUser>>(),
+            services.Provider.GetRequiredService<UserLookupService>(),
+            services.Provider.GetRequiredService<AuditLogService>(),
+            services.Provider.GetRequiredService<OpenCcConverterService>())
+        {
+            ImportYear = 2031,
+            UploadFile = CreateWorkbookFile(workbook, "projects.xlsx")
+        };
+        model.PageContext = CreatePageContext();
+
+        await model.OnPostAsync(CancellationToken.None);
+
+        model.RowErrors.Should().Contain(error => error.Contains("工程編號") && error.Contains("64"));
+        model.RowErrors.Should().Contain(error => error.Contains("工程名稱") && error.Contains("200"));
+        (await db.Projects.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Planning_project_import_rejects_xls_before_reading_workbook()
     {
         await using var services = await TestServices.CreateAsync();
         var model = new PlanningProjectImportModel(
             new PlanningProjectService(services.Provider.GetRequiredService<ApplicationDbContext>()),
-            services.Provider.GetRequiredService<UserLookupService>())
+            services.Provider.GetRequiredService<UserLookupService>(),
+            NullLogger<PlanningProjectImportModel>.Instance)
         {
             UploadFile = new FormFile(new MemoryStream([1, 2, 3]), 0, 3, "UploadFile", "planning.xls")
         };
@@ -100,6 +141,23 @@ public sealed class ImportPageModelTests
         await model.OnPostAsync(CancellationToken.None);
 
         model.ErrorMessage.Should().Contain(".xlsx");
+    }
+
+    [Fact]
+    public async Task Planning_project_import_hides_internal_exception_details()
+    {
+        await using var services = await TestServices.CreateAsync();
+        var model = new PlanningProjectImportModel(
+            new PlanningProjectService(services.Provider.GetRequiredService<ApplicationDbContext>()),
+            services.Provider.GetRequiredService<UserLookupService>(),
+            NullLogger<PlanningProjectImportModel>.Instance)
+        {
+            UploadFile = new FormFile(new MemoryStream([1, 2, 3]), 0, 3, "UploadFile", "broken.xlsx")
+        };
+
+        await model.OnPostAsync(CancellationToken.None);
+
+        model.ErrorMessage.Should().Be("匯入失敗，請確認檔案格式與內容後再試。若問題持續發生，請聯絡系統管理員。");
     }
 
     [Fact]
@@ -126,7 +184,8 @@ public sealed class ImportPageModelTests
         using var workbook = CreatePlanningWorkbook("alice,bob");
         var model = new PlanningProjectImportModel(
             new PlanningProjectService(db),
-            services.Provider.GetRequiredService<UserLookupService>())
+            services.Provider.GetRequiredService<UserLookupService>(),
+            NullLogger<PlanningProjectImportModel>.Instance)
         {
             UploadFile = CreateWorkbookFile(workbook, "planning.xlsx")
         };
@@ -134,6 +193,29 @@ public sealed class ImportPageModelTests
         await model.OnPostAsync(CancellationToken.None);
 
         model.ErrorMessage.Should().Contain("只能指定一位負責人");
+        (await db.PlanningProjects.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Planning_project_import_rejects_text_longer_than_database_limits()
+    {
+        await using var services = await TestServices.CreateAsync();
+        var db = services.Provider.GetRequiredService<ApplicationDbContext>();
+        using var workbook = CreatePlanningWorkbook(
+            leaderUserName: string.Empty,
+            projectName: new string('N', 201),
+            vendor: new string('V', 201));
+        var model = new PlanningProjectImportModel(
+            new PlanningProjectService(db),
+            services.Provider.GetRequiredService<UserLookupService>(),
+            NullLogger<PlanningProjectImportModel>.Instance)
+        {
+            UploadFile = CreateWorkbookFile(workbook, "planning.xlsx")
+        };
+
+        await model.OnPostAsync(CancellationToken.None);
+
+        model.ErrorMessage.Should().Contain("專案名").And.Contain("200");
         (await db.PlanningProjects.CountAsync()).Should().Be(0);
     }
 
@@ -154,7 +236,8 @@ public sealed class ImportPageModelTests
         using var workbook = CreatePlanningWorkbook("viewer");
         var model = new PlanningProjectImportModel(
             new PlanningProjectService(db),
-            services.Provider.GetRequiredService<UserLookupService>())
+            services.Provider.GetRequiredService<UserLookupService>(),
+            NullLogger<PlanningProjectImportModel>.Instance)
         {
             UploadFile = CreateWorkbookFile(workbook, "planning.xlsx")
         };
@@ -171,7 +254,8 @@ public sealed class ImportPageModelTests
         await using var services = await TestServices.CreateAsync();
         var model = new PlanningProjectImportModel(
             new PlanningProjectService(services.Provider.GetRequiredService<ApplicationDbContext>()),
-            services.Provider.GetRequiredService<UserLookupService>());
+            services.Provider.GetRequiredService<UserLookupService>(),
+            NullLogger<PlanningProjectImportModel>.Instance);
 
         var file = model.OnGetTemplate().Should().BeOfType<FileContentResult>().Subject;
         using var stream = new MemoryStream(file.FileContents);
@@ -182,7 +266,10 @@ public sealed class ImportPageModelTests
         workbook.Worksheet(1).Cell(2, 2).GetString().Should().NotContain(",");
     }
 
-    private static XLWorkbook CreatePlanningWorkbook(string leaderUserName)
+    private static XLWorkbook CreatePlanningWorkbook(
+        string leaderUserName,
+        string projectName = "Test Planning Project",
+        string vendor = "")
     {
         var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("PlanningProjects");
@@ -190,8 +277,9 @@ public sealed class ImportPageModelTests
         sheet.Cell(1, 2).Value = "專案負責人";
         sheet.Cell(1, 3).Value = "廠商";
         sheet.Cell(1, 4).Value = "最新說明";
-        sheet.Cell(2, 1).Value = "Test Planning Project";
+        sheet.Cell(2, 1).Value = projectName;
         sheet.Cell(2, 2).Value = leaderUserName;
+        sheet.Cell(2, 3).Value = vendor;
         return workbook;
     }
 

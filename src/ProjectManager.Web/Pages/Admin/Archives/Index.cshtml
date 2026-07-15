@@ -28,6 +28,7 @@
     </div>
 }
 
+<div class="data-list-card">
 <div class="data-table-wrap">
     <table class="table table-hover align-middle data-table">
         <thead>
@@ -50,7 +51,7 @@
             {
                 var archive = Model.Archives[i];
                 <tr>
-                    <td class="text-center">@(i + 1)</td>
+                    <td class="text-center">@((Model.PageNumber - 1) * Model.PageSize + i + 1)</td>
                     <td class="text-center">@archive.ProjectNumber</td>
                     <td>@archive.Name</td>
                     <td>@archive.AssignmentSummary</td>
@@ -63,7 +64,7 @@
                     <td class="text-end text-nowrap">
                         @if (Model.CanManageBusinessData && Model.CanRestore(archive))
                         {
-                            <form method="post" asp-page-handler="Restore" asp-route-id="@archive.Id" class="d-inline" onsubmit="return confirm('確定還原該歸檔專案嗎？還原後專案將回到專案總覽清單。');">
+                            <form method="post" asp-page-handler="Restore" asp-route-id="@archive.Id" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定還原該歸檔專案嗎？還原後專案將回到專案總覽清單。');">
                                 <button type="submit" class="btn btn-sm btn-outline-success">還原</button>
                             </form>
                         }
@@ -86,4 +87,6 @@
             }
         </tbody>
     </table>
+</div>
+<partial name="_Pagination" model="Model.Pagination" />
 </div>

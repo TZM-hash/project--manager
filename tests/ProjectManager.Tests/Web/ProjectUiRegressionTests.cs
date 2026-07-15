@@ -48,6 +48,47 @@ public sealed class ProjectUiRegressionTests
     }
 
     [Fact]
+    public void Text_inputs_expose_database_length_limits_to_the_browser()
+    {
+        var projectForm = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "_ProjectForm.cshtml");
+        var workbenchEdit = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Edit.cshtml");
+        var planningCreate = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Create.cshtml");
+        var planningEdit = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Edit.cshtml");
+        var gantt = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
+
+        projectForm.Should().Contain("asp-for=\"Input.ParentCaseNumber\" maxlength=\"64\"");
+        projectForm.Should().Contain("asp-for=\"Input.ProjectNumber\" maxlength=\"64\"");
+        projectForm.Should().Contain("asp-for=\"Input.Purchases[i].RequestNumber\" maxlength=\"64\"");
+        workbenchEdit.Should().Contain("asp-for=\"Input.Purchases[i].RequestNumber\" maxlength=\"64\"");
+        planningCreate.Should().Contain("asp-for=\"Input.Name\" class=\"form-control\" maxlength=\"200\"");
+        planningCreate.Should().Contain("asp-for=\"Input.Vendor\" class=\"form-control\" maxlength=\"200\"");
+        planningEdit.Should().Contain("asp-for=\"Input.Name\" class=\"form-control form-control-sm\" maxlength=\"200\"");
+        planningEdit.Should().Contain("asp-for=\"Input.Vendor\" class=\"form-control form-control-sm\" maxlength=\"200\"");
+        gantt.Should().Contain("name=\"GanttInput.ProgressNote\" rows=\"3\" maxlength=\"2000\"");
+        gantt.Should().Contain("name=\"GanttInput.Tasks[@i].Name\" maxlength=\"200\"");
+        gantt.Should().Contain("name=\"GanttInput.Tasks[@i].ProgressDescription\" maxlength=\"1000\"");
+    }
+
+    [Fact]
+    public void Shared_pagination_uses_non_link_controls_for_unavailable_pages()
+    {
+        var pagination = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_Pagination.cshtml");
+
+        pagination.Should().Contain("aria-disabled=\"true\"");
+        pagination.Should().Contain("<span class=\"page-link\">上一頁</span>");
+        pagination.Should().Contain("<span class=\"page-link\">下一頁</span>");
+    }
+
+    [Fact]
+    public void Archive_history_uses_shared_server_pagination()
+    {
+        var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Archives", "Index.cshtml");
+
+        page.Should().Contain("partial name=\"_Pagination\" model=\"Model.Pagination\"");
+        page.Should().Contain("(Model.PageNumber - 1) * Model.PageSize + i + 1");
+    }
+
+    [Fact]
     public void Planning_project_and_existing_tables_place_column_management_before_row_spacing()
     {
         var pages = new[]

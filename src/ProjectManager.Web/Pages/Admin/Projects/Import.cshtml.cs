@@ -141,10 +141,25 @@ public sealed class ImportModel(
             return;
         }
 
+        if (projectNumber.Length > 64)
+        {
+            RowErrors.Add($"第 {row.RowNumber()} 行：工程編號不可超過64個字。");
+        }
+
         var projectName = row.Cell(3).GetFormattedString().Trim();
         if (string.IsNullOrWhiteSpace(projectName))
         {
             RowErrors.Add($"第 {row.RowNumber()} 行：工程名稱不能为空。");
+            return;
+        }
+
+        if (projectName.Length > 200)
+        {
+            RowErrors.Add($"第 {row.RowNumber()} 行：工程名稱不可超過200個字。");
+        }
+
+        if (projectNumber.Length > 64 || projectName.Length > 200)
+        {
             return;
         }
 

@@ -53,6 +53,29 @@ public sealed class ExceptionLogMiddlewareTests
         }
     }
 
+    [Fact]
+    public async Task Exception_log_preserves_inner_exception_details()
+    {
+        var root = CreateTemporaryDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var exception = new InvalidOperationException(
+                "outer failure",
+                new ApplicationException("database constraint details"));
+
+            await store.WriteAsync(exception, "/test", "user-1", "trace-1", CancellationToken.None);
+
+            var log = await File.ReadAllTextAsync(Directory.GetFiles(root, "exceptions-*.jsonl").Single());
+            log.Should().Contain("outer failure");
+            log.Should().Contain("database constraint details");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static ExceptionLogMiddleware CreateMiddleware() =>
         new(
             _ => throw new InvalidOperationException("original failure"),

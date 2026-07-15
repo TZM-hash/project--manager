@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Extensions;
 using ProjectManager.Web.Models;
+using ProjectManager.Web.Pages.Shared;
 using ProjectManager.Web.Security;
 using ProjectManager.Web.Services;
 
@@ -15,18 +16,62 @@ public sealed class IndexModel(
     ApplicationDbContext db,
     ProjectArchiveService projectArchiveService) : PageModel
 {
+    [BindProperty(SupportsGet = true)]
+    public int PageNumber { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public int PageSize { get; set; } = PageSizeOptions.DefaultPageSize;
+
     public IReadOnlyList<ProjectArchive> Archives { get; private set; } = [];
+
+    public int TotalCount { get; private set; }
+
+    public int TotalPages { get; private set; } = 1;
+
+    public PaginationViewModel Pagination => new(
+        PageNumber,
+        PageSize,
+        TotalCount,
+        TotalPages,
+        "./Index",
+        new Dictionary<string, string?>());
 
     public bool CanManageBusinessData => User.CanManageAllBusinessData();
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        Archives = (await db.ProjectArchives
+        var query = db.ProjectArchives
             .AsNoTracking()
-            .Include(x => x.ArchivedByUser)
-            .ToListAsync(cancellationToken))
-            .OrderByDescending(x => x.ArchivedAt)
-            .ToList();
+            .Include(x => x.ArchivedByUser);
+        PagedResult<ProjectArchive> page;
+        if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            var ordered = (await query.ToListAsync(cancellationToken))
+                .OrderByDescending(x => x.ArchivedAt)
+                .ToList();
+            var normalizedPageSize = PageSizeOptions.NormalizePageSize(PageSize);
+            var totalPages = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)normalizedPageSize));
+            var normalizedPageNumber = Math.Min(PageSizeOptions.NormalizePageNumber(PageNumber), totalPages);
+            var items = ordered
+                .Skip((normalizedPageNumber - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
+                .ToList();
+            page = new PagedResult<ProjectArchive>(items, ordered.Count, normalizedPageNumber, normalizedPageSize);
+        }
+        else
+        {
+            page = await PagedResult<ProjectArchive>.CreateAsync(
+                query.OrderByDescending(x => x.ArchivedAt),
+                PageNumber,
+                PageSize,
+                cancellationToken);
+        }
+
+        Archives = page.Items;
+        TotalCount = page.TotalCount;
+        PageNumber = page.PageNumber;
+        PageSize = page.PageSize;
+        TotalPages = page.TotalPages;
     }
 
     public bool CanRestore(ProjectArchive archive)
@@ -54,6 +99,6 @@ public sealed class IndexModel(
             TempData["SuccessMessage"] = "專案已成功還原到專案總覽";
         }
 
-        return RedirectToPage();
+        return RedirectToPage("./Index", new { PageNumber, PageSize });
     }
 }

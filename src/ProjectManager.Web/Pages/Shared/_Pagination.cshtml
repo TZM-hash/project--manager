@@ -21,18 +21,36 @@
         </form>
         <nav aria-label="列表分頁">
             <ul class="pagination pagination-sm">
-                <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
-                    <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(Model.PageNumber - 1)">上一頁</a>
-                </li>
+                @if (Model.PageNumber <= 1)
+                {
+                    <li class="page-item disabled" aria-disabled="true">
+                        <span class="page-link">上一頁</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(Model.PageNumber - 1)">上一頁</a>
+                    </li>
+                }
                 @for (var i = 1; i <= Model.TotalPages; i++)
                 {
                     <li class="page-item @(i == Model.PageNumber ? "active" : "")">
                         <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(i)">@i</a>
                     </li>
                 }
-                <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
-                    <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(Model.PageNumber + 1)">下一頁</a>
-                </li>
+                @if (Model.PageNumber >= Model.TotalPages)
+                {
+                    <li class="page-item disabled" aria-disabled="true">
+                        <span class="page-link">下一頁</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-page="@Model.PageName" asp-all-route-data="Model.RouteFor(Model.PageNumber + 1)">下一頁</a>
+                    </li>
+                }
             </ul>
         </nav>
     </div>

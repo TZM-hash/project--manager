@@ -530,6 +530,11 @@ public sealed class ProjectGanttService(
     private static List<string> Validate(ProjectGanttInputModel input)
     {
         var errors = new List<string>();
+        if (input.ProgressNote?.Length > 2000)
+        {
+            errors.Add("進度說明不可超過 2000 個字。");
+        }
+
         if (input.StartDate is not null &&
             input.FinishDate is not null &&
             input.FinishDate < input.StartDate)
@@ -542,6 +547,16 @@ public sealed class ProjectGanttService(
             if (!HasTaskData(task))
             {
                 continue;
+            }
+
+            if (task.Name?.Length > 200)
+            {
+                errors.Add($"第 {index} 項工作名稱不可超過 200 個字。");
+            }
+
+            if (task.ProgressDescription?.Length > 1000)
+            {
+                errors.Add($"第 {index} 項工作進度說明不可超過 1000 個字。");
             }
 
             if (task.PlannedStartDate is not null &&

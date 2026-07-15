@@ -12,7 +12,8 @@ namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 [Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class ImportModel(
     PlanningProjectService planningProjectService,
-    UserLookupService userLookup) : PageModel
+    UserLookupService userLookup,
+    ILogger<ImportModel> logger) : PageModel
 {
     [BindProperty]
     [Required(ErrorMessage = "請選擇 Excel 檔案。")]
@@ -64,9 +65,20 @@ public sealed class ImportModel(
                     continue;
                 }
 
+                if (name.Length > 200)
+                {
+                    ErrorMessage = $"第 {row.RowNumber()} 行的專案名不可超過200個字。";
+                    return Page();
+                }
+
                 var leaderUserName = row.Cell(2).GetString().Trim();
                 var vendor = row.Cell(3).GetString().Trim();
                 var latestDescription = row.Cell(4).GetString().Trim();
+                if (vendor.Length > 200)
+                {
+                    ErrorMessage = $"第 {row.RowNumber()} 行的暫定廠商不可超過200個字。";
+                    return Page();
+                }
 
                 var leaderNames = UserLookupService.SplitNames(leaderUserName).ToArray();
                 if (leaderNames.Length > 1)
@@ -107,7 +119,8 @@ public sealed class ImportModel(
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"匯入失敗：{ex.Message}";
+            logger.LogError(ex, "規劃中專案匯入失敗，檔案：{FileName}", UploadFile.FileName);
+            ErrorMessage = "匯入失敗，請確認檔案格式與內容後再試。若問題持續發生，請聯絡系統管理員。";
         }
 
         return Page();

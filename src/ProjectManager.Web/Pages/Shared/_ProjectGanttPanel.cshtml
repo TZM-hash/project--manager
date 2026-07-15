@@ -80,7 +80,7 @@
             </div>
             <div class="gantt-plan-note">
                 <label class="form-label">進度說明</label>
-                <textarea class="form-control" asp-for="Input.ProgressNote" name="GanttInput.ProgressNote" rows="3"></textarea>
+                <textarea class="form-control" asp-for="Input.ProgressNote" name="GanttInput.ProgressNote" rows="3" maxlength="2000"></textarea>
             </div>
         </div>
 
@@ -245,7 +245,7 @@
                             <input type="hidden" name="GanttInput.Tasks[@i].SortOrder" value="@(i + 1)" data-gantt-sort />
                             <span data-gantt-index>@(i + 1)</span>
                         </td>
-                        <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].Name" value="@input.Tasks[i].Name" @(Model.CanEdit ? null : "readonly") /></td>
+                        <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].Name" maxlength="200" value="@input.Tasks[i].Name" @(Model.CanEdit ? null : "readonly") /></td>
                         <td class="text-center"><input class="form-check-input" name="GanttInput.Tasks[@i].IsMilestone" type="checkbox" value="true" @(input.Tasks[i].IsMilestone ? "checked" : null) @(Model.CanEdit ? null : "disabled") /><input type="hidden" name="GanttInput.Tasks[@i].IsMilestone" value="false" /></td>
                         <td>
                             <select class="form-select form-select-sm" name="GanttInput.Tasks[@i].OwnerUserId" @(Model.CanEdit ? null : "disabled")>
@@ -286,7 +286,7 @@
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ActualStartDate" type="date" value="@input.Tasks[i].ActualStartDate?.ToString("yyyy-MM-dd")" @(Model.CanEdit ? null : "readonly") /></td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ActualFinishDate" type="date" value="@input.Tasks[i].ActualFinishDate?.ToString("yyyy-MM-dd")" @(Model.CanEdit ? null : "readonly") /></td>
                         <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ProgressPercent" value="@input.Tasks[i].ProgressPercent" @(Model.CanEdit ? null : "readonly") /></td>
-                        <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ProgressDescription" value="@input.Tasks[i].ProgressDescription" @(Model.CanEdit ? null : "readonly") /></td>
+                        <td><input class="form-control form-control-sm" name="GanttInput.Tasks[@i].ProgressDescription" maxlength="1000" value="@input.Tasks[i].ProgressDescription" @(Model.CanEdit ? null : "readonly") /></td>
                         <td>
                             @if (Model.CanEdit)
                             {

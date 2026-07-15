@@ -2,12 +2,12 @@
 @model ProjectManager.Web.Pages.Workbench.Projects.IndexModel
 @using ProjectManager.Web.Extensions
 @{
-    ViewData["Title"] = "我的專案";
+    ViewData["Title"] = Model.PageTitle;
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">我的專案</h1>
+        <h1 class="page-title">@Model.PageTitle</h1>
         <div class="page-subtitle">查看專案狀態、進度、收款比例和请购摘要</div>
     </div>
 </div>

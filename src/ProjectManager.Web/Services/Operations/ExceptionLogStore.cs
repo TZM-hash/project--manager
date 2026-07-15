@@ -35,7 +35,7 @@ public sealed class ExceptionLogStore(IOptions<OperationalMonitoringOptions> opt
             traceIdentifier,
             exception.GetType().FullName ?? exception.GetType().Name,
             exception.Message,
-            exception.StackTrace);
+            exception.ToString());
         var line = JsonSerializer.Serialize(entry, JsonOptions) + Environment.NewLine;
         var file = Path.Combine(rootPath, $"exceptions-{entry.Timestamp:yyyyMMdd}.jsonl");
         await writeLock.WaitAsync(cancellationToken);

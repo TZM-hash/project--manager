@@ -18,12 +18,13 @@
     <div class="row g-2 align-items-end mb-3">
         <div class="col-md-4">
             <label asp-for="Input.Name" class="form-label form-label-sm">專案名</label>
-            <input asp-for="Input.Name" class="form-control form-control-sm" />
+            <input asp-for="Input.Name" class="form-control form-control-sm" maxlength="200" />
             <span asp-validation-for="Input.Name" class="text-danger"></span>
         </div>
         <div class="col-md-3">
             <label asp-for="Input.Vendor" class="form-label form-label-sm">暫定廠商</label>
-            <input asp-for="Input.Vendor" class="form-control form-control-sm" />
+            <input asp-for="Input.Vendor" class="form-control form-control-sm" maxlength="200" />
+            <span asp-validation-for="Input.Vendor" class="text-danger"></span>
         </div>
         <div class="col-md-2">
             <label asp-for="Input.RecordYear" class="form-label form-label-sm">年</label>

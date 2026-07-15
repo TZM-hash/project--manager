@@ -252,6 +252,33 @@ public sealed class ProjectGanttServiceTests
     }
 
     [Fact]
+    public async Task SaveAsync_rejects_text_longer_than_database_limits()
+    {
+        var (db, connection) = await TestDbFactory.CreateAsync();
+        await using var _ = connection;
+        await using var __ = db;
+        var service = new ProjectGanttService(db, new SystemSettingsService(db));
+        var input = new ProjectGanttInputModel
+        {
+            ProgressNote = new string('N', 2001),
+            Tasks =
+            {
+                new ProjectGanttTaskInputModel
+                {
+                    Name = new string('T', 201),
+                    ProgressDescription = new string('D', 1001)
+                }
+            }
+        };
+
+        var errors = await service.SaveAsync(1, input, "user-1", CancellationToken.None);
+
+        errors.Should().Contain(error => error.Contains("進度說明") && error.Contains("2000"));
+        errors.Should().Contain(error => error.Contains("工作名稱") && error.Contains("200"));
+        errors.Should().Contain(error => error.Contains("工作進度說明") && error.Contains("1000"));
+    }
+
+    [Fact]
     public async Task BuildInputAsync_roundtrips_owner_dependency_actual_dates_and_overdue_state()
     {
         var (db, connection) = await TestDbFactory.CreateAsync();

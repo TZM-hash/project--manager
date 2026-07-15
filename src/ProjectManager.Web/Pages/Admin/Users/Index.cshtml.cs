@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -105,17 +106,38 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
             return NotFound();
         }
 
-        var result = await userManager.DeleteAsync(user);
-        if (!result.Succeeded)
+        await using var transaction = await db.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+        var blockReason = await GetDeleteBlockReasonAsync(user);
+        if (blockReason is not null)
         {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
+            ModelState.AddModelError(string.Empty, blockReason);
             await OnGetAsync(cancellationToken);
             return Page();
         }
 
+        IdentityResult result;
+        try
+        {
+            result = await userManager.DeleteAsync(user);
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            db.ChangeTracker.Clear();
+            ModelState.AddModelError(string.Empty, "此使用者已被專案或歷史資料引用，無法刪除；如不再使用，請改為停用帳號。");
+            await OnGetAsync(cancellationToken);
+            return Page();
+        }
+        if (!result.Succeeded)
+        {
+            AddIdentityErrors(result);
+            await OnGetAsync(cancellationToken);
+            return Page();
+        }
+
+        await transaction.CommitAsync(cancellationToken);
         return RedirectToPage("./Index", BuildRouteValues());
     }
 
@@ -126,16 +148,96 @@ public sealed class IndexModel(UserManager<ApplicationUser> userManager, Applica
             return RedirectToPage("./Index", BuildRouteValues());
         }
 
-        foreach (var id in ids.Distinct())
+        var users = new List<ApplicationUser>();
+        foreach (var id in ids.Distinct(StringComparer.Ordinal))
         {
             var user = await userManager.FindByIdAsync(id);
             if (user != null)
             {
-                await userManager.DeleteAsync(user);
+                users.Add(user);
             }
         }
 
+        await using var transaction = await db.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+        var currentUserId = userManager.GetUserId(User);
+        if (users.Any(user => string.Equals(user.Id, currentUserId, StringComparison.Ordinal)))
+        {
+            ModelState.AddModelError(string.Empty, "目前登入中的帳號不能刪除。");
+        }
+
+        var administrators = await userManager.GetUsersInRoleAsync(RoleNames.Administrator);
+        var activeAdministratorIds = administrators
+            .Where(user => user.IsActive)
+            .Select(user => user.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        var selectedActiveAdministratorCount = users.Count(user => activeAdministratorIds.Contains(user.Id));
+        if (selectedActiveAdministratorCount > 0 &&
+            activeAdministratorIds.Count - selectedActiveAdministratorCount < 1)
+        {
+            ModelState.AddModelError(string.Empty, "系統至少需要保留一個啟用中的系統管理員。");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await OnGetAsync(cancellationToken);
+            return Page();
+        }
+
+        foreach (var user in users)
+        {
+            IdentityResult result;
+            try
+            {
+                result = await userManager.DeleteAsync(user);
+            }
+            catch (DbUpdateException)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                db.ChangeTracker.Clear();
+                ModelState.AddModelError(string.Empty, $"使用者「{user.UserName}」已被專案或歷史資料引用，無法刪除；如不再使用，請改為停用帳號。");
+                await OnGetAsync(cancellationToken);
+                return Page();
+            }
+
+            if (!result.Succeeded)
+            {
+                AddIdentityErrors(result);
+                await transaction.RollbackAsync(cancellationToken);
+                await OnGetAsync(cancellationToken);
+                return Page();
+            }
+        }
+
+        await transaction.CommitAsync(cancellationToken);
         return RedirectToPage("./Index", BuildRouteValues());
+    }
+
+    private async Task<string?> GetDeleteBlockReasonAsync(ApplicationUser user)
+    {
+        if (string.Equals(user.Id, userManager.GetUserId(User), StringComparison.Ordinal))
+        {
+            return "目前登入中的帳號不能刪除。";
+        }
+
+        if (!user.IsActive || !await userManager.IsInRoleAsync(user, RoleNames.Administrator))
+        {
+            return null;
+        }
+
+        var administrators = await userManager.GetUsersInRoleAsync(RoleNames.Administrator);
+        return administrators.Any(candidate => candidate.IsActive && candidate.Id != user.Id)
+            ? null
+            : "系統至少需要保留一個啟用中的系統管理員。";
+    }
+
+    private void AddIdentityErrors(IdentityResult result)
+    {
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
     }
 
     private async Task<IQueryable<ApplicationUser>> ApplyFilterAsync(

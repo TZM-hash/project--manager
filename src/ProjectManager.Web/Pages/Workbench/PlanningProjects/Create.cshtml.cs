@@ -100,12 +100,14 @@ public sealed class CreateModel(
     {
         [Display(Name = "專案名")]
         [Required(ErrorMessage = "请输入專案名。")]
+        [StringLength(200, ErrorMessage = "專案名不可超過200個字。")]
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "暫定負責人")]
         public string? LeaderUserId { get; set; }
 
         [Display(Name = "暫定廠商")]
+        [StringLength(200, ErrorMessage = "暫定廠商不可超過200個字。")]
         public string? Vendor { get; set; }
 
         [Display(Name = "最新說明")]
