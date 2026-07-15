@@ -177,6 +177,8 @@ public sealed class ImportPageModelTests
         using var stream = new MemoryStream(file.FileContents);
         using var workbook = new XLWorkbook(stream);
 
+        workbook.Worksheet(1).Cell(1, 2).GetString().Should().Be("暫定負責人");
+        workbook.Worksheet(1).Cell(1, 3).GetString().Should().Be("暫定廠商");
         workbook.Worksheet(1).Cell(2, 2).GetString().Should().NotContain(",");
     }
 

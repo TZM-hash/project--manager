@@ -1910,6 +1910,12 @@ body.theme-clear-glass .app-footer {
 .gantt-task-state-blocked { --gantt-task-color: #dc2626; }
 .gantt-task-state-not-started { --gantt-task-color: #64748b; }
 
+.gantt-progress-start { --gantt-progress-color: #ef4444; --gantt-progress-soft: #fee2e2; }
+.gantt-progress-low { --gantt-progress-color: #f59e0b; --gantt-progress-soft: #fef3c7; }
+.gantt-progress-mid { --gantt-progress-color: #2563eb; --gantt-progress-soft: #dbeafe; }
+.gantt-progress-high { --gantt-progress-color: #14b8a6; --gantt-progress-soft: #ccfbf1; }
+.gantt-progress-complete { --gantt-progress-color: #16a34a; --gantt-progress-soft: #dcfce7; }
+
 .gantt-visual-legend {
   display: grid;
   gap: 0.55rem;
@@ -1943,6 +1949,14 @@ body.theme-clear-glass .app-footer {
   border-radius: 50%;
   background: var(--gantt-task-color);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--gantt-task-color) 16%, transparent);
+}
+
+.gantt-progress-legend .gantt-legend-progress-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--gantt-progress-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gantt-progress-color) 16%, transparent);
 }
 
 .gantt-legend-bar {
@@ -1980,7 +1994,7 @@ body.theme-clear-glass .app-footer {
 
 .gantt-panel .gantt-chart-header {
   position: sticky;
-  top: 2.8rem;
+  top: 0;
   z-index: 9;
   box-shadow: 0 1px 0 var(--app-border), 0 5px 12px rgba(15, 23, 42, 0.06);
 }
@@ -2000,7 +2014,7 @@ body.theme-clear-glass .app-footer {
 
 .gantt-panel .gantt-chart-row {
   height: auto;
-  min-height: 5.4rem;
+  min-height: 4.2rem;
 }
 
 .gantt-panel .gantt-chart-label {
@@ -2045,6 +2059,14 @@ body.theme-clear-glass .app-footer {
   background: var(--gantt-task-color);
 }
 
+.gantt-task-alerts {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  align-items: center;
+  min-width: 0;
+}
+
 .gantt-panel .gantt-chart-track {
   background:
     repeating-linear-gradient(
@@ -2063,15 +2085,15 @@ body.theme-clear-glass .app-footer {
   overflow: hidden;
   border: 2px solid #111827;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--gantt-task-color) 14%, #fff);
-  box-shadow: 0 5px 12px color-mix(in srgb, var(--gantt-task-color) 15%, transparent);
+  background: var(--gantt-progress-soft);
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--gantt-progress-color) 15%, transparent);
 }
 
 .gantt-panel .gantt-bar > i {
   display: block;
   height: 100%;
   border-radius: 2px 0 0 2px;
-  background: color-mix(in srgb, var(--gantt-task-color) 84%, #fff);
+  background: var(--gantt-progress-color);
   animation: none;
 }
 
@@ -2097,6 +2119,14 @@ body.theme-clear-glass .app-footer {
   transform: translate(-50%, -100%);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.gantt-bar-progress-label.gantt-progress-start,
+.gantt-bar-progress-label.gantt-progress-low,
+.gantt-bar-progress-label.gantt-progress-mid,
+.gantt-bar-progress-label.gantt-progress-high,
+.gantt-bar-progress-label.gantt-progress-complete {
+  color: color-mix(in srgb, var(--gantt-progress-color) 84%, #111827);
 }
 
 .gantt-panel .gantt-chart-redline {
@@ -2308,14 +2338,12 @@ body.theme-clear-glass .font-select-panel {
   }
 }
 
-.gantt-chart-percent.gantt-task-state-completed strong,
-.gantt-chart-percent.gantt-task-state-in-progress strong,
-.gantt-chart-percent.gantt-task-state-ahead strong,
-.gantt-chart-percent.gantt-task-state-at-risk strong,
-.gantt-chart-percent.gantt-task-state-waiting strong,
-.gantt-chart-percent.gantt-task-state-blocked strong,
-.gantt-chart-percent.gantt-task-state-not-started strong {
-  color: color-mix(in srgb, var(--gantt-task-color) 86%, #111827);
+.gantt-chart-percent.gantt-progress-start strong,
+.gantt-chart-percent.gantt-progress-low strong,
+.gantt-chart-percent.gantt-progress-mid strong,
+.gantt-chart-percent.gantt-progress-high strong,
+.gantt-chart-percent.gantt-progress-complete strong {
+  color: color-mix(in srgb, var(--gantt-progress-color) 86%, #111827);
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }

@@ -98,6 +98,15 @@ public sealed class IndexModel(
         return names.Count > 0 ? string.Join("、", names) : "-";
     }
 
+    public string GetLatestRecordPeriod(PlanningProject project)
+    {
+        var latestRecord = project.HistoryRecords
+            .OrderByDescending(x => x.Year)
+            .ThenByDescending(x => x.Month)
+            .FirstOrDefault();
+        return latestRecord is null ? "-" : $"{latestRecord.Year}-{latestRecord.Month:00}";
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
         var project = await planningProjectService.GetPlanningProjectAsync(id, cancellationToken);
@@ -193,7 +202,7 @@ public sealed class IndexModel(
         [
             new MetricInsight("規劃中專案", TotalCount.ToString("N0"), "尚未正式立项"),
             new MetricInsight("近 30 天更新", recentCount.ToString("N0"), "有最新動態"),
-            new MetricInsight("廠商数", vendorCount.ToString("N0"), "当前資料覆盖", "success")
+            new MetricInsight("暫定廠商數", vendorCount.ToString("N0"), "目前資料覆蓋", "success")
         ];
 
         var leaderRows = projects
@@ -278,12 +287,12 @@ public sealed class IndexModel(
         if (!string.IsNullOrWhiteSpace(LeaderUserId))
         {
             var userText = UserOptions.FirstOrDefault(x => x.Value == LeaderUserId)?.Text ?? LeaderUserId;
-            items.Add(new FilterSummaryItem("專案負責人", userText));
+            items.Add(new FilterSummaryItem("暫定負責人", userText));
         }
 
         if (!string.IsNullOrWhiteSpace(Vendor))
         {
-            items.Add(new FilterSummaryItem("廠商", Vendor));
+            items.Add(new FilterSummaryItem("暫定廠商", Vendor));
         }
 
         return items;

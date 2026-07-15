@@ -1,7 +1,15 @@
 @model ProjectManager.Web.Pages.Shared.PercentBarModel
 @{
     var percent = Math.Clamp(Model.Value, 0, 100);
-    var stage = percent >= 100 ? "is-complete" : "is-progress";
+    var stage = percent >= 100
+        ? "is-complete"
+        : percent >= 80
+            ? "is-high"
+            : percent >= 50
+                ? "is-mid"
+                : percent >= 20
+                    ? "is-low"
+                    : "is-start";
     var displayText = string.IsNullOrWhiteSpace(Model.Label)
         ? $"{Model.Value:0.##}%"
         : Model.Label;

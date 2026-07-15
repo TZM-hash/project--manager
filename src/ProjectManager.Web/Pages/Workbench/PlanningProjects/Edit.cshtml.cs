@@ -155,10 +155,10 @@ public sealed class EditModel(
         [Required(ErrorMessage = "请输入專案名。")]
         public string Name { get; set; } = string.Empty;
 
-        [Display(Name = "專案負責人")]
+        [Display(Name = "暫定負責人")]
         public string? LeaderUserId { get; set; }
 
-        [Display(Name = "廠商")]
+        [Display(Name = "暫定廠商")]
         public string? Vendor { get; set; }
 
         [Display(Name = "上期說明")]

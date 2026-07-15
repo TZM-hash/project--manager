@@ -32,8 +32,8 @@
 
 <div class="insight-grid">
     <section class="chart-card">
-        <div class="chart-title">負責人分布</div>
-        <div class="chart-subtitle">按負責人彙總规划中專案</div>
+        <div class="chart-title">暫定負責人分布</div>
+        <div class="chart-subtitle">按暫定負責人彙總規劃中專案</div>
         <div class="bar-list">
             @foreach (var slice in Model.LeaderSlices)
             {
@@ -46,8 +46,8 @@
         </div>
     </section>
     <section class="chart-card">
-        <div class="chart-title">廠商分布</div>
-        <div class="chart-subtitle">辅助查看供應商覆盖情况</div>
+        <div class="chart-title">暫定廠商分布</div>
+        <div class="chart-subtitle">輔助查看暫定合作廠商覆蓋情況</div>
         <div class="bar-list">
             @foreach (var slice in Model.VendorSlices)
             {
@@ -65,7 +65,7 @@
     <div class="filter-quick-row">
         <div class="filter-quick-main">
             <input class="form-control" asp-for="Name" placeholder="搜尋專案名稱" />
-            <input class="form-control" asp-for="Vendor" placeholder="廠商" />
+            <input class="form-control" asp-for="Vendor" placeholder="暫定廠商" />
         </div>
         <div class="filter-quick-actions">
             <button class="btn btn-outline-secondary" type="button" data-filter-drawer-toggle>進階篩選</button>
@@ -76,14 +76,14 @@
         <div class="filter-drawer-header">
             <div>
                 <div class="filter-drawer-title">進階篩選</div>
-                <div class="filter-drawer-subtitle">按負責人、廠商和專案名稱定位規劃中專案</div>
+                <div class="filter-drawer-subtitle">按暫定負責人、暫定廠商和專案名稱定位規劃中專案</div>
             </div>
             <button class="btn btn-sm btn-outline-secondary" type="button" data-filter-drawer-close>收起</button>
         </div>
         <div class="row g-2">
             <div class="col-md-6">
                 <select class="form-select" asp-for="LeaderUserId" asp-items="Model.UserOptions">
-                    <option value="">專案負責人</option>
+                    <option value="">暫定負責人</option>
                 </select>
             </div>
         </div>
@@ -115,18 +115,50 @@
 </div>
 
 <div class="data-list-card">
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap p-2 border-bottom">
+        <div class="d-flex align-items-baseline gap-2">
+            <strong>規劃專案明細</strong>
+            <span class="text-muted small">共 @Model.TotalCount 筆</span>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="dropdown" data-column-manager>
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-column-manager-toggle>列管理</button>
+                <div class="dropdown-menu dropdown-menu-end p-3 column-manager-menu">
+                    <div data-column-manager-list></div>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item" data-column-manager-all>全選</button>
+                    <button type="button" class="dropdown-item" data-column-manager-none>保留必要欄位</button>
+                </div>
+            </div>
+            <div class="dropdown" data-row-spacing>
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-row-spacing-toggle>行間距</button>
+                <div class="dropdown-menu dropdown-menu-end p-2">
+                    <button type="button" class="dropdown-item" data-row-spacing-option="compact">緊湊</button>
+                    <button type="button" class="dropdown-item" data-row-spacing-option="normal">預設</button>
+                    <button type="button" class="dropdown-item" data-row-spacing-option="spacious">寬鬆</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="data-table-wrap">
-        <table class="table table-sm table-striped align-middle data-table has-sticky-actions">
+        <table id="planning-projects-table"
+               class="table table-sm table-striped align-middle data-table has-sticky-actions planning-projects-table"
+               data-column-manager-table
+               data-initial-visible-columns='["item","name","leader","vendor","latestDescription","updatedAt","actions"]'
+               data-initial-row-density="Normal">
         <thead>
             <tr>
                 <th class="checkbox-cell"><input class="form-check-input" type="checkbox" data-bulk-check-all /></th>
-                <th style="width: 60px;">项次</th>
-                <th>專案名</th>
-                <th>專案負責人</th>
-                <th>廠商</th>
-                <th>最新說明</th>
-                <th>最近更新</th>
-                <th class="text-end">操作</th>
+                <th data-column="item" data-column-label="項次" data-column-fixed style="width: 60px;">項次</th>
+                <th data-column="name" data-column-label="專案名稱" data-column-fixed>專案名稱</th>
+                <th data-column="leader" data-column-label="暫定負責人">暫定負責人</th>
+                <th data-column="vendor" data-column-label="暫定廠商">暫定廠商</th>
+                <th data-column="latestDescription" data-column-label="最新說明">最新說明</th>
+                <th data-column="latestPeriod" data-column-label="最新記錄年月">最新記錄年月</th>
+                <th data-column="historyCount" data-column-label="歷史記錄數" class="numeric">歷史記錄數</th>
+                <th data-column="createdAt" data-column-label="建立時間">建立時間</th>
+                <th data-column="updatedAt" data-column-label="最近更新">最近更新</th>
+                <th data-column="actions" data-column-label="操作" data-column-fixed class="text-end">操作</th>
             </tr>
         </thead>
         <tbody>
@@ -135,13 +167,16 @@
         {
             <tr>
                 <td class="checkbox-cell"><input class="form-check-input" type="checkbox" value="@project.Id" data-bulk-checkbox /></td>
-                <td>@idx</td>
-                <td>@project.Name</td>
-                <td>@Model.GetLeaderDisplayNames(project.LeaderUserId)</td>
-                <td>@(project.Vendor ?? "-")</td>
-                <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(project.LatestDescription) ?? "-")</td>
-                <td>@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                <td class="text-end text-nowrap">
+                <td data-column="item">@idx</td>
+                <td data-column="name"><strong>@project.Name</strong></td>
+                <td data-column="leader">@Model.GetLeaderDisplayNames(project.LeaderUserId)</td>
+                <td data-column="vendor">@(project.Vendor ?? "-")</td>
+                <td data-column="latestDescription" class="rich-text-content planning-project-description">@Html.Raw(RichTextSanitizer.Normalize(project.LatestDescription) ?? "-")</td>
+                <td data-column="latestPeriod" class="text-nowrap">@Model.GetLatestRecordPeriod(project)</td>
+                <td data-column="historyCount" class="numeric">@project.HistoryRecords.Count</td>
+                <td data-column="createdAt" class="text-nowrap">@project.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td data-column="updatedAt" class="text-nowrap">@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td data-column="actions" class="text-end text-nowrap">
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Edit" asp-route-id="@project.Id">編輯</a>
                     <a class="btn btn-sm btn-outline-secondary" asp-page="./Print" asp-route-id="@project.Id">列印</a>
                     <form method="post" asp-page-handler="Delete" asp-route-id="@project.Id" asp-route-Name="@Model.Name" asp-route-LeaderUserId="@Model.LeaderUserId" asp-route-Vendor="@Model.Vendor" asp-route-PageNumber="@Model.PageNumber" asp-route-PageSize="@Model.PageSize" class="d-inline" onsubmit="return confirm('確定刪除該專案嗎？');">
@@ -154,7 +189,7 @@
         @if (!Model.Projects.Any())
         {
             <tr>
-                <td colspan="8">
+                <td colspan="11">
                     <partial name="_EmptyState" model='new ProjectManager.Web.Pages.Shared.EmptyStateViewModel(
                         "目前沒有規劃中專案",
                         "可以建立第一筆規劃中專案，或清除篩選後重新查看。",

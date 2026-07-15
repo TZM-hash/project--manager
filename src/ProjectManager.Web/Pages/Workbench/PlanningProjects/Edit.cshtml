@@ -22,7 +22,7 @@
             <span asp-validation-for="Input.Name" class="text-danger"></span>
         </div>
         <div class="col-md-3">
-            <label asp-for="Input.Vendor" class="form-label form-label-sm">廠商</label>
+            <label asp-for="Input.Vendor" class="form-label form-label-sm">暫定廠商</label>
             <input asp-for="Input.Vendor" class="form-control form-control-sm" />
         </div>
         <div class="col-md-2">
@@ -36,7 +36,7 @@
     </div>
 
     <div class="col-md-12 mb-3">
-        <label asp-for="Input.LeaderUserId" class="form-label form-label-sm">專案負責人</label>
+        <label asp-for="Input.LeaderUserId" class="form-label form-label-sm">暫定負責人</label>
         <select asp-for="Input.LeaderUserId" asp-items="Model.UserOptions" class="form-select form-select-sm">
             <option value="">未指定</option>
         </select>

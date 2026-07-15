@@ -75,4 +75,13 @@ public sealed class PrintListModel(
             .ToList();
         return names.Count > 0 ? string.Join("、", names) : "-";
     }
+
+    public string GetLatestRecordPeriod(PlanningProject project)
+    {
+        var latestRecord = project.HistoryRecords
+            .OrderByDescending(x => x.Year)
+            .ThenByDescending(x => x.Month)
+            .FirstOrDefault();
+        return latestRecord is null ? "-" : $"{latestRecord.Year}-{latestRecord.Month:00}";
+    }
 }

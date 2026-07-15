@@ -5,6 +5,174 @@ namespace ProjectManager.Tests.Web;
 public sealed class ProjectUiRegressionTests
 {
     [Fact]
+    public void Planning_project_surfaces_use_provisional_leader_and_vendor_labels()
+    {
+        var planningFiles = new[]
+        {
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Index.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Index.cshtml.cs"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Create.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Create.cshtml.cs"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Edit.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Edit.cshtml.cs"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Import.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Print.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "PrintList.cshtml")
+        };
+        var content = string.Join("\n", planningFiles);
+
+        content.Should().Contain("暫定負責人");
+        content.Should().Contain("暫定廠商");
+        content.Should().NotContain(">專案負責人<");
+        content.Should().NotContain("Name = \"專案負責人\"");
+        content.Should().NotContain(">廠商<");
+        content.Should().NotContain("Name = \"廠商\"");
+    }
+
+    [Fact]
+    public void Planning_project_list_supports_optional_columns_and_standard_display_controls()
+    {
+        var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Index.cshtml");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+
+        page.Should().Contain("id=\"planning-projects-table\"");
+        page.Should().Contain("data-column-manager-table");
+        page.Should().Contain("data-column-manager-toggle");
+        page.Should().Contain("data-row-spacing-toggle");
+        page.Should().Contain("data-column=\"latestPeriod\"");
+        page.Should().Contain("data-column=\"historyCount\"");
+        page.Should().Contain("data-column=\"createdAt\"");
+        css.Should().Contain(".planning-projects-table {\n  min-width: 76rem;");
+        css.Should().Contain("[data-column=\"latestPeriod\"]");
+        css.Should().Contain("min-width: 7.5rem;");
+    }
+
+    [Fact]
+    public void Planning_project_and_existing_tables_place_column_management_before_row_spacing()
+    {
+        var pages = new[]
+        {
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Index.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Index.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Index.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Reports", "OpenProjects", "Index.cshtml"),
+            ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "MaintenanceOrders", "Index.cshtml")
+        };
+
+        pages.Should().OnlyContain(page =>
+            page.IndexOf("data-column-manager-toggle", StringComparison.Ordinal) >= 0 &&
+            page.IndexOf("data-column-manager-toggle", StringComparison.Ordinal) <
+            page.IndexOf("data-row-spacing-toggle", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Planning_project_print_pages_use_the_dedicated_report_hierarchy()
+    {
+        var single = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "Print.cshtml");
+        var list = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "PlanningProjects", "PrintList.cshtml");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+
+        single.Should().Contain("planning-print-report");
+        single.Should().Contain("planning-print-summary");
+        single.Should().NotContain("planning-print-description");
+        single.Should().NotContain("最新說明");
+        single.Should().NotContain("上期說明");
+        single.Should().Contain("本期記錄");
+        single.Should().NotContain("<td class=\"text-nowrap\">@record.CreatedAt");
+        single.Should().Contain("@@page {\n        size: A4 landscape;");
+        list.Should().Contain("planning-print-report");
+        list.Should().Contain("planning-print-list-table");
+        list.IndexOf(">項次<", StringComparison.Ordinal)
+            .Should().BeLessThan(list.IndexOf(">專案名稱<", StringComparison.Ordinal));
+        list.IndexOf(">專案名稱<", StringComparison.Ordinal)
+            .Should().BeLessThan(list.IndexOf(">暫定負責人<", StringComparison.Ordinal));
+        list.IndexOf(">暫定負責人<", StringComparison.Ordinal)
+            .Should().BeLessThan(list.IndexOf(">暫定廠商<", StringComparison.Ordinal));
+        list.IndexOf(">暫定廠商<", StringComparison.Ordinal)
+            .Should().BeLessThan(list.IndexOf(">進度說明<", StringComparison.Ordinal));
+        list.Should().Contain("<th class=\"planning-print-col-vendor\">暫定廠商</th>\n                <th>進度說明</th>");
+        single.Should().Contain("URLSearchParams");
+        single.Should().Contain("has('preview')");
+        single.Should().Contain("document.createTreeWalker");
+        single.Should().Contain("converter(node.nodeValue)");
+        single.Should().NotContain("converter.convertElement");
+        list.Should().Contain("URLSearchParams");
+        list.Should().Contain("has('preview')");
+        css.Should().Contain(".planning-print-report");
+        css.Should().Contain("width: min(1100px, calc(100% - 2rem));");
+        css.Should().Contain(".planning-print-list-table");
+        css.Should().Contain(".print-table-list.planning-print-history-table th");
+        css.Should().Contain(".print-table-list.planning-print-list-table th");
+        css.Should().Contain(".planning-print-summary-item:last-child");
+        css.Should().NotContain("page: planning-detail;");
+        css.Should().Contain(".planning-print-history-table th:nth-child(2)");
+        css.Should().Contain("width: 55%;");
+    }
+
+    [Fact]
+    public void Gantt_chart_uses_progress_threshold_colors_and_compact_inline_alerts()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
+        var workbenchDetails = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Details.cshtml");
+        var adminDetails = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Details.cshtml");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+
+        partial.Should().Contain("bar.ProgressPercent >= 80");
+        partial.Should().Contain("bar.ProgressPercent >= 50");
+        partial.Should().Contain("bar.ProgressPercent >= 20");
+        partial.Should().Contain("gantt-progress-start");
+        partial.Should().Contain("gantt-progress-low");
+        partial.Should().Contain("gantt-progress-mid");
+        partial.Should().Contain("gantt-progress-high");
+        partial.Should().Contain("gantt-progress-complete");
+        partial.Should().Contain("gantt-task-alerts");
+        css.Should().Contain(".gantt-progress-start { --gantt-progress-color: #ef4444;");
+        css.Should().Contain(".gantt-progress-low { --gantt-progress-color: #f59e0b;");
+        css.Should().Contain(".gantt-progress-mid { --gantt-progress-color: #2563eb;");
+        css.Should().Contain(".gantt-progress-high { --gantt-progress-color: #14b8a6;");
+        css.Should().Contain(".gantt-progress-complete { --gantt-progress-color: #16a34a;");
+        css.Should().Contain(".gantt-task-alerts {\n  display: flex;");
+        css.Should().Contain("min-height: 4.2rem;");
+        css.Should().NotContain("min-height: 5.4rem;");
+        css.Should().Contain(".gantt-panel .gantt-chart-header {\n  position: sticky;\n  top: 0;");
+        workbenchDetails.Should().Contain("detail-tab-shell-gantt");
+        adminDetails.Should().Contain("detail-tab-shell-gantt");
+        css.Should().Contain(".detail-tab-shell-gantt > .detail-tabs {\n  position: static;");
+    }
+
+    [Fact]
+    public void Shared_percent_bars_use_the_historical_five_color_thresholds()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_PercentBar.cshtml");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
+
+        partial.Should().Contain("percent >= 80");
+        partial.Should().Contain("percent >= 50");
+        partial.Should().Contain("percent >= 20");
+        partial.Should().Contain("\"is-start\"");
+        partial.Should().Contain("\"is-low\"");
+        partial.Should().Contain("\"is-mid\"");
+        partial.Should().Contain("\"is-high\"");
+        css.Should().Contain(".percent-progress.is-start");
+        css.Should().Contain("--progress-color: #ef4444;");
+        css.Should().Contain(".percent-progress.is-low");
+        css.Should().Contain("--progress-color: #f59e0b;");
+        css.Should().Contain(".percent-progress.is-mid");
+        css.Should().Contain(".percent-progress.is-high");
+        css.Should().Contain("--progress-color: #14b8a6;");
+    }
+
+    [Fact]
+    public void Shared_status_badges_render_each_status_configured_colors()
+    {
+        var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_StatusBadge.cshtml");
+
+        partial.Should().Contain("style=\"color:@textColor;background-color:@backgroundColor;font-weight:@fontWeight\"");
+        partial.Should().NotContain("status-semantic-");
+        partial.Should().NotContain("--status-custom-");
+    }
+
+    [Fact]
     public void Global_overviews_use_the_permission_hierarchy_instead_of_viewer_role_shortcuts()
     {
         var home = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Index.cshtml.cs");
@@ -78,12 +246,12 @@ public sealed class ProjectUiRegressionTests
     }
 
     [Fact]
-    public void Gantt_rows_leave_room_for_label_metadata_and_status_badges()
+    public void Gantt_rows_keep_label_metadata_and_status_badges_in_a_compact_layout()
     {
         var themes = ReadRepositoryFile("src", "ProjectManager.Web", "wwwroot", "css", "themes.css");
 
         themes.Should().Contain(".gantt-panel .gantt-chart-row {\n  height: auto;");
-        themes.Should().Contain("min-height: 5.4rem;");
+        themes.Should().Contain("min-height: 4.2rem;");
         themes.Should().Contain("overflow: visible;\n  white-space: normal;");
     }
 

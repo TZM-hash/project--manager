@@ -118,8 +118,8 @@ public sealed class ImportModel(
         using var workbook = new XLWorkbook();
         var worksheet = workbook.AddWorksheet("規劃中專案");
         worksheet.Cell(1, 1).Value = "專案名";
-        worksheet.Cell(1, 2).Value = "專案負責人";
-        worksheet.Cell(1, 3).Value = "廠商";
+        worksheet.Cell(1, 2).Value = "暫定負責人";
+        worksheet.Cell(1, 3).Value = "暫定廠商";
         worksheet.Cell(1, 4).Value = "最新說明";
 
         worksheet.Cell(2, 1).Value = "示例專案A";

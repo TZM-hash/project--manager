@@ -5,21 +5,36 @@
     Layout = "_PrintLayout";
 }
 
-<div class="print-report" id="printContent">
-    <div class="print-header">
-        <h1>規劃中專案清单</h1>
-        <div class="print-date">列印日期：@DateTime.Now.ToString("yyyy-MM-dd")</div>
+<div class="print-report print-report-wide planning-print-report planning-print-report-wide" id="printContent">
+    <header class="planning-print-header">
+        <div>
+            <div class="planning-print-eyebrow">PLANNING PROJECT LIST</div>
+            <h1>規劃中專案清單</h1>
+            <p>彙整暫定負責人、暫定廠商與最新推進資訊</p>
+        </div>
+        <div class="planning-print-date-card">
+            <span>列印日期</span>
+            <strong>@DateTime.Now.ToString("yyyy-MM-dd")</strong>
+        </div>
+    </header>
+
+    <div class="planning-print-list-summary">
+        <span>本次列印</span>
+        <strong>@Model.Projects.Count</strong>
+        <span>筆規劃中專案</span>
     </div>
 
-    <table class="print-table print-table-list">
+    <div class="planning-print-list-wrap">
+    <table class="print-table print-table-list planning-print-list-table">
         <thead>
             <tr>
-                <th style="width: 50px;">项次</th>
-                <th>專案名</th>
-                <th>專案負責人</th>
-                <th>廠商</th>
-                <th>最新說明</th>
-                <th>最近更新</th>
+                <th class="planning-print-col-index">項次</th>
+                <th class="planning-print-col-name">專案名稱</th>
+                <th class="planning-print-col-leader">暫定負責人</th>
+                <th class="planning-print-col-vendor">暫定廠商</th>
+                <th>進度說明</th>
+                <th class="planning-print-col-period">最新記錄年月</th>
+                <th class="planning-print-col-updated">最近更新</th>
             </tr>
         </thead>
         <tbody>
@@ -27,24 +42,24 @@
             @foreach (var project in Model.Projects)
             {
                 <tr>
-                    <td style="text-align: center;">@idx</td>
-                    <td>@project.Name</td>
+                    <td class="planning-print-index">@idx</td>
+                    <td><strong>@project.Name</strong></td>
                     <td>@Model.GetLeaderDisplayNames(project.LeaderUserId)</td>
                     <td>@(project.Vendor ?? "-")</td>
                     <td class="rich-text-content">@Html.Raw(RichTextSanitizer.Normalize(project.LatestDescription) ?? "-")</td>
-                    <td>@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="text-nowrap">@Model.GetLatestRecordPeriod(project)</td>
+                    <td class="text-nowrap">@project.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                 </tr>
                 idx++;
             }
         </tbody>
     </table>
+    </div>
 
-    @if (Model.Projects.Count > 0)
-    {
-        <div class="print-summary" style="margin-top: 1rem; color: #64748b; font-size: 0.9rem;">
-            共 @Model.Projects.Count 笔专案
-        </div>
-    }
+    <footer class="planning-print-footer">
+        <span>台塑電子專案管理系統</span>
+        <span>共 @Model.Projects.Count 筆專案</span>
+    </footer>
 </div>
 
 @section Scripts {
@@ -57,7 +72,10 @@
                 converter.convertElement(content);
                 document.title = converter.convert(document.title);
             }
-            setTimeout(function() { window.print(); }, 300);
+            var previewMode = new URLSearchParams(window.location.search).has('preview');
+            if (!previewMode) {
+                setTimeout(function() { window.print(); }, 300);
+            }
         };
     </script>
 }

@@ -24,6 +24,10 @@
   box-shadow: var(--app-shadow-soft);
 }
 
+.detail-tab-shell-gantt > .detail-tabs {
+  position: static;
+}
+
 .detail-tab {
   display: inline-flex;
   align-items: center;
@@ -157,9 +161,24 @@
   transition: width 0.55s ease;
 }
 
-.percent-progress.is-progress {
+.percent-progress.is-start {
+  --progress-color: #ef4444;
+  --progress-bg: #fee2e2;
+}
+
+.percent-progress.is-low {
+  --progress-color: #f59e0b;
+  --progress-bg: #fef3c7;
+}
+
+.percent-progress.is-mid {
   --progress-color: #2563eb;
   --progress-bg: #dbeafe;
+}
+
+.percent-progress.is-high {
+  --progress-color: #14b8a6;
+  --progress-bg: #ccfbf1;
 }
 
 .percent-progress.is-complete {
@@ -404,6 +423,369 @@
 
 .planning-note-editor {
   flex: 1;
+}
+
+.planning-projects-table {
+  min-width: 76rem;
+}
+
+.planning-projects-table [data-column="name"] {
+  min-width: 11rem;
+}
+
+.planning-projects-table [data-column="leader"],
+.planning-projects-table [data-column="vendor"] {
+  min-width: 8rem;
+}
+
+.planning-projects-table [data-column="latestDescription"] {
+  min-width: 20rem;
+}
+
+.planning-projects-table [data-column="latestPeriod"] {
+  min-width: 7.5rem;
+}
+
+.planning-projects-table [data-column="historyCount"] {
+  min-width: 7rem;
+}
+
+.planning-projects-table [data-column="createdAt"],
+.planning-projects-table [data-column="updatedAt"] {
+  min-width: 9.5rem;
+}
+
+.planning-project-description {
+  max-width: 34rem;
+}
+
+.planning-print-report {
+  --planning-print-accent: #0f8f98;
+  --planning-print-accent-dark: #0b6670;
+  --planning-print-soft: #e8f7f7;
+  --planning-print-border: #b9d4d6;
+  width: min(1100px, calc(100% - 2rem));
+  max-width: none !important;
+  padding: 2rem 2.25rem;
+  color: #17333a;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", "Microsoft YaHei", sans-serif;
+}
+
+.planning-print-report-wide {
+  width: min(1480px, calc(100% - 2rem));
+  max-width: none !important;
+  page: planning-list;
+}
+
+.planning-print-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--planning-print-accent);
+}
+
+.planning-print-eyebrow {
+  margin-bottom: 0.25rem;
+  color: var(--planning-print-accent-dark);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.planning-print-header h1 {
+  margin: 0;
+  color: #102f36;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.planning-print-header p {
+  margin: 0.3rem 0 0;
+  color: #58747a;
+  font-size: 0.88rem;
+}
+
+.planning-print-date-card {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 9rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--planning-print-border);
+  border-radius: 0.65rem;
+  background: var(--planning-print-soft);
+  text-align: right;
+}
+
+.planning-print-date-card span,
+.planning-print-summary-item span {
+  color: #5e7b80;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.planning-print-date-card strong {
+  color: var(--planning-print-accent-dark);
+  font-size: 0.95rem;
+}
+
+.planning-print-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.planning-print-summary-item {
+  display: grid;
+  align-content: center;
+  gap: 0.25rem;
+  min-height: 4.25rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--planning-print-border);
+  border-left: 4px solid #63bec3;
+  border-radius: 0.55rem;
+  background: #f8fcfc;
+  break-inside: avoid;
+}
+
+.planning-print-summary-primary {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #f1fbfb, #ffffff);
+}
+
+.planning-print-summary-item:last-child {
+  grid-column: span 3;
+  min-height: 3.4rem;
+}
+
+.planning-print-summary-item strong {
+  color: #16343a;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.planning-print-description,
+.planning-print-history {
+  margin-top: 1rem;
+  break-inside: avoid-page;
+}
+
+.planning-print-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.planning-print-section-heading span {
+  color: var(--planning-print-accent-dark);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.planning-print-section-heading h2 {
+  margin: 0.08rem 0 0;
+  color: #17333a;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.planning-print-section-heading > strong {
+  color: #5e7b80;
+  font-size: 0.78rem;
+}
+
+.planning-print-description-body {
+  min-height: 6rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--planning-print-border);
+  border-radius: 0.55rem;
+  background: linear-gradient(180deg, #ffffff, #f8fcfc);
+  color: #203e44;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.planning-print-history-table,
+.planning-print-list-table {
+  table-layout: fixed;
+  border: 1px solid #7faeb2;
+}
+
+.print-table-list.planning-print-history-table th,
+.print-table-list.planning-print-list-table th {
+  border-color: #327f86;
+  background: var(--planning-print-accent);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.planning-print-history-table td,
+.planning-print-list-table td {
+  border-color: var(--planning-print-border);
+  color: #203e44;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.planning-print-history-table tbody tr:nth-child(even),
+.planning-print-list-table tbody tr:nth-child(even) {
+  background: #f2fafa;
+}
+
+.planning-print-list-table tbody tr {
+  background: #e9f6f7;
+}
+
+.planning-print-history-table th:first-child {
+  width: 10%;
+}
+
+.planning-print-history-table th:nth-child(2) {
+  width: 55%;
+}
+
+.planning-print-history-table th:nth-child(3) {
+  width: 15%;
+}
+
+.planning-print-history-table th:last-child {
+  width: 20%;
+}
+
+.planning-print-list-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--planning-print-border);
+  border-radius: 0.5rem;
+  background: var(--planning-print-soft);
+  color: #56747a;
+  font-size: 0.82rem;
+}
+
+.planning-print-list-summary strong {
+  color: var(--planning-print-accent-dark);
+  font-size: 1.15rem;
+}
+
+.planning-print-list-wrap {
+  width: 100%;
+  overflow: visible;
+}
+
+.planning-print-list-table {
+  width: 100%;
+}
+
+.planning-print-list-table .planning-print-col-index {
+  width: 4.5%;
+}
+
+.planning-print-list-table .planning-print-col-name {
+  width: 13%;
+}
+
+.planning-print-list-table .planning-print-col-leader {
+  width: 9%;
+}
+
+.planning-print-list-table .planning-print-col-vendor {
+  width: 10%;
+}
+
+.planning-print-list-table .planning-print-col-period {
+  width: 8%;
+}
+
+.planning-print-list-table .planning-print-col-updated {
+  width: 12%;
+}
+
+.planning-print-index {
+  text-align: center;
+  font-weight: 800;
+}
+
+.planning-print-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--planning-print-border);
+  color: #6a8489;
+  font-size: 0.68rem;
+}
+
+@page planning-list {
+  size: A4 landscape;
+  margin: 9mm;
+}
+
+@media (max-width: 720px) {
+  .planning-print-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .planning-print-date-card {
+    text-align: left;
+  }
+
+  .planning-print-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .planning-print-summary-primary {
+    grid-column: auto;
+  }
+
+  .planning-print-summary-item:last-child {
+    grid-column: auto;
+  }
+}
+
+@media print {
+  .planning-print-report {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+
+  .planning-print-report,
+  .planning-print-report * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .planning-print-header,
+  .planning-print-summary-item,
+  .planning-print-description,
+  .planning-print-history-table tr,
+  .planning-print-list-table tr,
+  .planning-print-footer {
+    break-inside: avoid;
+  }
+
+  .planning-print-history-table,
+  .planning-print-list-table {
+    margin-bottom: 0;
+  }
 }
 
 .skip-status-panel {
@@ -846,7 +1228,6 @@
 
 .gantt-overdue-badge {
   display: inline-flex;
-  margin-left: 0.3rem;
   padding: 0.12rem 0.38rem;
   border: 1px solid #fecaca;
   border-radius: 999px;

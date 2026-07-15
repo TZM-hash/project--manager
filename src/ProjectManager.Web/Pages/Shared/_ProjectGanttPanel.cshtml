@@ -29,7 +29,7 @@
     <div class="gantt-panel-head">
         <div>
             <h2 class="detail-panel-title">甘特圖</h2>
-            <div class="chart-subtitle">黑框為完整計劃工期，狀態實色為已完成部分、同色淡色為未完成部分；檔案日期折線保留進度超前與滯後判讀。目前時間單位：@scaleText。</div>
+            <div class="chart-subtitle">黑框為完整計劃工期，進度條按百分比分段顯色，實色為已完成部分、同色淡色為未完成部分；狀態徽章另行提示風險、等待與阻塞。目前時間單位：@scaleText。</div>
         </div>
         <div class="page-actions">
             <a class="btn btn-outline-secondary" asp-page="/Workbench/Projects/GanttPrint" asp-route-id="@Model.Project.Id">預覽 / 列印</a>
@@ -88,6 +88,11 @@
             <div class="gantt-progress-legend">
                 <span><i class="gantt-legend-bar"><b></b></i>實色：已完成</span>
                 <span><i class="gantt-legend-bar gantt-legend-bar-pale"><b></b></i>淡色：未完成</span>
+                <span class="gantt-progress-start"><i class="gantt-legend-progress-dot"></i>0–19%</span>
+                <span class="gantt-progress-low"><i class="gantt-legend-progress-dot"></i>20–49%</span>
+                <span class="gantt-progress-mid"><i class="gantt-legend-progress-dot"></i>50–79%</span>
+                <span class="gantt-progress-high"><i class="gantt-legend-progress-dot"></i>80–99%</span>
+                <span class="gantt-progress-complete"><i class="gantt-legend-progress-dot"></i>100%</span>
                 <span><i class="gantt-legend-redline"></i>檔案日期</span>
                 <span><i class="gantt-legend-milestone"></i>里程碑</span>
             </div>
@@ -126,6 +131,11 @@
                     var visualState = ProjectGanttService.GetTaskVisualState(row.Task, archiveDemand.Date, point.State);
                     var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
                     var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
+                    var progressStageClass = bar.ProgressPercent >= 100 ? "gantt-progress-complete"
+                        : bar.ProgressPercent >= 80 ? "gantt-progress-high"
+                        : bar.ProgressPercent >= 50 ? "gantt-progress-mid"
+                        : bar.ProgressPercent >= 20 ? "gantt-progress-low"
+                        : "gantt-progress-start";
                     var progressText = $"{bar.ProgressPercent:0.##}%";
                     var progressPosition = bar.LeftPercent + (bar.WidthPercent * Math.Clamp(bar.ProgressPercent, 0m, 100m) / 100m);
                     var progressTooltip = ProjectGanttService.GetProgressSummary(point);
@@ -138,11 +148,13 @@
                         <div class="gantt-chart-label">
                             <span class="gantt-task-name" data-language-preserve translate="no">@row.Task.Name</span>
                             <small class="gantt-task-meta">負責人：@ownerName@if (!string.IsNullOrWhiteSpace(predecessorName)) { <text> · 前置工作：@predecessorName</text> }</small>
-                            <span class="gantt-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
-                            @if (overdue)
-                            {
-                                <span class="gantt-overdue-badge">逾期</span>
-                            }
+                            <div class="gantt-task-alerts">
+                                <span class="gantt-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
+                                @if (overdue)
+                                {
+                                    <span class="gantt-overdue-badge">逾期</span>
+                                }
+                            </div>
                         </div>
                         <div class="gantt-chart-track">
                             @if (row.Task.IsMilestone && bar.WidthPercent >= 0)
@@ -151,13 +163,13 @@
                             }
                             else if (bar.WidthPercent > 0)
                             {
-                                <span class="gantt-bar @visualStateClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@progressTooltip" title="@progressTooltip">
+                                <span class="gantt-bar @progressStageClass" style="left:@bar.LeftPercent.ToString("0.##")%;width:@bar.WidthPercent.ToString("0.##")%;" aria-label="@progressTooltip" title="@progressTooltip">
                                     <i style="width:@bar.ProgressPercent.ToString("0.##")%"></i>
                                 </span>
-                                <span class="gantt-bar-progress-label" style="--gantt-progress-position:@progressPosition.ToString("0.##")%;">@progressText</span>
+                                <span class="gantt-bar-progress-label @progressStageClass" style="--gantt-progress-position:@progressPosition.ToString("0.##")%;">@progressText</span>
                             }
                         </div>
-                        <div class="gantt-chart-percent @visualStateClass"><strong>@progressText</strong></div>
+                        <div class="gantt-chart-percent @progressStageClass"><strong>@progressText</strong></div>
                     </div>
                 }
                 @if (taskRows.Count > 0)
