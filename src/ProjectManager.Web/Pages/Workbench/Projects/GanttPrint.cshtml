@@ -14,6 +14,7 @@
     var weights = ProjectGanttService.BuildTaskWeights(tasks.Count);
     var archiveLinePosition = ProjectGanttService.GetTimelinePositionPercent(archiveDemand.Date, months);
     var progressPoints = ProjectGanttService.BuildProgressLinePoints(tasks, archiveDemand.Date, months);
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
     var expectedProgress = ProjectGanttService.CalculateExpectedProgress(tasks, weights, archiveDemand.Date);
     var actualProgress = ProjectGanttService.CalculateActualProgress(tasks, weights);
     var ownerText = string.Join("、", Model.Project.Assignments.Select(x => x.User?.DisplayName ?? x.User?.UserName ?? x.UserId));
@@ -25,8 +26,16 @@
         ? $"GANTT-{Model.Project.ProjectNumber}"
         : Model.Project.ParentCaseNumber;
     var notes = tasks
-        .Where(x => !string.IsNullOrWhiteSpace(x.ProgressDescription))
-        .Select(x => $"{x.Name}：{x.ProgressDescription}")
+        .Select((task, index) => new
+        {
+            Task = task,
+            State = ProjectGanttService.GetTaskVisualState(task, archiveDemand.Date, progressPoints[index].State)
+        })
+        .Where(x => !string.IsNullOrWhiteSpace(x.Task.ProgressDescription)
+            && (x.Task.ProgressPercent < 100m
+                || x.State is GanttTaskVisualState.AtRisk or GanttTaskVisualState.Waiting or GanttTaskVisualState.Blocked))
+        .Take(4)
+        .Select(x => $"{x.Task.Name}：{x.Task.ProgressDescription}")
         .ToList();
 }
 
@@ -122,21 +131,30 @@
                             ? taskStart.Value.AddDays(completedTaskDays - 1)
                             : (DateOnly?)null;
                         var progressPoint = progressPoints[index];
+                        var visualState = ProjectGanttService.GetTaskVisualState(task, archiveDemand.Date, progressPoint.State);
+                        var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
+                        var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
+                        var progressStageClass = ProjectGanttService.GetProgressStageCssClass(task.ProgressPercent);
+                        var ownerName = !string.IsNullOrWhiteSpace(task.OwnerUserId) && ownerNames.TryGetValue(task.OwnerUserId, out var taskOwner)
+                            ? taskOwner
+                            : "未指派";
+                        var plannedRange = taskStart is not null || taskFinish is not null
+                            ? $"{taskStart?.ToString("yyyy/M/d") ?? "-"}–{taskFinish?.ToString("yyyy/M/d") ?? "-"}"
+                            : "未設定";
+                        var overdue = ProjectGanttService.IsTaskOverdue(task, today);
 
                         <tr>
                             <td class="gantt-print-index">@(task.SortOrder > 0 ? task.SortOrder : index + 1)</td>
                             <td class="gantt-print-task">
-                                <span>@if (task.IsMilestone) { <b class="gantt-print-milestone">◆</b> }@task.Name</span>
-                                <small>@ProjectGanttService.GetProgressSummary(progressPoint)</small>
-                                <small>負責人：@(!string.IsNullOrWhiteSpace(task.OwnerUserId) && ownerNames.TryGetValue(task.OwnerUserId, out var taskOwner) ? taskOwner : "未指派")</small>
-                                @if (task.PredecessorTaskId is { } predecessorId)
-                                {
-                                    <small>前置工作：@(tasks.FirstOrDefault(item => item.Id == predecessorId)?.Name ?? "-")</small>
-                                }
-                                @if (task.ActualStartDate is not null || task.ActualFinishDate is not null)
-                                {
-                                    <small>實際：@(task.ActualStartDate?.ToString("yyyy-MM-dd") ?? "-") ～ @(task.ActualFinishDate?.ToString("yyyy-MM-dd") ?? "-")</small>
-                                }
+                                <div class="gantt-print-task-title">
+                                    <span>@if (task.IsMilestone) { <b class="gantt-print-milestone">◆</b> }@task.Name</span>
+                                    <span class="gantt-print-task-state-badge @visualStateClass"><i></i>@visualStateLabel</span>
+                                    @if (overdue)
+                                    {
+                                        <span class="gantt-print-overdue-badge">逾期</span>
+                                    }
+                                </div>
+                                <small class="gantt-print-task-meta">負責人：@ownerName · 計劃：@plannedRange</small>
                             </td>
                             @foreach (var month in months)
                             {
@@ -162,16 +180,20 @@
                                 }
 
                                 <td class="gantt-print-month-cell">
-                                    @if (intersects)
+                                    @if (task.IsMilestone && taskStart is not null && taskStart >= monthStart && taskStart <= monthFinish)
                                     {
-                                        <span class="gantt-print-plan-bar" style="left:@barLeft.ToString("0.###")%;width:@barWidth.ToString("0.###")%">
+                                        <span class="gantt-print-timeline-milestone" style="left:@barLeft.ToString("0.###")%" title="里程碑：@task.Name"></span>
+                                    }
+                                    else if (intersects)
+                                    {
+                                        <span class="gantt-print-plan-bar @progressStageClass" style="left:@barLeft.ToString("0.###")%;width:@barWidth.ToString("0.###")%">
                                             <i style="width:@doneWidth.ToString("0.###")%"></i>
                                         </span>
                                     }
                                 </td>
                             }
                             <td class="gantt-print-ratio">@weights[index].ToString("0.##")%</td>
-                            <td class="gantt-print-actual">@task.ProgressPercent.ToString("0.0")%</td>
+                            <td class="gantt-print-actual @progressStageClass"><strong>@task.ProgressPercent.ToString("0.#")%</strong></td>
                         </tr>
                     }
                 </tbody>
@@ -180,18 +202,29 @@
             {
                 var previousX = archiveLinePosition;
                 decimal previousY = 0;
-                <svg class="gantt-print-progress-line" viewBox="0 0 100 @tasks.Count" preserveAspectRatio="none" aria-label="檔案日期進度線">
-                    @for (var pointIndex = 0; pointIndex < progressPoints.Count; pointIndex++)
+                <div class="gantt-print-timeline-overlay" aria-label="檔案日期進度折線">
+                    <svg class="gantt-print-progress-line" viewBox="0 0 100 @tasks.Count" preserveAspectRatio="none" aria-hidden="true">
+                        @for (var pointIndex = 0; pointIndex < progressPoints.Count; pointIndex++)
+                        {
+                            var point = progressPoints[pointIndex];
+                            var currentY = pointIndex + 0.5m;
+                            var stateClass = point.State == GanttProgressState.Ahead ? "is-ahead" : point.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
+                            <line class="@stateClass" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@point.PositionPercent.ToString("0.###")" y2="@currentY.ToString("0.###")" vector-effect="non-scaling-stroke" />
+                            previousX = point.PositionPercent;
+                            previousY = currentY;
+                        }
+                        <line class="is-on-schedule" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@archiveLinePosition.ToString("0.###")" y2="@tasks.Count" vector-effect="non-scaling-stroke" />
+                    </svg>
+                    @for (var markerIndex = 0; markerIndex < progressPoints.Count; markerIndex++)
                     {
-                        var point = progressPoints[pointIndex];
-                        var currentY = pointIndex + 0.5m;
-                        var stateClass = point.State == GanttProgressState.Ahead ? "is-ahead" : point.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
-                        <line class="@stateClass" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@point.PositionPercent.ToString("0.###")" y2="@currentY.ToString("0.###")" vector-effect="non-scaling-stroke" />
-                        previousX = point.PositionPercent;
-                        previousY = currentY;
+                        var markerPoint = progressPoints[markerIndex];
+                        var markerStateClass = markerPoint.State == GanttProgressState.Ahead ? "is-ahead" : markerPoint.State == GanttProgressState.Behind ? "is-behind" : "is-on-schedule";
+                        var markerTop = (markerIndex + 0.5m) / tasks.Count * 100m;
+                        <span class="gantt-print-progress-marker @markerStateClass"
+                              style="left:@markerPoint.PositionPercent.ToString("0.###")%;top:@markerTop.ToString("0.###")%"
+                              title="@tasks[markerIndex].Name：@ProjectGanttService.GetProgressSummary(markerPoint)"></span>
                     }
-                    <line class="is-on-schedule" x1="@previousX.ToString("0.###")" y1="@previousY.ToString("0.###")" x2="@archiveLinePosition.ToString("0.###")" y2="@tasks.Count" vector-effect="non-scaling-stroke" />
-                </svg>
+                </div>
             }
         </div>
 

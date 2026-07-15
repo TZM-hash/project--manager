@@ -131,11 +131,7 @@
                     var visualState = ProjectGanttService.GetTaskVisualState(row.Task, archiveDemand.Date, point.State);
                     var visualStateLabel = ProjectGanttService.GetTaskVisualStateLabel(visualState);
                     var visualStateClass = ProjectGanttService.GetTaskVisualStateCssClass(visualState);
-                    var progressStageClass = bar.ProgressPercent >= 100 ? "gantt-progress-complete"
-                        : bar.ProgressPercent >= 80 ? "gantt-progress-high"
-                        : bar.ProgressPercent >= 50 ? "gantt-progress-mid"
-                        : bar.ProgressPercent >= 20 ? "gantt-progress-low"
-                        : "gantt-progress-start";
+                    var progressStageClass = ProjectGanttService.GetProgressStageCssClass(bar.ProgressPercent);
                     var progressText = $"{bar.ProgressPercent:0.##}%";
                     var progressPosition = bar.LeftPercent + (bar.WidthPercent * Math.Clamp(bar.ProgressPercent, 0m, 100m) / 100m);
                     var progressTooltip = ProjectGanttService.GetProgressSummary(point);

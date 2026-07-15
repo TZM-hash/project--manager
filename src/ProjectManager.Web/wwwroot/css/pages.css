@@ -2420,6 +2420,11 @@
 }
 
 .gantt-print-report {
+  --gantt-print-header-row-height: 1.28rem;
+  --gantt-print-header-height: calc(var(--gantt-print-header-row-height) * 2);
+  --gantt-print-row-height: 2.25rem;
+  --gantt-print-timeline-left: 21%;
+  --gantt-print-timeline-width: 64%;
   width: 100%;
   max-width: none;
   margin: 0 auto;
@@ -2555,13 +2560,14 @@
 }
 
 .gantt-print-grid thead th {
-  height: 1.28rem;
+  height: var(--gantt-print-header-row-height);
   padding: 0.08rem 0.1rem;
   font-weight: 700;
 }
 
+.gantt-print-grid tbody tr,
 .gantt-print-grid tbody td {
-  height: 2rem;
+  height: var(--gantt-print-row-height);
   padding: 0.08rem 0.12rem;
 }
 
@@ -2581,16 +2587,63 @@
   white-space: normal;
 }
 
-.gantt-print-task span,
-.gantt-print-task small {
-  display: block;
+.gantt-print-task-title {
+  display: flex;
+  gap: 0.22rem;
+  align-items: center;
+  min-width: 0;
 }
 
-.gantt-print-task small {
+.gantt-print-task-title > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt-print-task-meta {
+  display: block;
   margin-top: 0.08rem;
+  overflow: hidden;
   color: #475569;
   font-size: 0.58rem;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt-print-task-state-badge,
+.gantt-print-overdue-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.18rem;
+  align-items: center;
+  padding: 0.05rem 0.22rem;
+  border-radius: 999px;
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.gantt-print-task-state-badge {
+  border: 1px solid color-mix(in srgb, var(--gantt-task-color) 34%, transparent);
+  background: color-mix(in srgb, var(--gantt-task-color) 9%, #fff);
+  color: color-mix(in srgb, var(--gantt-task-color) 86%, #111827);
+}
+
+.gantt-print-task-state-badge i {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: var(--gantt-task-color);
+}
+
+.gantt-print-overdue-badge {
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
 }
 
 .gantt-print-index,
@@ -2625,15 +2678,32 @@
   height: 0.52rem;
   min-width: 2px;
   overflow: hidden;
-  border: 1px solid #4f8a25;
-  background: #cbe8a0;
+  border: 1.5px solid #111827;
+  border-radius: 2px;
+  background: var(--gantt-progress-soft);
   transform: translateY(-50%);
 }
 
 .gantt-print-plan-bar i {
   display: block;
   height: 100%;
-  background: #82bd48;
+  background: var(--gantt-progress-color);
+}
+
+.gantt-print-timeline-milestone {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1.5px solid #6d28d9;
+  background: #ede9fe;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.gantt-print-actual strong {
+  color: var(--gantt-progress-color);
+  font-weight: 850;
 }
 
 .has-archive-redline::after {

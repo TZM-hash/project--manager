@@ -154,13 +154,16 @@ public sealed class ProjectUiRegressionTests
     public void Gantt_chart_uses_progress_threshold_colors_and_compact_inline_alerts()
     {
         var partial = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_ProjectGanttPanel.cshtml");
+        var ganttService = ReadRepositoryFile("src", "ProjectManager.Web", "Services", "ProjectGanttService.cs");
         var workbenchDetails = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Details.cshtml");
         var adminDetails = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Admin", "Projects", "Details.cshtml");
         var css = FrontendAssetStructureTests.ReadCssLayers();
 
-        partial.Should().Contain("bar.ProgressPercent >= 80");
-        partial.Should().Contain("bar.ProgressPercent >= 50");
-        partial.Should().Contain("bar.ProgressPercent >= 20");
+        partial.Should().Contain("GetProgressStageCssClass(bar.ProgressPercent)");
+        ganttService.Should().Contain("progress >= 100m");
+        ganttService.Should().Contain("progress >= 80m");
+        ganttService.Should().Contain("progress >= 50m");
+        ganttService.Should().Contain("progress >= 20m");
         partial.Should().Contain("gantt-progress-start");
         partial.Should().Contain("gantt-progress-low");
         partial.Should().Contain("gantt-progress-mid");
@@ -618,7 +621,7 @@ public sealed class ProjectUiRegressionTests
 
         partial.Should().Contain("gantt-progress-marker");
         partial.Should().Contain("GetProgressSummary");
-        print.Should().Contain("GetProgressSummary(progressPoint)");
+        print.Should().Contain("GetProgressSummary(markerPoint)");
         css.Should().Contain(".gantt-panel .gantt-chart-header");
         css.Should().Contain("position: sticky;");
         css.Should().Contain("content: attr(data-tooltip)");

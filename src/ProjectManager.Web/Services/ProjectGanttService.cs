@@ -409,6 +409,16 @@ public sealed class ProjectGanttService(
         return new GanttBar(left, width, ClampPercent(task.ProgressPercent));
     }
 
+    public static string GetProgressStageCssClass(decimal progressPercent)
+    {
+        var progress = ClampPercent(progressPercent);
+        return progress >= 100m ? "gantt-progress-complete"
+            : progress >= 80m ? "gantt-progress-high"
+            : progress >= 50m ? "gantt-progress-mid"
+            : progress >= 20m ? "gantt-progress-low"
+            : "gantt-progress-start";
+    }
+
     public static GanttTaskVisualState GetTaskVisualState(
         ProjectGanttTaskInputModel task,
         DateOnly archiveDate,

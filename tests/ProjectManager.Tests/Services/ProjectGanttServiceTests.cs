@@ -131,6 +131,22 @@ public sealed class ProjectGanttServiceTests
     }
 
     [Theory]
+    [InlineData(-1, "gantt-progress-start")]
+    [InlineData(19.99, "gantt-progress-start")]
+    [InlineData(20, "gantt-progress-low")]
+    [InlineData(49.99, "gantt-progress-low")]
+    [InlineData(50, "gantt-progress-mid")]
+    [InlineData(79.99, "gantt-progress-mid")]
+    [InlineData(80, "gantt-progress-high")]
+    [InlineData(99.99, "gantt-progress-high")]
+    [InlineData(100, "gantt-progress-complete")]
+    [InlineData(120, "gantt-progress-complete")]
+    public void GetProgressStageCssClass_UsesSharedFiveStageRules(decimal progress, string expected)
+    {
+        ProjectGanttService.GetProgressStageCssClass(progress).Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData(100, GanttProgressState.Behind, GanttTaskVisualState.Completed)]
     [InlineData(45, GanttProgressState.Ahead, GanttTaskVisualState.Ahead)]
     [InlineData(45, GanttProgressState.Behind, GanttTaskVisualState.AtRisk)]

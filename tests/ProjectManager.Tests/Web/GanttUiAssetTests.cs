@@ -14,6 +14,7 @@ public sealed class GanttUiAssetTests
         partial.Should().Contain("gantt-visual-legend");
         partial.Should().Contain("gantt-bar-progress-label");
         partial.Should().Contain("GetTaskVisualState");
+        partial.Should().Contain("GetProgressStageCssClass");
         partial.Should().Contain("gantt-task-milestone");
         partial.Should().Contain("gantt-legend-milestone");
         partial.Should().Contain("負責人");
@@ -49,15 +50,26 @@ public sealed class GanttUiAssetTests
     }
 
     [Fact]
-    public void Gantt_print_view_includes_enhanced_task_metadata()
+    public void Gantt_print_view_reuses_web_visual_rules_and_keeps_overlay_inside_timeline()
     {
         var printView = ReadRepositoryFile(
             "src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "GanttPrint.cshtml");
+        var css = FrontendAssetStructureTests.ReadCssLayers();
 
         printView.Should().Contain("gantt-print-milestone");
-        printView.Should().Contain("負責人");
-        printView.Should().Contain("前置工作");
-        printView.Should().Contain("實際：");
+        printView.Should().Contain("GetProgressStageCssClass");
+        printView.Should().Contain("GetTaskVisualState");
+        printView.Should().Contain("GetTaskVisualStateCssClass");
+        printView.Should().Contain("gantt-print-task-state-badge");
+        printView.Should().Contain("gantt-print-timeline-overlay");
+        printView.Should().Contain("gantt-print-progress-marker");
+        printView.Should().Contain("計劃：");
+        printView.Should().NotContain("<small>實際：");
+
+        css.Should().Contain("--gantt-print-row-height");
+        css.Should().Contain(".gantt-print-timeline-overlay");
+        css.Should().Contain("left: var(--gantt-print-timeline-left)");
+        css.Should().Contain("width: var(--gantt-print-timeline-width)");
     }
 
     private static string ReadRepositoryFile(params string[] pathParts)
