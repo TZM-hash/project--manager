@@ -11,7 +11,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class EditModel(
     MaintenanceOrderService service,
     UserManager<ApplicationUser> userManager) : PageModel

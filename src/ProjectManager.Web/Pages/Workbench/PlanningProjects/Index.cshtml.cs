@@ -64,13 +64,9 @@ public sealed class IndexModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(LeaderUserId))
+        if (!User.CanManageAllBusinessData())
         {
-            var currentUserId = userManager.GetUserId(User);
-            if (!string.IsNullOrWhiteSpace(currentUserId))
-            {
-                LeaderUserId = currentUserId;
-            }
+            LeaderUserId = userManager.GetUserId(User) ?? "__missing-current-user__";
         }
 
         await LoadUserDisplayNamesAsync(cancellationToken);
@@ -104,13 +100,20 @@ public sealed class IndexModel(
 
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
+        var project = await planningProjectService.GetPlanningProjectAsync(id, cancellationToken);
+        if (project is null || !CanManage(project))
+        {
+            return NotFound();
+        }
+
         await planningProjectService.DeleteAsync(id, cancellationToken);
         return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
-        await planningProjectService.DeleteManyAsync(ids, cancellationToken);
+        var allowedIds = await GetAllowedIdsAsync(ids, cancellationToken);
+        await planningProjectService.DeleteManyAsync(allowedIds, cancellationToken);
         return RedirectToPage("./Index", BuildRouteValuesWithPaging());
     }
 
@@ -124,6 +127,31 @@ public sealed class IndexModel(
         return RedirectToPage("./PrintList", new { ids = string.Join(",", ids) });
     }
 
+    private bool CanManage(PlanningProject project)
+    {
+        if (User.CanManageAllBusinessData())
+        {
+            return true;
+        }
+
+        var currentUserId = userManager.GetUserId(User);
+        return !string.IsNullOrWhiteSpace(currentUserId) &&
+               (project.LeaderUserId ?? string.Empty)
+                   .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                   .Contains(currentUserId, StringComparer.Ordinal);
+    }
+
+    private async Task<int[]> GetAllowedIdsAsync(int[] ids, CancellationToken cancellationToken)
+    {
+        if (User.CanManageAllBusinessData())
+        {
+            return ids.Distinct().ToArray();
+        }
+
+        var projects = await planningProjectService.GetPlanningProjectsByIdsAsync(ids, cancellationToken);
+        return projects.Where(CanManage).Select(x => x.Id).ToArray();
+    }
+
     private async Task LoadUserDisplayNamesAsync(CancellationToken cancellationToken)
     {
         // 負責人欄位可能儲存单人，也可能是逗号分隔的多人 ID，这里统一展開为顯示名。
@@ -133,8 +161,9 @@ public sealed class IndexModel(
         UserDisplayNames = users.ToDictionary(
             x => x.Id,
             x => string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName);
+        var currentUserId = userManager.GetUserId(User);
         UserOptions = users
-            .Where(x => x.IsActive)
+            .Where(x => x.IsActive && (User.CanManageAllBusinessData() || x.Id == currentUserId))
             .Select(x => new SelectListItem(
                 string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
                 x.Id))
@@ -209,7 +238,7 @@ public sealed class IndexModel(
 
         if (!string.IsNullOrWhiteSpace(LeaderUserId))
         {
-            query = query.Where(x => x.LeaderUserId != null && x.LeaderUserId.Contains(LeaderUserId));
+            query = query.WhereLeaderAssigned(LeaderUserId);
         }
 
         if (!string.IsNullOrWhiteSpace(Vendor))

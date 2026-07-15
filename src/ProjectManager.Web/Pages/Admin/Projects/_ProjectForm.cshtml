@@ -3,19 +3,19 @@
 <form method="post" class="mt-3">
     <input asp-for="Input.Id" type="hidden" />
     <input asp-for="Input.RowVersion" type="hidden" />
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
 
     <section class="form-section">
         <h2 class="form-section-title">基礎資訊</h2>
         <div class="row g-3">
-            <div class="col-md-2"><label class="form-label">年</label><input class="form-control" asp-for="Input.Year" /></div>
+            <div class="col-md-2"><label class="form-label">年</label><input class="form-control" asp-for="Input.Year" /><span class="text-danger" asp-validation-for="Input.Year"></span></div>
             <div class="col-md-2">
                 <label class="form-label">專案類型</label>
                 <select class="form-select" asp-for="Input.ProjectType" asp-items="Model.ProjectTypeOptions"></select>
             </div>
             <div class="col-md-3"><label class="form-label">母案案號</label><input class="form-control" asp-for="Input.ParentCaseNumber" /></div>
-            <div class="col-md-2"><label class="form-label">專案工號</label><input class="form-control" asp-for="Input.ProjectNumber" /></div>
-            <div class="col-md-3"><label class="form-label">專案名稱</label><input class="form-control" asp-for="Input.Name" /></div>
+            <div class="col-md-2"><label class="form-label">專案工號</label><input class="form-control" asp-for="Input.ProjectNumber" /><span class="text-danger" asp-validation-for="Input.ProjectNumber"></span></div>
+            <div class="col-md-3"><label class="form-label">專案名稱</label><input class="form-control" asp-for="Input.Name" /><span class="text-danger" asp-validation-for="Input.Name"></span></div>
             <div class="col-md-4">
                 <label class="form-label">專案人員</label>
                 <select class="form-select" asp-for="Input.AssignedUserId" asp-items="Model.UserOptions">
@@ -31,11 +31,12 @@
             <div class="col-md-3">
                 <label class="form-label">狀態</label>
                 <select class="form-select" asp-for="Input.StatusId" asp-items="Model.StatusOptions"></select>
+                <span class="text-danger" asp-validation-for="Input.StatusId"></span>
             </div>
             <div class="col-md-3"><label class="form-label">結案日期</label><input class="form-control" asp-for="Input.ClosedYearMonth" type="month" /></div>
-            <div class="col-md-2"><label class="form-label">專案進度 %</label><input class="form-control" asp-for="Input.ProgressPercent" /></div>
-            <div class="col-md-2"><label class="form-label">專案金額</label><input class="form-control" asp-for="Input.ProjectAmount" /></div>
-            <div class="col-md-2"><label class="form-label">收款比例 %</label><input class="form-control" asp-for="Input.CollectionPercent" /></div>
+            <div class="col-md-2"><label class="form-label">專案進度 %</label><input class="form-control" asp-for="Input.ProgressPercent" /><span class="text-danger" asp-validation-for="Input.ProgressPercent"></span></div>
+            <div class="col-md-2"><label class="form-label">專案金額</label><input class="form-control" asp-for="Input.ProjectAmount" /><span class="text-danger" asp-validation-for="Input.ProjectAmount"></span></div>
+            <div class="col-md-2"><label class="form-label">收款比例 %</label><input class="form-control" asp-for="Input.CollectionPercent" /><span class="text-danger" asp-validation-for="Input.CollectionPercent"></span></div>
             <div class="col-md-4">
                 <label class="form-label">廠商（實施中專案，自由輸入）</label>
                 <input class="form-control" asp-for="Input.VendorName" placeholder="請輸入廠商名稱" />
@@ -116,7 +117,7 @@
     </section>
 
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">儲存</button>
+        <button type="submit" class="btn btn-primary" data-processing-label="正在儲存…">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

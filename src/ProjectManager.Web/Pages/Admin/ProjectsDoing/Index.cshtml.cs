@@ -9,7 +9,7 @@ using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Admin.ProjectsDoing;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class IndexModel(ApplicationDbContext db) : PageModel
 {
     [BindProperty(SupportsGet = true)]

@@ -66,6 +66,7 @@ public sealed class CreateModel(
             $"Created settlement {Input.Year}-{Input.Month:00}.",
             cancellationToken);
 
+        TempData["SuccessMessage"] = $"{Input.Year}-{Input.Month:00} 月結批次已生成。";
         return RedirectToPage("./Details", new { id = result.BatchId });
     }
 

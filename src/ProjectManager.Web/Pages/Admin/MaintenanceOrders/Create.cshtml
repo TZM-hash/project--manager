@@ -12,7 +12,7 @@
 </div>
 
 <form method="post" class="form-section">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
     <div class="row g-3">
         <div class="col-12"><h2 class="h6 mb-0">合約基本資料</h2></div>
         <div class="col-md-2">
@@ -97,7 +97,7 @@
         </div>
     </div>
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">儲存</button>
+        <button type="submit" class="btn btn-primary" data-processing-label="正在儲存…">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

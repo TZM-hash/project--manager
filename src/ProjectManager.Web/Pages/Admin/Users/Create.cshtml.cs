@@ -3,15 +3,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Admin.Users;
 
 [Authorize(Roles = RoleNames.Administrator)]
-public sealed class CreateModel(UserManager<ApplicationUser> userManager) : PageModel
+public sealed class CreateModel(
+    UserManager<ApplicationUser> userManager,
+    ApplicationDbContext db) : PageModel
 {
-    public IReadOnlyList<string> AvailableRoles { get; private set; } = RoleNames.All;
+    public IReadOnlyList<string> AvailableRoles { get; private set; } = RoleNames.Assignable;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -25,6 +28,12 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
         if (Input.IsWeakManaged)
         {
             ModelState.Remove("Input.Password");
+        }
+
+        var roleResult = RoleSelection.Normalize(Input.SelectedRoles);
+        if (!roleResult.Succeeded)
+        {
+            ModelState.AddModelError(nameof(Input.SelectedRoles), roleResult.ErrorMessage!);
         }
 
         if (!ModelState.IsValid)
@@ -52,24 +61,34 @@ public sealed class CreateModel(UserManager<ApplicationUser> userManager) : Page
             return Page();
         }
 
+        await using var transaction = await db.Database.BeginTransactionAsync();
         var createResult = await userManager.CreateAsync(user, password);
 
         if (!createResult.Succeeded)
         {
-            foreach (var error in createResult.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
+            AddIdentityErrors(createResult);
             return Page();
         }
 
-        var selectedRoles = Input.SelectedRoles.Intersect(RoleNames.All).ToArray();
-        if (selectedRoles.Length > 0)
+        var addRolesResult = await userManager.AddToRolesAsync(user, roleResult.Roles);
+        if (!addRolesResult.Succeeded)
         {
-            await userManager.AddToRolesAsync(user, selectedRoles);
+            await transaction.RollbackAsync();
+            AddIdentityErrors(addRolesResult);
+            return Page();
         }
 
+        await transaction.CommitAsync();
+        TempData["SuccessMessage"] = $"使用者「{user.UserName}」已新增。";
         return RedirectToPage("./Index");
+    }
+
+    private void AddIdentityErrors(IdentityResult result)
+    {
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
     }
 
     private static string GenerateRandomPassword()

@@ -10,7 +10,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Archives;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class IndexModel(
     ApplicationDbContext db,
     ProjectArchiveService projectArchiveService) : PageModel

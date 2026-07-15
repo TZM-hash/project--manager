@@ -10,7 +10,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class DetailsModel(
     ApplicationDbContext db,
     ProjectGanttService ganttService,

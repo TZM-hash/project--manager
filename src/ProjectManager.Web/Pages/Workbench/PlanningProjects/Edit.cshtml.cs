@@ -14,7 +14,8 @@ namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class EditModel(
     PlanningProjectService planningProjectService,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserManager<ApplicationUser> userManager,
+    UserLookupService userLookup) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -31,14 +32,17 @@ public sealed class EditModel(
             return NotFound();
         }
 
+        if (!CanManage(project))
+        {
+            return NotFound();
+        }
+
         Project = project;
         Input = new InputModel
         {
             Id = project.Id,
             Name = project.Name,
-            LeaderUserIds = string.IsNullOrWhiteSpace(project.LeaderUserId)
-                ? []
-                : project.LeaderUserId.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
+            LeaderUserId = project.LeaderUserId,
             Vendor = project.Vendor,
             PreviousDescription = project.LatestDescription,
             RecordYear = DateTime.Today.Year,
@@ -51,19 +55,39 @@ public sealed class EditModel(
 
     public async Task<IActionResult> OnPostAsync(int id, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
+        var project = await planningProjectService.GetPlanningProjectAsync(id, cancellationToken);
+        if (project is null || !CanManage(project))
         {
-            var project = await planningProjectService.GetPlanningProjectAsync(id, cancellationToken);
-            Project = project ?? new PlanningProject();
-            await LoadOptionsAsync(cancellationToken);
-            return Page();
+            return NotFound();
         }
 
         var currentUserId = userManager.GetUserId(User);
-        // 多选負責人以逗号分隔存储
-        var leaderUserId = Input.LeaderUserIds != null && Input.LeaderUserIds.Count > 0
-            ? string.Join(",", Input.LeaderUserIds.Where(x => !string.IsNullOrWhiteSpace(x)))
-            : null;
+        var leaderUserId = User.CanManageAllBusinessData() ? Input.LeaderUserId : project.LeaderUserId;
+        if (leaderUserId?.Contains(',') == true)
+        {
+            ModelState.AddModelError(nameof(Input.LeaderUserId), "規劃中專案目前只能指定一位負責人。");
+        }
+        else if (User.CanManageAllBusinessData() && !string.IsNullOrWhiteSpace(leaderUserId))
+        {
+            var resolvedLeaderUserId = await userLookup.ResolveActiveProjectStaffUserIdAsync(
+                leaderUserId,
+                cancellationToken);
+            if (string.IsNullOrWhiteSpace(resolvedLeaderUserId))
+            {
+                ModelState.AddModelError(nameof(Input.LeaderUserId), "請選擇有效的一般使用者作為負責人。");
+            }
+            else
+            {
+                leaderUserId = resolvedLeaderUserId;
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            Project = project;
+            await LoadOptionsAsync(cancellationToken);
+            return Page();
+        }
 
         var updated = await planningProjectService.UpdateAsync(
             id,
@@ -82,6 +106,7 @@ public sealed class EditModel(
             return NotFound();
         }
 
+        TempData["SuccessMessage"] = $"規劃中專案「{updated.Name}」已更新。";
         return RedirectToPage("./Index");
     }
 
@@ -97,12 +122,29 @@ public sealed class EditModel(
             .ThenBy(x => x.UserName)
             .ToListAsync(cancellationToken);
 
+        var currentUserId = userManager.GetUserId(User);
         UserOptions = users
-            .Where(x => projectStaffUserIds.Contains(x.Id))
+            .Where(x => User.CanManageAllBusinessData()
+                ? projectStaffUserIds.Contains(x.Id)
+                : x.Id == currentUserId)
             .Select(x => new SelectListItem(
                 string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
                 x.Id))
             .ToList();
+    }
+
+    private bool CanManage(PlanningProject project)
+    {
+        if (User.CanManageAllBusinessData())
+        {
+            return true;
+        }
+
+        var currentUserId = userManager.GetUserId(User);
+        return !string.IsNullOrWhiteSpace(currentUserId) &&
+               (project.LeaderUserId ?? string.Empty)
+                   .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                   .Contains(currentUserId, StringComparer.Ordinal);
     }
 
     public sealed class InputModel
@@ -114,7 +156,7 @@ public sealed class EditModel(
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "專案負責人")]
-        public List<string>? LeaderUserIds { get; set; }
+        public string? LeaderUserId { get; set; }
 
         [Display(Name = "廠商")]
         public string? Vendor { get; set; }

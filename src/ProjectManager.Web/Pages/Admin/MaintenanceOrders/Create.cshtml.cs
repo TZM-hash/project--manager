@@ -11,7 +11,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class CreateModel(
     MaintenanceOrderService service,
     UserManager<ApplicationUser> userManager) : PageModel
@@ -72,6 +72,7 @@ public sealed class CreateModel(
         };
 
         await service.CreateAsync(order, userManager.GetUserId(User), cancellationToken);
+        TempData["SuccessMessage"] = $"保養訂單「{order.ContractNumber}」已新增。";
         return RedirectToPage("./Index");
     }
 

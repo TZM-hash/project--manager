@@ -148,9 +148,9 @@ public sealed class IndexModel(
 
     private ProjectFilter CreateFilter()
     {
-        var personnelUserId = User.IsInRole(RoleNames.ProjectStaff)
-            ? userManager.GetUserId(User)
-            : PersonnelUserId;
+        var personnelUserId = User.CanManageAllBusinessData()
+            ? PersonnelUserId
+            : userManager.GetUserId(User);
 
         return new ProjectFilter(
             Year,

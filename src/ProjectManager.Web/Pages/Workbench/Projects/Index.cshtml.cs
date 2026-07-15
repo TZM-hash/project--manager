@@ -113,8 +113,8 @@ public sealed class IndexModel(
         CurrentUserId = userManager.GetUserId(User) ?? string.Empty;
         await ResolveSavedViewAsync(cancellationToken);
         await LoadOptionsAsync(cancellationToken);
-        CanEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
-        var canViewAll = CanEditAll || User.IsInRole(RoleNames.Viewer);
+        CanEditAll = User.CanManageAllBusinessData();
+        var canViewAll = CanEditAll;
 
         if (!canViewAll && PersonnelUserId == null)
         {

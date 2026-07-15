@@ -8,7 +8,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class CreateModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
@@ -59,6 +59,7 @@ public sealed class CreateModel(
             $"新增專案 {project.ProjectNumber}",
             changes,
             cancellationToken);
+        TempData["SuccessMessage"] = $"專案「{project.ProjectNumber}」已新增。";
         return RedirectToPage("./Details", new { id = project.Id });
     }
 }

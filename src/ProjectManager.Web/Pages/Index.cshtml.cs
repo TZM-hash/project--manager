@@ -20,9 +20,7 @@ public class IndexModel(
         }
 
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) ||
-                         User.IsInRole(RoleNames.Leader) ||
-                         User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.CanManageAllBusinessData();
         Workbench = await personalWorkbenchService.BuildAsync(userId, canViewAll, cancellationToken);
     }
 }

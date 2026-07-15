@@ -11,7 +11,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Statuses;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class EditModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
@@ -104,6 +104,9 @@ public sealed class EditModel(
             status.Id.ToString(),
             $"Saved status {status.Code}.",
             cancellationToken);
+        TempData["SuccessMessage"] = isNew
+            ? $"狀態「{status.Name}」已新增。"
+            : $"狀態「{status.Name}」已儲存。";
         return RedirectToPage("./Index");
     }
 

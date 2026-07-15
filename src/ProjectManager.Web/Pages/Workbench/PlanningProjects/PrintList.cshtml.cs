@@ -40,6 +40,16 @@ public sealed class PrintListModel(
         }
 
         Projects = await planningProjectService.GetPlanningProjectsByIdsAsync(idList, cancellationToken);
+        if (!User.CanManageAllBusinessData())
+        {
+            var currentUserId = userManager.GetUserId(User);
+            Projects = string.IsNullOrWhiteSpace(currentUserId)
+                ? []
+                : Projects.Where(project => (project.LeaderUserId ?? string.Empty)
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .Contains(currentUserId, StringComparer.Ordinal))
+                    .ToList();
+        }
 
         var users = await userManager.Users
             .AsNoTracking()

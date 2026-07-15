@@ -1,4 +1,5 @@
 @page
+@using ProjectManager.Web.Security
 @model ProjectManager.Web.Pages.Workbench.PlanningProjects.IndexModel
 @{
     ViewData["Title"] = "規劃中專案";
@@ -10,7 +11,10 @@
         <div class="page-subtitle">跟踪尚未正式立项的專案意向和月度說明</div>
     </div>
     <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量匯入</a>
+        @if (User.CanManageAllBusinessData())
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Import">Excel 批量匯入</a>
+        }
         <a class="btn btn-primary" asp-page="./Create">新增</a>
     </div>
 </div>

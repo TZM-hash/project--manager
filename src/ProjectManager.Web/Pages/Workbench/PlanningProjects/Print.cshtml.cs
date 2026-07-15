@@ -26,6 +26,18 @@ public sealed class PrintModel(
             return NotFound();
         }
 
+        if (!User.CanManageAllBusinessData())
+        {
+            var currentUserId = userManager.GetUserId(User);
+            var leaderIds = (project.LeaderUserId ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (string.IsNullOrWhiteSpace(currentUserId) ||
+                !leaderIds.Contains(currentUserId, StringComparer.Ordinal))
+            {
+                return NotFound();
+            }
+        }
+
         Project = project;
 
         // 解析逗号分隔的負責人 ID，顯示姓名

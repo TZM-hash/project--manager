@@ -9,7 +9,7 @@ using ProjectManager.Web.Services.Operations;
 
 namespace ProjectManager.Web.Pages.Admin.DataExchange;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class IndexModel(
     OperationJobService jobs,
     OperationFileStore fileStore,

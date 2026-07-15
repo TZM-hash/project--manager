@@ -8,7 +8,7 @@ using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Admin.Vendors;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class CreateModel(ApplicationDbContext db) : PageModel
 {
     [BindProperty]
@@ -50,6 +50,7 @@ public sealed class CreateModel(ApplicationDbContext db) : PageModel
         db.Vendors.Add(vendor);
         await db.SaveChangesAsync();
 
+        TempData["SuccessMessage"] = $"廠商「{vendor.CompanyName}」已新增。";
         return RedirectToPage("./Index");
     }
 

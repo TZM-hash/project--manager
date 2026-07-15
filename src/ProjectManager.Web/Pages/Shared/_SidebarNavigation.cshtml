@@ -1,9 +1,9 @@
 @using ProjectManager.Web.Security
 @{
-    var isAdministrator = User.IsInRole(RoleNames.Administrator);
-    var canManageProjects = isAdministrator || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
-    var canViewReports = isAdministrator || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
-    var canUseSettlements = isAdministrator || User.IsInRole(RoleNames.Leader);
+    var isAdministrator = User.IsSystemAdministrator();
+    var canManageBusinessData = User.CanManageAllBusinessData();
+    var canViewReports = User.IsRegularUser();
+    var canUseSettlements = canManageBusinessData;
 }
 
 <section class="nav-section" aria-labelledby="nav-work-label">
@@ -15,7 +15,7 @@
                 <span>首頁</span>
             </a>
         </li>
-        @if (isAdministrator)
+        @if (canManageBusinessData)
         {
             <li class="nav-item">
                 <a class="nav-link" asp-area="" asp-page="/Admin/ProjectAssignments/Index" data-nav-label="專案分配">
@@ -24,7 +24,7 @@
                 </a>
             </li>
         }
-        @if (canManageProjects)
+        @if (canManageBusinessData)
         {
             <li class="nav-item">
                 <a class="nav-link" asp-area="" asp-page="/Admin/Projects/Index" data-nav-label="專案總覽">
@@ -45,12 +45,15 @@
                 <span>規劃中專案</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-area="" asp-page="/Admin/MaintenanceOrders/Index" data-nav-label="保養訂單">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3L4 17l3 3 5.4-5.3a4 4 0 0 0 5.3-5.4l-2.7 2.7-2.3-.4-.4-2.3Z"/></svg>
-                <span>保養訂單</span>
-            </a>
-        </li>
+        @if (canManageBusinessData)
+        {
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-page="/Admin/MaintenanceOrders/Index" data-nav-label="保養訂單">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.3L4 17l3 3 5.4-5.3a4 4 0 0 0 5.3-5.4l-2.7 2.7-2.3-.4-.4-2.3Z"/></svg>
+                    <span>保養訂單</span>
+                </a>
+            </li>
+        }
         @if (User.Identity?.IsAuthenticated == true)
         {
             <li class="nav-item">
@@ -72,7 +75,7 @@
     </ul>
 </section>
 
-@if (canViewReports || isAdministrator)
+@if (canViewReports || canManageBusinessData)
 {
     <section class="nav-section" aria-labelledby="nav-report-label">
         <div class="nav-section-label" id="nav-report-label">報表分析</div>
@@ -86,7 +89,7 @@
                     </a>
                 </li>
             }
-            @if (isAdministrator)
+            @if (canManageBusinessData)
             {
                 <li class="nav-item">
                     <a class="nav-link" asp-area="" asp-page="/Admin/Archives/Index" data-nav-label="歸檔歷史">
@@ -99,17 +102,23 @@
     </section>
 }
 
-@if (isAdministrator)
+@if (canManageBusinessData)
 {
     <section class="nav-section" aria-labelledby="nav-system-label">
         <div class="nav-section-label" id="nav-system-label">系統管理</div>
         <ul class="nav flex-column">
-            <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Users/Index" data-nav-label="使用者管理"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1.5A4.5 4.5 0 0 1 7.5 14h3A4.5 4.5 0 0 1 15 18.5V20"/><path d="M16 6h5M18.5 3.5v5"/></svg><span>使用者管理</span></a></li>
+            @if (isAdministrator)
+            {
+                <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Users/Index" data-nav-label="使用者管理"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1.5A4.5 4.5 0 0 1 7.5 14h3A4.5 4.5 0 0 1 15 18.5V20"/><path d="M16 6h5M18.5 3.5v5"/></svg><span>使用者管理</span></a></li>
+            }
             <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Vendors/Index" data-nav-label="廠商管理"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>廠商管理</span></a></li>
             <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Statuses/Index" data-nav-label="狀態設定"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9-9-9Z"/><circle cx="8" cy="8" r="1.4"/></svg><span>狀態設定</span></a></li>
             <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/DataExchange/Index" data-nav-label="資料匯入匯出"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h13"/><path d="m13 4 4 4-4 4"/><path d="M20 16H7"/><path d="m11 12-4 4 4 4"/></svg><span>資料匯入匯出</span></a></li>
-            <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Operations/Index" data-nav-label="運維監控"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg><span>運維監控</span></a></li>
-            <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Settings/Index" data-nav-label="系統設定"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg><span>系統設定</span></a></li>
+            @if (isAdministrator)
+            {
+                <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Operations/Index" data-nav-label="運維監控"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg><span>運維監控</span></a></li>
+                <li class="nav-item"><a class="nav-link" asp-area="" asp-page="/Admin/Settings/Index" data-nav-label="系統設定"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg><span>系統設定</span></a></li>
+            }
         </ul>
     </section>
 }

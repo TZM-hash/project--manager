@@ -37,7 +37,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public IReadOnlyList<MonthlySettlementBatch> Batches { get; private set; } = [];
 
-    public bool IsAdministrator => User.IsInRole(RoleNames.Administrator);
+    public bool IsAdministrator => User.CanManageAllBusinessData();
 
     public int TotalCount { get; private set; }
 
@@ -89,7 +89,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken cancellationToken)
     {
-        if (!User.IsInRole(RoleNames.Administrator))
+        if (!User.CanManageAllBusinessData())
         {
             return Forbid();
         }
@@ -112,7 +112,7 @@ public sealed class IndexModel(ApplicationDbContext db) : PageModel
 
     public async Task<IActionResult> OnPostBatchDeleteAsync(int[] ids, CancellationToken cancellationToken)
     {
-        if (!User.IsInRole(RoleNames.Administrator))
+        if (!User.CanManageAllBusinessData())
         {
             return Forbid();
         }

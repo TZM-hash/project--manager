@@ -51,6 +51,7 @@ public static class SeedData
         await SeedRolesAsync(roleManager);
         await SeedStatusesAsync(db);
         await SeedAdminUserAsync(userManager, configuration);
+        await EnsureLegacyRoleCompatibilityAsync(userManager);
     }
 
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -140,6 +141,24 @@ public static class SeedData
         if (!await userManager.IsInRoleAsync(admin, RoleNames.Administrator))
         {
             await userManager.AddToRoleAsync(admin, RoleNames.Administrator);
+        }
+    }
+
+    private static async Task EnsureLegacyRoleCompatibilityAsync(
+        UserManager<ApplicationUser> userManager)
+    {
+        var processedUserIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var legacyRole in RoleNames.LegacyRegularRoles)
+        {
+            var users = await userManager.GetUsersInRoleAsync(legacyRole);
+            foreach (var user in users.Where(x => processedUserIds.Add(x.Id)))
+            {
+                var currentRoles = await userManager.GetRolesAsync(user);
+                if (!currentRoles.Any(RoleNames.PrimaryRoles.Contains))
+                {
+                    await userManager.AddToRoleAsync(user, RoleNames.ProjectStaff);
+                }
+            }
         }
     }
 }

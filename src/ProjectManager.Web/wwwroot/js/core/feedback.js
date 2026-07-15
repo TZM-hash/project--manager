@@ -70,7 +70,27 @@ function initProcessingFeedback() {
   window.addEventListener("pageshow", restore);
 }
 
+function initValidationFeedback() {
+  const summary = document.querySelector(".validation-summary-errors");
+  if (!summary || !summary.textContent.trim()) {
+    return;
+  }
+
+  summary.setAttribute("role", "alert");
+  summary.setAttribute("tabindex", "-1");
+  window.requestAnimationFrame(() => {
+    summary.scrollIntoView({ behavior: "smooth", block: "center" });
+    const invalidField = document.querySelector(".input-validation-error, [aria-invalid='true']");
+    if (invalidField instanceof HTMLElement) {
+      invalidField.focus({ preventScroll: true });
+      return;
+    }
+    summary.focus({ preventScroll: true });
+  });
+}
+
 export function initFeedback() {
   initPasswordToggles();
   initProcessingFeedback();
+  initValidationFeedback();
 }

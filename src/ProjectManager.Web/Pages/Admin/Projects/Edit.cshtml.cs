@@ -9,7 +9,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class EditModel(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,

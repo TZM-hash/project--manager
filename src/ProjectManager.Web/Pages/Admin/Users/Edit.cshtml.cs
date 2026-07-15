@@ -1,17 +1,22 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Admin.Users;
 
 [Authorize(Roles = RoleNames.Administrator)]
-public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageModel
+public sealed class EditModel(
+    UserManager<ApplicationUser> userManager,
+    ApplicationDbContext db) : PageModel
 {
-    public IReadOnlyList<string> AvailableRoles { get; private set; } = RoleNames.All;
+    public IReadOnlyList<string> AvailableRoles { get; private set; } = RoleNames.Assignable;
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -39,6 +44,12 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
 
     public async Task<IActionResult> OnPostAsync(string id)
     {
+        var roleResult = RoleSelection.Normalize(Input.SelectedRoles);
+        if (!roleResult.Succeeded)
+        {
+            ModelState.AddModelError(nameof(Input.SelectedRoles), roleResult.ErrorMessage!);
+        }
+
         if (!ModelState.IsValid)
         {
             return Page();
@@ -50,27 +61,75 @@ public sealed class EditModel(UserManager<ApplicationUser> userManager) : PageMo
             return NotFound();
         }
 
+        using var transaction = db.Database.BeginTransaction(IsolationLevel.Serializable);
+        var currentRoles = await userManager.GetRolesAsync(user);
+        if (await WouldRemoveLastActiveAdministratorAsync(user, currentRoles, roleResult.Roles))
+        {
+            ModelState.AddModelError(string.Empty, "系統至少需要保留一個啟用中的系統管理員。");
+            return Page();
+        }
+
         user.DisplayName = Input.DisplayName;
         user.Email = Input.Email;
         user.IsActive = Input.IsActive;
         user.IsWeakManaged = Input.IsWeakManaged;
-
         var updateResult = await userManager.UpdateAsync(user);
         if (!updateResult.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, "使用者儲存失敗，请检查信箱格式和帳號狀態。");
+            AddIdentityErrors(updateResult);
             return Page();
         }
 
-        var currentRoles = await userManager.GetRolesAsync(user);
-        await userManager.RemoveFromRolesAsync(user, currentRoles);
-        var selectedRoles = Input.SelectedRoles.Intersect(RoleNames.All).ToArray();
-        if (selectedRoles.Length > 0)
+        var rolesToAdd = roleResult.Roles.Except(currentRoles, StringComparer.Ordinal).ToArray();
+        if (rolesToAdd.Length > 0)
         {
-            await userManager.AddToRolesAsync(user, selectedRoles);
+            var addResult = await userManager.AddToRolesAsync(user, rolesToAdd);
+            if (!addResult.Succeeded)
+            {
+                await transaction.RollbackAsync();
+                AddIdentityErrors(addResult);
+                return Page();
+            }
         }
 
+        var rolesToRemove = currentRoles.Except(roleResult.Roles, StringComparer.Ordinal).ToArray();
+        if (rolesToRemove.Length > 0)
+        {
+            var removeResult = await userManager.RemoveFromRolesAsync(user, rolesToRemove);
+            if (!removeResult.Succeeded)
+            {
+                await transaction.RollbackAsync();
+                AddIdentityErrors(removeResult);
+                return Page();
+            }
+        }
+
+        await transaction.CommitAsync();
+        TempData["SuccessMessage"] = $"使用者「{user.UserName}」已更新。";
         return RedirectToPage("./Index");
+    }
+
+    private async Task<bool> WouldRemoveLastActiveAdministratorAsync(
+        ApplicationUser user,
+        IEnumerable<string> currentRoles,
+        IEnumerable<string> selectedRoles)
+    {
+        if (!currentRoles.Contains(RoleNames.Administrator) ||
+            (Input.IsActive && selectedRoles.Contains(RoleNames.Administrator)))
+        {
+            return false;
+        }
+
+        var administrators = await userManager.GetUsersInRoleAsync(RoleNames.Administrator);
+        return administrators.All(x => x.Id == user.Id || !x.IsActive);
+    }
+
+    private void AddIdentityErrors(IdentityResult result)
+    {
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
     }
 
     public sealed class InputModel

@@ -209,7 +209,7 @@ public sealed class PlanningProjectService(ApplicationDbContext db)
 
         if (!string.IsNullOrWhiteSpace(filter.LeaderUserId))
         {
-            query = query.Where(x => x.LeaderUserId != null && x.LeaderUserId.Contains(filter.LeaderUserId));
+            query = query.WhereLeaderAssigned(filter.LeaderUserId);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Vendor))

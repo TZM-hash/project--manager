@@ -78,7 +78,7 @@ public sealed class DetailsModel(
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.CanManageAllBusinessData();
         ActiveTab = ResolveActiveTab();
         IQueryable<Project> projectQuery = db.Projects
             .AsNoTracking()
@@ -120,7 +120,7 @@ public sealed class DetailsModel(
         }
 
         Project = project;
-        CanEditProgress = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
+        CanEditProgress = User.CanManageAllBusinessData() || User.IsInRole(RoleNames.ProjectStaff);
         if (ActiveTab == "overview")
         {
             var skippedStatuses = await db.ProjectSkippedStatuses
@@ -172,13 +172,13 @@ public sealed class DetailsModel(
     public async Task<IActionResult> OnPostSaveGanttAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.CanManageAllBusinessData();
         if (!await CanAccessProjectAsync(id, userId, canViewAll, cancellationToken))
         {
             return NotFound();
         }
 
-        var canEdit = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.ProjectStaff) || User.IsInRole(RoleNames.Leader);
+        var canEdit = User.CanManageAllBusinessData() || User.IsInRole(RoleNames.ProjectStaff);
         if (!canEdit)
         {
             return Forbid();
@@ -201,7 +201,7 @@ public sealed class DetailsModel(
     public async Task<IActionResult> OnGetExportGanttAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.CanManageAllBusinessData();
         if (!await CanAccessProjectAsync(id, userId, canViewAll, cancellationToken))
         {
             return NotFound();
@@ -224,8 +224,8 @@ public sealed class DetailsModel(
         CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
-        var canEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+        var canViewAll = User.CanManageAllBusinessData();
+        var canEditAll = canViewAll;
         var result = await collaborationService.DeleteAsync(
             new CollaborationCommand(id, recordId, userId, canViewAll, canEditAll, null, string.Empty, rowVersion),
             cancellationToken);
@@ -235,8 +235,8 @@ public sealed class DetailsModel(
     private async Task<IActionResult> SaveCollaborationAsync(int id, bool isUpdate, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
-        var canEditAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader);
+        var canViewAll = User.CanManageAllBusinessData();
+        var canEditAll = canViewAll;
         var command = new CollaborationCommand(
             id,
             CollaborationInput.RecordId,
@@ -282,7 +282,7 @@ public sealed class DetailsModel(
     public async Task<IActionResult> OnGetDownloadCollaborationAttachmentAsync(int id, int attachmentId, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) || User.IsInRole(RoleNames.Leader) || User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.CanManageAllBusinessData();
         if (!await CanAccessProjectAsync(id, userId, canViewAll, cancellationToken)) return NotFound();
         var attachment = await db.ProjectCollaborationAttachments.AsNoTracking()
             .Include(x => x.Record)

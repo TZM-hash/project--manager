@@ -9,7 +9,7 @@ using ProjectManager.Web.Security;
 
 namespace ProjectManager.Web.Pages.Admin.Vendors;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class EditModel(ApplicationDbContext db) : PageModel
 {
     [BindProperty]

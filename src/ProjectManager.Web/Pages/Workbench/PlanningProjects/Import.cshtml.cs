@@ -9,7 +9,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class ImportModel(
     PlanningProjectService planningProjectService,
     UserLookupService userLookup) : PageModel
@@ -64,14 +64,29 @@ public sealed class ImportModel(
                     continue;
                 }
 
-                var leaderUserNames = row.Cell(2).GetString().Trim();
+                var leaderUserName = row.Cell(2).GetString().Trim();
                 var vendor = row.Cell(3).GetString().Trim();
                 var latestDescription = row.Cell(4).GetString().Trim();
 
-                var resolvedLeaderIds = await userLookup.ResolveUserIdsAsync(leaderUserNames, cancellationToken);
-                var leaderUserId = resolvedLeaderIds.Count > 0
-                    ? string.Join(",", resolvedLeaderIds)
-                    : null;
+                var leaderNames = UserLookupService.SplitNames(leaderUserName).ToArray();
+                if (leaderNames.Length > 1)
+                {
+                    ErrorMessage = $"第 {row.RowNumber()} 行只能指定一位負責人。";
+                    return Page();
+                }
+
+                string? leaderUserId = null;
+                if (leaderNames.Length == 1)
+                {
+                    leaderUserId = await userLookup.ResolveActiveProjectStaffUserIdAsync(
+                        leaderNames[0],
+                        cancellationToken);
+                    if (string.IsNullOrWhiteSpace(leaderUserId))
+                    {
+                        ErrorMessage = $"第 {row.RowNumber()} 行的負責人不是有效的一般使用者。";
+                        return Page();
+                    }
+                }
 
                 projects.Add(new PlanningProject
                 {
@@ -108,7 +123,7 @@ public sealed class ImportModel(
         worksheet.Cell(1, 4).Value = "最新說明";
 
         worksheet.Cell(2, 1).Value = "示例專案A";
-        worksheet.Cell(2, 2).Value = "admin,user1";
+        worksheet.Cell(2, 2).Value = "user1";
         worksheet.Cell(2, 3).Value = "示例廠商";
         worksheet.Cell(2, 4).Value = "这是示例說明";
 

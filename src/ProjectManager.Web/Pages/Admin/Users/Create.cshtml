@@ -13,7 +13,7 @@
 </div>
 
 <form method="post" class="form-section">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
     <div class="row g-3">
         <div class="col-md-4">
             <label asp-for="Input.UserName" class="form-label">使用者名稱</label>
@@ -41,20 +41,26 @@
             </label>
         </div>
         <div class="col-12">
-            <label class="form-label">角色</label>
+            <label class="form-label">主權限層級</label>
             <div class="d-flex flex-wrap gap-3">
-                @foreach (var role in Model.AvailableRoles)
+                @foreach (var role in RoleNames.PrimaryRoles)
                 {
                     <label class="form-check-label">
-                        <input class="form-check-input" type="checkbox" name="Input.SelectedRoles" value="@role" />
+                        <input class="form-check-input" type="radio" name="Input.SelectedRoles" value="@role" />
                         @RoleNames.GetDisplayName(role)
                     </label>
                 }
             </div>
         </div>
+        <div class="col-12">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" name="Input.SelectedRoles" value="@RoleNames.SubCaseContact" />
+                @RoleNames.GetDisplayName(RoleNames.SubCaseContact)（補充身份）
+            </label>
+        </div>
     </div>
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">儲存</button>
+        <button type="submit" class="btn btn-primary" data-processing-label="正在儲存…">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

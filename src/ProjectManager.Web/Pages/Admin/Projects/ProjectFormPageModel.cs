@@ -399,26 +399,35 @@ public sealed class ProjectInputModel
 
     public string RowVersion { get; set; } = string.Empty;
 
+    [Range(2000, 2100, ErrorMessage = "請輸入有效年份。")]
     public int Year { get; set; } = DateTime.Today.Year;
 
     public string? ParentCaseNumber { get; set; }
 
+    [Required(ErrorMessage = "請輸入專案工號。")]
+    [StringLength(100, ErrorMessage = "專案工號不可超過100個字。")]
     public string? ProjectNumber { get; set; }
 
+    [Required(ErrorMessage = "請輸入專案名稱。")]
+    [StringLength(200, ErrorMessage = "專案名稱不可超過200個字。")]
     public string? Name { get; set; }
 
     public ProjectType ProjectType { get; set; } = ProjectType.Engineering;
 
+    [Range(1, int.MaxValue, ErrorMessage = "請選擇有效狀態。")]
     public int StatusId { get; set; }
 
     public string? AssignedUserId { get; set; }
 
     public string? ClosedYearMonth { get; set; }
 
+    [Range(typeof(decimal), "0", "100", ErrorMessage = "專案進度必須介於0到100之間。")]
     public decimal ProgressPercent { get; set; }
 
+    [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "專案金額不可為負數。")]
     public decimal ProjectAmount { get; set; }
 
+    [Range(typeof(decimal), "0", "100", ErrorMessage = "收款比例必須介於0到100之間。")]
     public decimal CollectionPercent { get; set; }
 
     [MaxLength(1000, ErrorMessage = "狀態說明最多允許1000個字符")]

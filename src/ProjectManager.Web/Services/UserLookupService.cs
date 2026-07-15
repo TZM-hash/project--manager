@@ -51,6 +51,23 @@ public sealed class UserLookupService(UserManager<ApplicationUser> userManager)
         return ids;
     }
 
+    public async Task<string?> ResolveActiveProjectStaffUserIdAsync(
+        string? value,
+        CancellationToken cancellationToken)
+    {
+        var userId = await ResolveUserIdAsync(value, cancellationToken);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return null;
+        }
+
+        var user = await userManager.FindByIdAsync(userId);
+        return user is { IsActive: true } &&
+               await userManager.IsInRoleAsync(user, Security.RoleNames.ProjectStaff)
+            ? user.Id
+            : null;
+    }
+
     public static IEnumerable<string> SplitNames(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))

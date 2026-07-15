@@ -10,7 +10,7 @@ using ProjectType = ProjectManager.Web.Models.ProjectType;
 
 namespace ProjectManager.Web.Pages.Admin.Projects;
 
-[Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class ReportModel(
     ApplicationDbContext db,
     SystemSettingsService systemSettingsService,

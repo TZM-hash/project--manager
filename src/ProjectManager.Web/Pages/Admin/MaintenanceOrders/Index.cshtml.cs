@@ -15,7 +15,7 @@ using ProjectManager.Web.Services.Operations;
 
 namespace ProjectManager.Web.Pages.Admin.MaintenanceOrders;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class IndexModel(
     MaintenanceOrderService service,
     ApplicationDbContext db,

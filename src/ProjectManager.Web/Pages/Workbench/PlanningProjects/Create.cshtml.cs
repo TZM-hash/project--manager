@@ -14,7 +14,8 @@ namespace ProjectManager.Web.Pages.Workbench.PlanningProjects;
 [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.ProjectStaff + "," + RoleNames.Leader)]
 public sealed class CreateModel(
     PlanningProjectService planningProjectService,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserManager<ApplicationUser> userManager,
+    UserLookupService userLookup) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -24,20 +25,40 @@ public sealed class CreateModel(
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         await LoadOptionsAsync(cancellationToken);
+        if (!User.CanManageAllBusinessData())
+        {
+            Input.LeaderUserId = userManager.GetUserId(User);
+        }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
+        var currentUserId = userManager.GetUserId(User);
+        var leaderUserId = User.CanManageAllBusinessData() ? Input.LeaderUserId : currentUserId;
+        if (leaderUserId?.Contains(',') == true)
+        {
+            ModelState.AddModelError(nameof(Input.LeaderUserId), "規劃中專案目前只能指定一位負責人。");
+        }
+        else if (!string.IsNullOrWhiteSpace(leaderUserId))
+        {
+            var resolvedLeaderUserId = await userLookup.ResolveActiveProjectStaffUserIdAsync(
+                leaderUserId,
+                cancellationToken);
+            if (string.IsNullOrWhiteSpace(resolvedLeaderUserId))
+            {
+                ModelState.AddModelError(nameof(Input.LeaderUserId), "請選擇有效的一般使用者作為負責人。");
+            }
+            else
+            {
+                leaderUserId = resolvedLeaderUserId;
+            }
+        }
+
         if (!ModelState.IsValid)
         {
             await LoadOptionsAsync(cancellationToken);
             return Page();
         }
-
-        // 多选負責人以逗号分隔存储
-        var leaderUserId = Input.LeaderUserIds != null && Input.LeaderUserIds.Count > 0
-            ? string.Join(",", Input.LeaderUserIds.Where(x => !string.IsNullOrWhiteSpace(x)))
-            : null;
 
         var project = new PlanningProject
         {
@@ -48,6 +69,7 @@ public sealed class CreateModel(
         };
 
         await planningProjectService.CreateAsync(project, cancellationToken);
+        TempData["SuccessMessage"] = $"規劃中專案「{project.Name}」已新增。";
         return RedirectToPage("./Index");
     }
 
@@ -63,8 +85,11 @@ public sealed class CreateModel(
             .ThenBy(x => x.UserName)
             .ToListAsync(cancellationToken);
 
+        var currentUserId = userManager.GetUserId(User);
         UserOptions = users
-            .Where(x => projectStaffUserIds.Contains(x.Id))
+            .Where(x => User.CanManageAllBusinessData()
+                ? projectStaffUserIds.Contains(x.Id)
+                : x.Id == currentUserId)
             .Select(x => new SelectListItem(
                 string.IsNullOrWhiteSpace(x.DisplayName) ? x.UserName ?? x.Id : x.DisplayName,
                 x.Id))
@@ -78,7 +103,7 @@ public sealed class CreateModel(
         public string Name { get; set; } = string.Empty;
 
         [Display(Name = "專案負責人")]
-        public List<string>? LeaderUserIds { get; set; }
+        public string? LeaderUserId { get; set; }
 
         [Display(Name = "廠商")]
         public string? Vendor { get; set; }

@@ -17,7 +17,7 @@
 
 <div class="form-section">
     <form method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div asp-validation-summary="All" class="text-danger"></div>
         <div class="mb-3">
             <label asp-for="UploadFile" class="form-label">選擇 Excel 檔案</label>
             <input asp-for="UploadFile" class="form-control" type="file" accept=".xlsx" />
@@ -32,7 +32,7 @@
         {
             <div class="alert alert-danger">@Model.ErrorMessage</div>
         }
-        <button type="submit" class="btn btn-primary">開始匯入</button>
+        <button type="submit" class="btn btn-primary" data-processing-label="正在匯入…">開始匯入</button>
     </form>
 </div>
 

@@ -24,9 +24,7 @@ public sealed class GanttPrintModel(
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var userId = userManager.GetUserId(User) ?? string.Empty;
-        var canViewAll = User.IsInRole(RoleNames.Administrator) ||
-                         User.IsInRole(RoleNames.Leader) ||
-                         User.IsInRole(RoleNames.Viewer);
+        var canViewAll = User.CanManageAllBusinessData();
         var project = await workbenchProjectService.GetProjectForUserAsync(
             id,
             userId,

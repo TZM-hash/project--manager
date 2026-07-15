@@ -4,6 +4,7 @@ using ClosedXML.Excel;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Data.Sqlite;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ProjectManager.Web.Data;
 using ProjectManager.Web.Models;
 using ProjectManager.Web.Services;
+using ProjectManager.Web.Security;
 using AdminProjectImportModel = ProjectManager.Web.Pages.Admin.Projects.ImportModel;
 using PlanningProjectImportModel = ProjectManager.Web.Pages.Workbench.PlanningProjects.ImportModel;
 
@@ -98,6 +100,97 @@ public sealed class ImportPageModelTests
         await model.OnPostAsync(CancellationToken.None);
 
         model.ErrorMessage.Should().Contain(".xlsx");
+    }
+
+    [Fact]
+    public void Planning_project_import_is_limited_to_business_managers()
+    {
+        var attribute = typeof(PlanningProjectImportModel)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+            .Cast<AuthorizeAttribute>()
+            .Single();
+
+        attribute.Roles.Should().Be(RoleNames.BusinessManagerRoles);
+    }
+
+    [Fact]
+    public async Task Planning_project_import_rejects_multiple_leaders_with_clear_error()
+    {
+        await using var services = await TestServices.CreateAsync();
+        var db = services.Provider.GetRequiredService<ApplicationDbContext>();
+        db.Users.AddRange(
+            new ApplicationUser { Id = "alice-id", UserName = "alice", NormalizedUserName = "ALICE", IsActive = true },
+            new ApplicationUser { Id = "bob-id", UserName = "bob", NormalizedUserName = "BOB", IsActive = true });
+        await db.SaveChangesAsync();
+
+        using var workbook = CreatePlanningWorkbook("alice,bob");
+        var model = new PlanningProjectImportModel(
+            new PlanningProjectService(db),
+            services.Provider.GetRequiredService<UserLookupService>())
+        {
+            UploadFile = CreateWorkbookFile(workbook, "planning.xlsx")
+        };
+
+        await model.OnPostAsync(CancellationToken.None);
+
+        model.ErrorMessage.Should().Contain("只能指定一位負責人");
+        (await db.PlanningProjects.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Planning_project_import_rejects_user_without_project_staff_role()
+    {
+        await using var services = await TestServices.CreateAsync();
+        var db = services.Provider.GetRequiredService<ApplicationDbContext>();
+        db.Users.Add(new ApplicationUser
+        {
+            Id = "viewer-id",
+            UserName = "viewer",
+            NormalizedUserName = "VIEWER",
+            IsActive = true
+        });
+        await db.SaveChangesAsync();
+
+        using var workbook = CreatePlanningWorkbook("viewer");
+        var model = new PlanningProjectImportModel(
+            new PlanningProjectService(db),
+            services.Provider.GetRequiredService<UserLookupService>())
+        {
+            UploadFile = CreateWorkbookFile(workbook, "planning.xlsx")
+        };
+
+        await model.OnPostAsync(CancellationToken.None);
+
+        model.ErrorMessage.Should().Contain("有效的一般使用者");
+        (await db.PlanningProjects.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Planning_project_template_uses_a_single_leader_example()
+    {
+        await using var services = await TestServices.CreateAsync();
+        var model = new PlanningProjectImportModel(
+            new PlanningProjectService(services.Provider.GetRequiredService<ApplicationDbContext>()),
+            services.Provider.GetRequiredService<UserLookupService>());
+
+        var file = model.OnGetTemplate().Should().BeOfType<FileContentResult>().Subject;
+        using var stream = new MemoryStream(file.FileContents);
+        using var workbook = new XLWorkbook(stream);
+
+        workbook.Worksheet(1).Cell(2, 2).GetString().Should().NotContain(",");
+    }
+
+    private static XLWorkbook CreatePlanningWorkbook(string leaderUserName)
+    {
+        var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("PlanningProjects");
+        sheet.Cell(1, 1).Value = "專案名";
+        sheet.Cell(1, 2).Value = "專案負責人";
+        sheet.Cell(1, 3).Value = "廠商";
+        sheet.Cell(1, 4).Value = "最新說明";
+        sheet.Cell(2, 1).Value = "Test Planning Project";
+        sheet.Cell(2, 2).Value = leaderUserName;
+        return workbook;
     }
 
     private static PageContext CreatePageContext()

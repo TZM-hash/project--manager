@@ -10,7 +10,7 @@ using ProjectManager.Web.Services;
 
 namespace ProjectManager.Web.Pages.Admin.ProjectAssignments;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = RoleNames.BusinessManagerRoles)]
 public sealed class IndexModel(ApplicationDbContext db, UserManager<ApplicationUser> userManager) : PageModel
 {
     [BindProperty(SupportsGet = true)]

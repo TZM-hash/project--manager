@@ -12,7 +12,7 @@
 </div>
 
 <form method="post" class="form-section">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
     <div class="row g-3">
         <div class="col-md-6">
             <label asp-for="Input.Name" class="form-label">專案名</label>
@@ -20,8 +20,10 @@
             <span asp-validation-for="Input.Name" class="text-danger"></span>
         </div>
         <div class="col-md-6">
-            <label asp-for="Input.LeaderUserIds" class="form-label">專案負責人（可多选）</label>
-            <select asp-for="Input.LeaderUserIds" asp-items="Model.UserOptions" class="form-select" multiple size="5"></select>
+            <label asp-for="Input.LeaderUserId" class="form-label">專案負責人</label>
+            <select asp-for="Input.LeaderUserId" asp-items="Model.UserOptions" class="form-select">
+                <option value="">未指定</option>
+            </select>
         </div>
         <div class="col-md-6">
             <label asp-for="Input.Vendor" class="form-label">廠商</label>
@@ -33,7 +35,7 @@
         </div>
     </div>
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">儲存</button>
+        <button type="submit" class="btn btn-primary" data-processing-label="正在儲存…">儲存</button>
         <a class="btn btn-outline-secondary" asp-page="./Index">返回</a>
     </div>
 </form>

@@ -38,9 +38,9 @@ public sealed class PrintModel(
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        var personnelUserId = User.IsInRole(RoleNames.ProjectStaff)
-            ? userManager.GetUserId(User)
-            : PersonnelUserId;
+        var personnelUserId = User.CanManageAllBusinessData()
+            ? PersonnelUserId
+            : userManager.GetUserId(User);
 
         Projects = await projectQueryService.GetProjectsAsync(
             new ProjectFilter(Year, ParentCaseNumber, ProjectNumber, ProjectName, personnelUserId, StatusId, OpenOnly: true, AnalysisType),

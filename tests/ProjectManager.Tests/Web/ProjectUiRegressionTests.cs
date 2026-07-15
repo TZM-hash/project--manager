@@ -5,6 +5,21 @@ namespace ProjectManager.Tests.Web;
 public sealed class ProjectUiRegressionTests
 {
     [Fact]
+    public void Global_overviews_use_the_permission_hierarchy_instead_of_viewer_role_shortcuts()
+    {
+        var home = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Index.cshtml.cs");
+        var workbench = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Workbench", "Projects", "Index.cshtml.cs");
+        var navigation = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Shared", "_SidebarNavigation.cshtml");
+
+        home.Should().Contain("CanManageAllBusinessData()");
+        home.Should().NotContain("RoleNames.Viewer");
+        workbench.Should().Contain("CanManageAllBusinessData()");
+        workbench.Should().NotContain("canViewAll = CanEditAll || User.IsInRole(RoleNames.Viewer)");
+        navigation.Should().Contain("CanManageAllBusinessData()");
+        navigation.Should().Contain("IsSystemAdministrator()");
+    }
+
+    [Fact]
     public void Operation_center_exposes_persisted_progress_polling_and_authorized_downloads()
     {
         var page = ReadRepositoryFile("src", "ProjectManager.Web", "Pages", "Operations", "Index.cshtml");
