@@ -49,12 +49,13 @@ public sealed class FrontendAssetStructureTests
             Environment.NewLine,
             Directory.EnumerateFiles(root, "*.js", SearchOption.AllDirectories)
                 .OrderBy(path => path, StringComparer.Ordinal)
-                .Select(File.ReadAllText));
+                .Select(path => File.ReadAllText(path).ReplaceLineEndings("\n")));
     }
 
     private static string ReadRepositoryFile(params string[] pathParts)
     {
-        return File.ReadAllText(Path.Combine(new[] { RepositoryRoot() }.Concat(pathParts).ToArray()));
+        return File.ReadAllText(Path.Combine(new[] { RepositoryRoot() }.Concat(pathParts).ToArray()))
+            .ReplaceLineEndings("\n");
     }
 
     private static string RepositoryRoot()

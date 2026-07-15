@@ -236,7 +236,7 @@ public sealed class ProjectUiRegressionTests
         var migration = Directory
             .GetFiles(migrationsDirectory, "*RepairLegacyProjectTypes.cs")
             .Should().ContainSingle().Subject;
-        var source = File.ReadAllText(migration);
+        var source = File.ReadAllText(migration).ReplaceLineEndings("\n");
 
         source.Should().Contain("UPDATE [Projects] SET [ProjectType] = 2 WHERE [ProjectType] = 0");
     }
@@ -430,7 +430,7 @@ public sealed class ProjectUiRegressionTests
 
     private static string ReadRepositoryFile(params string[] pathParts)
     {
-        return File.ReadAllText(RepositoryPath(pathParts));
+        return File.ReadAllText(RepositoryPath(pathParts)).ReplaceLineEndings("\n");
     }
 
     private static string RepositoryPath(params string[] pathParts)

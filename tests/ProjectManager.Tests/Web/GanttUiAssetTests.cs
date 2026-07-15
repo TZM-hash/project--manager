@@ -69,7 +69,8 @@ public sealed class GanttUiAssetTests
         }
 
         var root = directory ?? throw new DirectoryNotFoundException("Cannot locate ProjectManager.sln.");
-        return File.ReadAllText(Path.Combine(new[] { root.FullName }.Concat(pathParts).ToArray()));
+        return File.ReadAllText(Path.Combine(new[] { root.FullName }.Concat(pathParts).ToArray()))
+            .ReplaceLineEndings("\n");
     }
 
 }
